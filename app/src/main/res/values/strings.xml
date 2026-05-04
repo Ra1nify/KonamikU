@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KonamikU</string>
+
+    <string name="nav_cards">Cards</string>
+    <string name="nav_status">Status</string>
+    <string name="nav_tools">Tools</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="card_add_title">Add New Card</string>
+    <string name="card_add_name_label">Card Name</string>
+    <string name="card_add_name_placeholder">e.g. My Suica</string>
+    <string name="card_add_idm_label">IDm (16 Hex chars)</string>
+    <string name="card_add_idm_placeholder">012E456789ABCDEF</string>
+    <string name="card_add_idm_scanning">Scanning…</string>
+    <string name="card_add_idm_scanning_hint">Hold card near NFC sensor</string>
+    <string name="card_add_scanning">Scanning</string>
+    <string name="card_add_confirm">Confirm</string>
+    <string name="card_add_cancel">Cancel</string>
+
+    <string name="card_delete_title">Delete Card</string>
+    <string name="card_delete_message">Delete \"%s\"? This cannot be undone.</string>
+    <string name="card_delete_confirm">Delete</string>
+    <string name="card_delete_cancel">Cancel</string>
+
+    <string name="card_action_activate">Activate</string>
+    <string name="card_action_stop">Stop</string>
+    <string name="card_action_normal">Normal</string>
+    <string name="card_action_compat">Compat</string>
+    <string name="card_action_delete">Delete</string>
+    <string name="card_label_idm">IDm</string>
+    <string name="card_badge_on">ON</string>
+    <string name="idm_copied">IDm copied</string>
+
+    <string name="cards_empty_title">No cards yet</string>
+    <string name="cards_empty_hint">Tap + to add a card</string>
+
+    <string name="toast_card_activated">%1$s activated · %2$s</string>
+    <string name="mode_normal">Normal mode</string>
+    <string name="mode_compat">Compat mode</string>
+
+    <string name="notif_channel_name">Card Emulation</string>
+    <string name="notif_channel_desc">KonamikU NFC card emulation status</string>
+    <string name="notif_progress_normal">Normal mode</string>
+    <string name="notif_progress_compat">Compat mode</string>
+    <string name="notif_progress_simulated">Simulated</string>
+    <string name="notif_action_stop">Stop</string>
+    <string name="notif_action_switch_mode">Switch Mode</string>
+
+    <string name="status_root">Root</string>
+    <string name="status_adb">ADB</string>
+    <string name="status_device_owner">Device Owner</string>
+    <string name="status_nfc_rf">NFC Radio</string>
+    <string name="status_default_payment">Default Payment</string>
+    <string name="status_lsposed">LSPosed</string>
+    <string name="status_pmmtool">PMm Tool</string>
+    <string name="status_hcef">HCE-F</string>
+    <string name="status_available">Available</string>
+    <string name="status_unavailable">Unavailable</string>
+    <string name="status_injected">Injected</string>
+    <string name="status_not_injected">Not injected</string>
+    <string name="status_rf_on">Enabled</string>
+    <string name="status_rf_off">Disabled</string>
+    <string name="status_none">None</string>
+
+    <string name="setting_appearance">Appearance</string>
+    <string name="setting_nav_layout">Navigation Layout</string>
+    <string name="setting_nav_auto">Auto</string>
+    <string name="setting_nav_bottom">Bottom</string>
+    <string name="setting_nav_rail">Rail</string>
+    <string name="setting_color_source">Color Source</string>
+    <string name="setting_color_system">System</string>
+    <string name="setting_color_custom">Custom</string>
+    <string name="setting_theme_mode">Theme Mode</string>
+    <string name="setting_theme_system">System</string>
+    <string name="setting_theme_light">Light</string>
+    <string name="setting_theme_dark">Dark</string>
+    <string name="setting_nfc_module">NFC Module</string>
+    <string name="setting_pmmtool">PMm Tool</string>
+    <string name="setting_pmmtool_active">Active</string>
+    <string name="setting_pmmtool_inactive">Inactive — restart NFC to apply</string>
+    <string name="setting_nfc_default">NFC Default App</string>
+    <string name="setting_nfc_default_desc">Set KonamikU as the default tap &amp; pay application from system settings.</string>
+    <string name="setting_nfc_default_open">Open NFC Payment Settings</string>
+    <string name="status_xposed_needs_restart">Module active — restart com.android.nfc to apply hooks</string>
+    <string name="status_xposed_restart_nfc">Plz restart NFC</string>
+
+    <string name="setting_language">Language</string>
+    <string name="setting_language_label">App Language</string>
+    <string name="setting_language_system">System</string>
+    <string name="setting_language_zh">简体中文</string>
+    <string name="setting_language_en">English</string>
+    <string name="setting_language_change">Change</string>
+
+</resources>

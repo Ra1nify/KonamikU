@@ -1,0 +1,5 @@
+-keep class org.cf0x.konamiku.xposed.KonamikuModule { *; }
+-keep class io.github.libxposed.api.** { *; }
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keep,includedescriptorclasses class org.cf0x.konamiku.data.NfcCard { *; }
