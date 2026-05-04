@@ -40,6 +40,30 @@
                 android:resource="@xml/hce_f_service" />
         </service>
 
+        <service
+            android:name=".nfc.EmuCard"
+            android:exported="true"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_NFCF_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_nfcf_service"
+                android:resource="@xml/hce_f_service" />
+        </service>
+
+        <service
+            android:name=".nfc.DummyPaymentService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/apdu_service" />
+        </service>
+        
         <receiver
             android:name=".notification.ScanReceiver"
             android:exported="false">
