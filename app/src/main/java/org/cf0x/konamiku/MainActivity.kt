@@ -1,7 +1,13 @@
 package org.cf0x.konamiku
 
 import android.content.Context
+import android.content.Intent
+import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,9 +26,9 @@ import org.cf0x.konamiku.util.CardIdConverter
 class MainActivity : ComponentActivity() {
 
     private lateinit var dataStore: AppDataStore
+    private var nfcAdapter: NfcAdapter? = null
 
     override fun attachBaseContext(newBase: Context) {
-        val store = AppDataStore(newBase)
         val locale = runCatching {
             runBlocking { AppDataStore(newBase).appLocale.first() }
         }.getOrDefault(AppLocale.SYSTEM)
@@ -40,7 +46,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        dataStore = AppDataStore(applicationContext)
+        dataStore    = AppDataStore(applicationContext)
+        nfcAdapter   = NfcAdapter.getDefaultAdapter(this)
 
         if (BuildConfig.DEBUG) {
             if (!CardIdConverter.selfTest()) {
@@ -61,5 +68,62 @@ class MainActivity : ComponentActivity() {
                 MainLayout(dataStore = dataStore)
             }
         }
+
+        // 处理从后台被 NFC 唤醒时的意图
+        handleNfcIntent(intent)
+    }
+
+    // 拦截全局 NFC 扫描意图
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNfcIntent(intent)
+    }
+
+    private fun handleNfcIntent(intent: Intent?) {
+        if (intent?.action == NfcAdapter.ACTION_TAG_DISCOVERED ||
+            intent?.action == NfcAdapter.ACTION_TECH_DISCOVERED ||
+            intent?.action == NfcAdapter.ACTION_NDEF_DISCOVERED) {
+
+            val tag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+            }
+
+            tag?.let {
+                val idm = it.id.joinToString("") { byte -> "%02X".format(byte) }
+
+                android.widget.Toast.makeText(applicationContext, "IDm:$idm", android.widget.Toast.LENGTH_SHORT).show()
+
+                setIntent(Intent())
+            }
+        }
+    }
+
+    // 暴露此方法，方便 Compose 取消扫卡模式后恢复默认监听
+    fun enableDefaultReaderMode() {
+        nfcAdapter?.enableReaderMode(
+            this,
+            { tag ->
+                val idm = tag.id.joinToString("") { byte -> "%02X".format(byte) }
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(this@MainActivity, "IDm:$idm", Toast.LENGTH_SHORT).show()
+                }
+            },
+            NfcAdapter.FLAG_READER_NFC_F or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
+            null
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        enableDefaultReaderMode()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter?.disableReaderMode(this)
     }
 }

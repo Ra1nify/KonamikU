@@ -257,9 +257,20 @@ private fun AddCardDialog(
     val nfcAdapter = remember { NfcAdapter.getDefaultAdapter(context) }
 
     DisposableEffect(isScanning) {
-        if (!isScanning) return@DisposableEffect onDispose {}
+        val activity = context as? android.app.Activity
 
-        val activity = context as? Activity ?: return@DisposableEffect onDispose {}
+        if (!isScanning) {
+            return@DisposableEffect onDispose {
+                activity?.let {
+                    nfcAdapter?.disableReaderMode(it)
+                    if (it is org.cf0x.konamiku.MainActivity) {
+                        it.enableDefaultReaderMode()
+                    }
+                }
+            }
+        }
+
+        val act = activity ?: return@DisposableEffect onDispose {}
 
         val callback = NfcAdapter.ReaderCallback { tag: Tag ->
             val hex = tag.id
@@ -267,7 +278,7 @@ private fun AddCardDialog(
                 .take(16)
                 .padStart(16, '0')
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                idm        = hex
+                idm = hex
                 isScanning = false
             }
         }
@@ -277,14 +288,17 @@ private fun AddCardDialog(
         }
 
         nfcAdapter?.enableReaderMode(
-            activity,
+            act,
             callback,
-            NfcAdapter.FLAG_READER_NFC_F,
+            NfcAdapter.FLAG_READER_NFC_F or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
             options
         )
 
         onDispose {
-            nfcAdapter?.disableReaderMode(activity)
+            nfcAdapter?.disableReaderMode(act)
+            if (act is org.cf0x.konamiku.MainActivity) {
+                act.enableDefaultReaderMode()
+            }
         }
     }
 
