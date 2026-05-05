@@ -1,5 +1,6 @@
 package org.cf0x.konamiku.ui.screens
 
+import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,14 +32,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.cf0x.konamiku.R
 import org.cf0x.konamiku.ui.components.TilBar
 import org.cf0x.konamiku.ui.components.TilSegment
 import org.cf0x.konamiku.util.AimeAccessCodeConverter
@@ -56,7 +59,7 @@ fun ToolsScreen() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text  = "Tools",
+            text  = stringResource(R.string.nav_tools),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.primary
         )
@@ -72,9 +75,12 @@ fun ToolsScreen() {
                         Icon(
                             Icons.AutoMirrored.Outlined.CompareArrows, null,
                             tint     = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
-                        Text("Konami ID  ↔  IDm",
-                            style = MaterialTheme.typography.labelLarge)
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            stringResource(R.string.tools_konami_panel_title),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 })
             ),
@@ -91,11 +97,15 @@ fun ToolsScreen() {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier              = Modifier.padding(horizontal = 12.dp)
                     ) {
-                        Icon(Icons.Outlined.Build, null,
+                        Icon(
+                            Icons.Outlined.Build, null,
                             tint     = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
-                        Text("IDm  ↔  Access Code",
-                            style = MaterialTheme.typography.labelLarge)
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            stringResource(R.string.tools_aime_panel_title),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 })
             ),
@@ -108,7 +118,6 @@ fun ToolsScreen() {
 
 @Composable
 private fun KonamiConverterPanel() {
-    val clipboard = LocalClipboardManager.current
     val KONAMI_ALPHABET = "0123456789ABCDEFGHJKLMNPRSTUWXYZ"
 
     var idmInput  by remember { mutableStateOf("") }
@@ -119,36 +128,42 @@ private fun KonamiConverterPanel() {
     var kidResult by remember { mutableStateOf<String?>(null) }
     var kidError  by remember { mutableStateOf<String?>(null) }
 
+    val needLengthIdm = stringResource(R.string.tools_validation_need_length, idmInput.length, 16)
+    val needLengthKid = stringResource(R.string.tools_validation_need_length, kidInput.length, 16)
+    val hexInvalid    = stringResource(R.string.tools_validation_hex_invalid)
+    val idmPrefix     = stringResource(R.string.tools_validation_idm_prefix)
+    val kidInvalid    = stringResource(R.string.tools_validation_kid_invalid)
+
     val idmValidation: String? = when {
         idmInput.isEmpty()   -> null
-        idmInput.length < 16 -> "需要16位，当前 ${idmInput.length} 位"
-        idmInput.any { it !in '0'..'9' && it !in 'A'..'F' } -> "包含无效十六进制字符"
-        !idmInput.startsWith("E004") && !idmInput.startsWith("0") ->
-            "IDm 须以 E004（磁卡）或 0（FeliCa）开头"
+        idmInput.length < 16 -> needLengthIdm
+        idmInput.any { it !in '0'..'9' && it !in 'A'..'F' } -> hexInvalid
+        !idmInput.startsWith("E004") && !idmInput.startsWith("0") -> idmPrefix
         else -> null
     }
     val idmReady = idmInput.length == 16 && idmValidation == null
 
     val kidValidation: String? = when {
         kidInput.isEmpty()   -> null
-        kidInput.length < 16 -> "需要16位，当前 ${kidInput.length} 位"
-        kidInput.any { it !in KONAMI_ALPHABET } -> "Invalid String"
+        kidInput.length < 16 -> needLengthKid
+        kidInput.any { it !in KONAMI_ALPHABET } -> kidInvalid
         else -> null
     }
     val kidReady = kidInput.length == 16 && kidValidation == null
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        SectionLabel("IDm \n → \nKonami ID")
+        SectionLabel(stringResource(R.string.tools_section_idm_to_kid))
+
         ConverterTextField(
             value          = idmInput,
             onValueChange  = {
                 idmInput  = it.uppercase().filter { c -> c in '0'..'9' || c in 'A'..'F' }.take(16)
                 idmResult = null; idmError = null
             },
-            label          = "IDm",
-            placeholder    = "012E456789ABCDEF",
+            label          = stringResource(R.string.tools_label_idm),
+            placeholder    = stringResource(R.string.card_add_idm_placeholder),
             isError        = idmValidation != null,
-            supportText    = idmValidation ?: "${idmInput.length} / 16",
+            supportText    = idmValidation ?: stringResource(R.string.tools_char_count, idmInput.length, 16),
             keyboardType   = KeyboardType.Ascii,
             capitalization = KeyboardCapitalization.Characters
         )
@@ -161,27 +176,29 @@ private fun KonamiConverterPanel() {
             },
             enabled  = idmReady,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("转换") }
+        ) { Text(stringResource(R.string.tools_convert)) }
+
         AnimatedVisibility(visible = idmResult != null || idmError != null) {
             if (idmResult != null)
-                ResultCard("Konami ID", idmResult!!) { clipboard.setText(AnnotatedString(idmResult!!)) }
+                ResultCard(stringResource(R.string.tools_label_kid_result), idmResult!!)
             else if (idmError != null)
                 ErrorCard(idmError!!)
         }
 
         HorizontalDivider(thickness = 0.5.dp)
 
-        SectionLabel("Konami ID \n → \n IDm")
+        SectionLabel(stringResource(R.string.tools_section_kid_to_idm))
+
         ConverterTextField(
             value          = kidInput,
             onValueChange  = {
                 kidInput  = it.uppercase().filter { c -> c in KONAMI_ALPHABET }.take(16)
                 kidResult = null; kidError = null
             },
-            label          = "Konami ID",
+            label          = stringResource(R.string.tools_label_kid),
             placeholder    = "FW5331K31WT1ZY2U",
             isError        = kidValidation != null,
-            supportText    = kidValidation ?: "${kidInput.length} / 16",
+            supportText    = kidValidation ?: stringResource(R.string.tools_char_count, kidInput.length, 16),
             keyboardType   = KeyboardType.Ascii,
             capitalization = KeyboardCapitalization.Characters
         )
@@ -194,10 +211,11 @@ private fun KonamiConverterPanel() {
             },
             enabled  = kidReady,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Transfer") }
+        ) { Text(stringResource(R.string.tools_convert)) }
+
         AnimatedVisibility(visible = kidResult != null || kidError != null) {
             if (kidResult != null)
-                ResultCard("IDm", kidResult!!) { clipboard.setText(AnnotatedString(kidResult!!)) }
+                ResultCard(stringResource(R.string.tools_label_idm_result), kidResult!!)
             else if (kidError != null)
                 ErrorCard(kidError!!)
         }
@@ -206,8 +224,6 @@ private fun KonamiConverterPanel() {
 
 @Composable
 private fun AimeConverterPanel() {
-    val clipboard = LocalClipboardManager.current
-
     var idmInput  by remember { mutableStateOf("") }
     var acResult  by remember { mutableStateOf<String?>(null) }
     var idmError  by remember { mutableStateOf<String?>(null) }
@@ -218,34 +234,40 @@ private fun AimeConverterPanel() {
 
     val acDigits = acInput.filter { it.isDigit() }
 
+    val hexInvalid   = stringResource(R.string.tools_validation_hex_invalid)
+    val max16        = stringResource(R.string.tools_validation_max_16)
+    val digitsOnly   = stringResource(R.string.tools_validation_digits_only)
+    val max20        = stringResource(R.string.tools_validation_max_20)
+
     val idmValidation: String? = when {
         idmInput.isEmpty() -> null
-        idmInput.any { it !in '0'..'9' && it !in 'A'..'F' } -> "包含无效十六进制字符"
-        idmInput.length > 16 -> "最多16位"
+        idmInput.any { it !in '0'..'9' && it !in 'A'..'F' } -> hexInvalid
+        idmInput.length > 16 -> max16
         else -> null
     }
     val idmReady = idmInput.isNotEmpty() && idmValidation == null
 
     val acValidation: String? = when {
         acInput.isEmpty() -> null
-        acInput.any { !it.isDigit() && it != '-' } -> "只能包含数字和连字符"
-        acDigits.length > 20 -> "最多20位数字"
+        acInput.any { !it.isDigit() && it != '-' } -> digitsOnly
+        acDigits.length > 20 -> max20
         else -> null
     }
     val acReady = acDigits.isNotEmpty() && acValidation == null
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        SectionLabel("IDm → Access Code")
+        SectionLabel(stringResource(R.string.tools_section_idm_to_ac))
+
         ConverterTextField(
             value          = idmInput,
             onValueChange  = {
                 idmInput = it.uppercase().filter { c -> c in '0'..'9' || c in 'A'..'F' }.take(16)
                 acResult = null; idmError = null
             },
-            label          = "IDm（最多16位十六进制）",
-            placeholder    = "012E456789ABCDEF",
+            label          = stringResource(R.string.tools_label_idm),
+            placeholder    = stringResource(R.string.card_add_idm_placeholder),
             isError        = idmValidation != null,
-            supportText    = idmValidation ?: "${idmInput.length} / 16",
+            supportText    = idmValidation ?: stringResource(R.string.tools_char_count, idmInput.length, 16),
             keyboardType   = KeyboardType.Ascii,
             capitalization = KeyboardCapitalization.Characters
         )
@@ -264,29 +286,29 @@ private fun AimeConverterPanel() {
             },
             enabled  = idmReady,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("转换") }
+        ) { Text(stringResource(R.string.tools_convert)) }
+
         AnimatedVisibility(visible = acResult != null || idmError != null) {
             if (acResult != null)
-                ResultCard("Access Code", acResult!!) {
-                    clipboard.setText(AnnotatedString(acResult!!))
-                }
+                ResultCard(stringResource(R.string.tools_label_ac_result), acResult!!)
             else if (idmError != null)
                 ErrorCard(idmError!!)
         }
 
         HorizontalDivider(thickness = 0.5.dp)
 
-        SectionLabel("Access Code → IDm")
+        SectionLabel(stringResource(R.string.tools_section_ac_to_idm))
+
         ConverterTextField(
             value          = acInput,
             onValueChange  = {
                 acInput   = it.filter { c -> c.isDigit() }.take(20)
                 idmResult = null; acError = null
             },
-            label          = "Access Code（20位数字）",
+            label          = stringResource(R.string.tools_label_ac),
             placeholder    = "00081234123412341234",
             isError        = acValidation != null,
-            supportText    = acValidation ?: "${acDigits.length} / 20",
+            supportText    = acValidation ?: stringResource(R.string.tools_char_count, acDigits.length, 20),
             keyboardType   = KeyboardType.Number,
             capitalization = KeyboardCapitalization.None
         )
@@ -308,11 +330,12 @@ private fun AimeConverterPanel() {
             },
             enabled  = acReady,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("转换") }
+        ) { Text(stringResource(R.string.tools_convert)) }
+
         AnimatedVisibility(visible = idmResult != null || acError != null) {
             when (val r = idmResult) {
                 is AimeAccessCodeConverter.Result.Single -> {
-                    ResultCard("IDm", r.value) { clipboard.setText(AnnotatedString(r.value)) }
+                    ResultCard(stringResource(R.string.tools_label_idm_result), r.value)
                 }
                 is AimeAccessCodeConverter.Result.Ambiguous -> {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -321,19 +344,14 @@ private fun AimeConverterPanel() {
                             shape = MaterialTheme.shapes.small
                         ) {
                             Text(
-                                "⚠ 存在两种可能结果（转换过程负号丢失）。\n" +
-                                "AiMe FeliCa 卡通常为正数范围，优先使用第一个结果。",
+                                text     = stringResource(R.string.tools_aime_ambiguous_warning),
                                 style    = MaterialTheme.typography.labelSmall,
                                 color    = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.padding(10.dp)
                             )
                         }
-                        ResultCard("IDm（正数，更常见）", r.positive) {
-                            clipboard.setText(AnnotatedString(r.positive))
-                        }
-                        ResultCard("IDm（负数补码）", r.negative) {
-                            clipboard.setText(AnnotatedString(r.negative))
-                        }
+                        ResultCard(stringResource(R.string.tools_label_idm_positive), r.positive)
+                        ResultCard(stringResource(R.string.tools_label_idm_negative), r.negative)
                     }
                 }
                 else -> if (acError != null) ErrorCard(acError!!)
@@ -341,6 +359,7 @@ private fun AimeConverterPanel() {
         }
     }
 }
+
 @Composable
 private fun SectionLabel(text: String) {
     Text(
@@ -367,9 +386,10 @@ private fun ConverterTextField(
         onValueChange  = onValueChange,
         label          = { Text(label) },
         placeholder    = {
-            Text(placeholder, style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = FontFamily.Monospace
-            ))
+            Text(
+                placeholder,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+            )
         },
         singleLine     = true,
         isError        = isError,
@@ -377,7 +397,7 @@ private fun ConverterTextField(
             Text(
                 text  = supportText,
                 color = if (isError) MaterialTheme.colorScheme.error
-                        else         LocalContentColor.current
+                else         LocalContentColor.current
             )
         },
         textStyle       = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
@@ -390,13 +410,14 @@ private fun ConverterTextField(
 }
 
 @Composable
-private fun ResultCard(label: String, value: String, onCopy: () -> Unit) {
-    val scope   = rememberCoroutineScope()
-    var copied  by remember { mutableStateOf(false) }
+private fun ResultCard(label: String, value: String) {
+    val clipboard = LocalClipboard.current
+    val scope     = rememberCoroutineScope()
+    var copied    by remember { mutableStateOf(false) }
 
     Surface(
-        color  = MaterialTheme.colorScheme.primaryContainer,
-        shape  = MaterialTheme.shapes.medium
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier              = Modifier
@@ -418,12 +439,18 @@ private fun ResultCard(label: String, value: String, onCopy: () -> Unit) {
                 )
             }
             TextButton(onClick = {
-                onCopy()
-                copied = true
-                scope.launch { delay(2000); copied = false }
+                scope.launch {
+                    clipboard.setClipEntry(
+                        ClipEntry(ClipData.newPlainText("", value))
+                    )
+                    copied = true
+                    delay(2000)
+                    copied = false
+                }
             }) {
                 Text(
-                    text  = if (copied) "已复制" else "复制",
+                    text  = if (copied) stringResource(R.string.tools_copied)
+                    else        stringResource(R.string.tools_copy),
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }

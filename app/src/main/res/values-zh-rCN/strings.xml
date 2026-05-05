@@ -69,4 +69,30 @@
     <string name="setting_language_en">English</string>
     <string name="setting_language_change">更改</string>
 
+    <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
+    <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
+    <string name="tools_section_idm_to_kid">IDm → Konami ID</string>
+    <string name="tools_section_kid_to_idm">Konami ID → IDm</string>
+    <string name="tools_section_idm_to_ac">IDm → Access Code</string>
+    <string name="tools_section_ac_to_idm">Access Code → IDm</string>
+    <string name="tools_label_idm">IDm（16位十六进制）</string>
+    <string name="tools_label_kid">Konami ID（16位）</string>
+    <string name="tools_label_ac">Access Code（20位数字）</string>
+    <string name="tools_label_idm_result">IDm</string>
+    <string name="tools_label_kid_result">Konami ID</string>
+    <string name="tools_label_ac_result">Access Code</string>
+    <string name="tools_label_idm_positive">IDm（正数，更常见）</string>
+    <string name="tools_label_idm_negative">IDm（负数补码）</string>
+    <string name="tools_convert">转换</string>
+    <string name="tools_copy">复制</string>
+    <string name="tools_copied">已复制</string>
+    <string name="tools_char_count">%1$d / %2$d</string>
+    <string name="tools_validation_need_length">需要 %2$d 位，当前 %1$d 位</string>
+    <string name="tools_validation_hex_invalid">包含无效十六进制字符</string>
+    <string name="tools_validation_idm_prefix">IDm 须以 E004（磁卡）或 0（FeliCa）开头</string>
+    <string name="tools_validation_kid_invalid">包含无效字符</string>
+    <string name="tools_validation_max_16">最多16位</string>
+    <string name="tools_validation_max_20">最多20位数字</string>
+    <string name="tools_validation_digits_only">只能包含数字</string>
+    <string name="tools_aime_ambiguous_warning">⚠ 存在两种可能结果（转换过程负号丢失）。\nAiMe FeliCa 卡通常为正数范围，优先使用第一个结果。</string>
 </resources>

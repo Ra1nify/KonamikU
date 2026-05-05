@@ -69,4 +69,30 @@
     <string name="setting_language_en">English</string>
     <string name="setting_language_change">Change</string>
 
+    <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
+    <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
+    <string name="tools_section_idm_to_kid">IDm → Konami ID</string>
+    <string name="tools_section_kid_to_idm">Konami ID → IDm</string>
+    <string name="tools_section_idm_to_ac">IDm → Access Code</string>
+    <string name="tools_section_ac_to_idm">Access Code → IDm</string>
+    <string name="tools_label_idm">IDm (16 hex chars)</string>
+    <string name="tools_label_kid">Konami ID (16 chars)</string>
+    <string name="tools_label_ac">Access Code (20 digits)</string>
+    <string name="tools_label_idm_result">IDm</string>
+    <string name="tools_label_kid_result">Konami ID</string>
+    <string name="tools_label_ac_result">Access Code</string>
+    <string name="tools_label_idm_positive">IDm (positive, more common)</string>
+    <string name="tools_label_idm_negative">IDm (negative, two\'s complement)</string>
+    <string name="tools_convert">Convert</string>
+    <string name="tools_copy">Copy</string>
+    <string name="tools_copied">Copied</string>
+    <string name="tools_char_count">%1$d / %2$d</string>
+    <string name="tools_validation_need_length">Need %2$d chars, currently %1$d</string>
+    <string name="tools_validation_hex_invalid">Contains invalid hex characters</string>
+    <string name="tools_validation_idm_prefix">IDm must start with E004 (mag) or 0 (FeliCa)</string>
+    <string name="tools_validation_kid_invalid">Contains invalid characters</string>
+    <string name="tools_validation_max_16">Maximum 16 characters</string>
+    <string name="tools_validation_max_20">Maximum 20 digits</string>
+    <string name="tools_validation_digits_only">Digits only</string>
+    <string name="tools_aime_ambiguous_warning">⚠ Two possible results (sign bit lost in conversion).\nAiMe FeliCa cards are usually in the positive range; prefer the first result.</string>
 </resources>
