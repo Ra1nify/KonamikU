@@ -21,13 +21,15 @@
     <string name="cards_empty_hint">Tap + to add a card</string>
 
     <string name="toast_card_activated">%1$s activated · %2$s</string>
-    <string name="mode_normal">Normal mode</string>
-    <string name="mode_compat">Compat mode</string>
+    <string name="mode_normal">Normal</string>
+    <string name="mode_compat">Compat</string>
+    <string name="mode_native">Native</string>
 
     <string name="notif_channel_name">Card Emulation</string>
     <string name="notif_channel_desc">KonamikU NFC card emulation status</string>
-    <string name="notif_progress_normal">Normal mode</string>
-    <string name="notif_progress_compat">Compat mode</string>
+    <string name="notif_progress_normal">Normal</string>
+    <string name="notif_progress_compat">Compat</string>
+    <string name="notif_progress_native">Native</string>
     <string name="notif_progress_simulated">Simulated</string>
     <string name="notif_action_stop">Stop</string>
     <string name="notif_action_switch_mode">Switch Mode</string>

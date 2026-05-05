@@ -21,13 +21,15 @@
     <string name="cards_empty_hint">点击 + 添加卡片</string>
 
     <string name="toast_card_activated">%1$s 已激活 · %2$s</string>
-    <string name="mode_normal">普通模式</string>
-    <string name="mode_compat">兼容模式</string>
+    <string name="mode_normal">正常</string>
+    <string name="mode_compat">兼容</string>
+    <string name="mode_native">原生</string>
 
     <string name="notif_channel_name">卡片模拟</string>
     <string name="notif_channel_desc">KonamikU NFC 卡片模拟状态</string>
-    <string name="notif_progress_normal">普通模式</string>
-    <string name="notif_progress_compat">兼容模式</string>
+    <string name="notif_progress_normal">正常</string>
+    <string name="notif_progress_compat">兼容</string>
+    <string name="notif_progress_native">原生</string>
     <string name="notif_progress_simulated">已模拟</string>
     <string name="notif_action_stop">停止</string>
     <string name="notif_action_switch_mode">切换模式</string>

@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.notification.ScanReceiver
 
@@ -29,33 +30,44 @@ class EmuCard : HostNfcFService() {
             val dataStore   = AppDataStore(applicationContext)
             val jsonManager = JsonManager(applicationContext)
             val activeId    = dataStore.activeCardId.first() ?: return@runBlocking
-            val compatMode  = dataStore.compatMode.first()
+            val emuMode     = dataStore.emuMode.first()
             val card        = jsonManager.loadCards().find { it.id == activeId }
                 ?: return@runBlocking
-            val idm         = if (compatMode) "02fe000000000000" else card.idm
-            felicaCard      = FelicaCard(idm)
+
+            val realIdm   = card.idm.uppercase()
+            val activeIdm = when (emuMode) {
+                EmuMode.NORMAL           -> realIdm
+                EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
+            }
+            felicaCard = FelicaCard(activeIdm = activeIdm, realIdm = realIdm, emuMode = emuMode)
         }
     }
 
     override fun processNfcFPacket(commandPacket: ByteArray, extras: Bundle?): ByteArray? {
         if (commandPacket.size < 2) return null
+        val card = felicaCard ?: return null
         return when (commandPacket[1].toInt() and 0xFF) {
-            0x04 -> handlePolling()
-            0x06 -> handleRead(commandPacket)
+            0x04 -> if (card.emuMode == EmuMode.NATIVE)  handleRequestResponse(commandPacket) else null
+            0x06 -> if (card.emuMode != EmuMode.NATIVE)  handleRead(commandPacket)            else null
+            0x08 -> if (card.emuMode != EmuMode.NATIVE)  handleWrite()                        else null
             else -> null
         }
     }
 
-    private fun handlePolling(): ByteArray? {
+    // ── Native: 0x04 Request Response → 0x05 ────────────────────────────
+    private fun handleRequestResponse(cmd: ByteArray): ByteArray? {
         val card = felicaCard ?: return null
-        return ByteArray(18).also { r ->
-            r[0] = 18
-            r[1] = 0x01
-            card.idmBytes.copyInto(r, 2)
-            card.pmmBytes.copyInto(r, 10)
-        }
+        if (cmd.size < 10) return null
+        val resp = ByteArray(11)
+        resp[0] = 11
+        resp[1] = 0x05
+        card.activeIdmBytes.copyInto(resp, 2)
+        resp[10] = 0x00
+        fireScanBroadcast()
+        return resp
     }
 
+    // ── SBGA: 0x06 Read Without Encryption → 0x07 ───────────────────────
     private fun handleRead(cmd: ByteArray): ByteArray? {
         if (cmd.size < 12) return null
         val card = felicaCard ?: return null
@@ -80,7 +92,7 @@ class EmuCard : HostNfcFService() {
                     blockNumber = b0 and 0x7F
                     pos += 1
                 }
-                blockData.add(card.readBlock(blockNumber) ?: return null)
+                blockData.add(card.readBlock(blockNumber))
             }
 
             val responseLen = 1 + 1 + 8 + 1 + 1 + 1 + blockData.size * 16
@@ -88,16 +100,31 @@ class EmuCard : HostNfcFService() {
                 var idx = 0
                 r[idx++] = responseLen.toByte()
                 r[idx++] = 0x07
-                card.idmBytes.copyInto(r, idx); idx += 8
+                card.activeIdmBytes.copyInto(r, idx); idx += 8
                 r[idx++] = 0x00
                 r[idx++] = 0x00
                 r[idx++] = blockData.size.toByte()
                 for (b in blockData) { b.copyInto(r, idx); idx += 16 }
             }
 
-            sendBroadcast(Intent(ScanReceiver.ACTION_SCAN).setPackage(packageName))
+            fireScanBroadcast()
             response
         }.getOrNull()
+    }
+
+    // ── SBGA: 0x08 Write stub → 0x09 ────────────────────────────────────
+    private fun handleWrite(): ByteArray? {
+        val card = felicaCard ?: return null
+        val resp = ByteArray(11)
+        resp[0] = 11
+        resp[1] = 0x09
+        card.activeIdmBytes.copyInto(resp, 2)
+        resp[10] = 0x00
+        return resp
+    }
+
+    private fun fireScanBroadcast() {
+        sendBroadcast(Intent(ScanReceiver.ACTION_SCAN).setPackage(packageName))
     }
 
     override fun onDeactivated(reason: Int) = Unit

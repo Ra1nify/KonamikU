@@ -11,6 +11,7 @@ import android.os.Build
 import kotlinx.coroutines.*
 import org.cf0x.konamiku.MainActivity
 import org.cf0x.konamiku.R
+import org.cf0x.konamiku.data.EmuMode
 
 object LiveUpdateManager {
 
@@ -35,21 +36,21 @@ object LiveUpdateManager {
             .createNotificationChannel(channel)
     }
 
-    fun postActive(context: Context, cardName: String, compatMode: Boolean) {
-        val progress = if (compatMode) 30 else 20
-        val modeText = context.getString(
-            if (compatMode) R.string.notif_progress_compat
-            else            R.string.notif_progress_normal
-        )
-        notify(context, cardName, modeText, progress)
+    fun postActive(context: Context, cardName: String, emuMode: EmuMode) {
+        val (progress, modeTextRes) = when (emuMode) {
+            EmuMode.NORMAL -> 20 to R.string.mode_normal
+            EmuMode.COMPAT -> 25 to R.string.mode_compat
+            EmuMode.NATIVE -> 30 to R.string.mode_native
+        }
+        notify(context, cardName, context.getString(modeTextRes), progress)
     }
 
-    fun pulse(context: Context, cardName: String, compatMode: Boolean, scope: CoroutineScope) {
-        notify(context, cardName, context.getString(R.string.notif_progress_simulated), 95)
+    fun pulse(context: Context, cardName: String, emuMode: EmuMode, scope: CoroutineScope) {
+        notify(context, cardName, context.getString(R.string.notif_progress_simulated), 100)
         pulseJob?.cancel()
         pulseJob = scope.launch {
             delay(3000)
-            postActive(context, cardName, compatMode)
+            postActive(context, cardName, emuMode)
         }
     }
 

@@ -3,9 +3,12 @@ package org.cf0x.konamiku.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 
 class NotificationActionReceiver : BroadcastReceiver() {
@@ -22,12 +25,17 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         LiveUpdateManager.cancel(context)
                     }
                     LiveUpdateManager.ACTION_TOGGLE_MODE -> {
-                        val current  = dataStore.compatMode.first()
-                        dataStore.saveCompatMode(!current)
+                        val current = dataStore.emuMode.first()
+                        val next = when (current) {
+                            EmuMode.NORMAL -> EmuMode.COMPAT
+                            EmuMode.COMPAT -> EmuMode.NATIVE
+                            EmuMode.NATIVE -> EmuMode.NORMAL
+                        }
+                        dataStore.saveEmuMode(next)
                         val activeId = dataStore.activeCardId.first() ?: return@launch
                         val card     = jsonManager.loadCards().find { it.id == activeId }
-                                       ?: return@launch
-                        LiveUpdateManager.postActive(context, card.name, !current)
+                            ?: return@launch
+                        LiveUpdateManager.postActive(context, card.name, next)
                     }
                     LiveUpdateManager.ACTION_DISMISSED -> {
                         dataStore.saveActiveCardId(null)

@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 
 class ScanReceiver : BroadcastReceiver() {
@@ -24,12 +25,14 @@ class ScanReceiver : BroadcastReceiver() {
                 val dataStore   = AppDataStore(context)
                 val jsonManager = JsonManager(context)
                 val activeId    = dataStore.activeCardId.first() ?: return@launch
-                val compatMode  = dataStore.compatMode.first()
+                val emuMode     = dataStore.emuMode.first()
                 val card        = jsonManager.loadCards().find { it.id == activeId }
-                                  ?: return@launch
-                val modeLabel   = context.getString(
-                    if (compatMode) R.string.mode_compat else R.string.mode_normal
-                )
+                    ?: return@launch
+                val modeLabel   = context.getString(when (emuMode) {
+                    EmuMode.NORMAL -> R.string.mode_normal
+                    EmuMode.COMPAT -> R.string.mode_compat
+                    EmuMode.NATIVE -> R.string.mode_native
+                })
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
@@ -37,7 +40,7 @@ class ScanReceiver : BroadcastReceiver() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-                LiveUpdateManager.pulse(context, card.name, compatMode, this)
+                LiveUpdateManager.pulse(context, card.name, emuMode, this)
             } finally {
                 pending.finish()
             }

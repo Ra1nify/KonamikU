@@ -18,6 +18,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 enum class NavigationMode { AUTO, BOTTOM, RAIL }
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ColorSource { MONET, PRESET, CUSTOM }
+enum class EmuMode { NORMAL, COMPAT, NATIVE }
 enum class AppLocale(val tag: String) {
     SYSTEM(""),
     ZH_CN("zh-CN"),
@@ -32,7 +33,7 @@ class AppDataStore(private val context: Context) {
         val COLOR_SOURCE    = stringPreferencesKey("color_source")
         val PRESET_COLOR    = intPreferencesKey("preset_color")
         val ACTIVE_CARD_ID  = stringPreferencesKey("active_card_id")
-        val COMPAT_MODE     = booleanPreferencesKey("compat_mode")
+        val EMU_MODE        = stringPreferencesKey("emu_mode")
         val LOAD_PMMTOOL    = booleanPreferencesKey("load_pmmtool")
         val APP_LOCALE = stringPreferencesKey("app_locale")
     }
@@ -64,8 +65,8 @@ class AppDataStore(private val context: Context) {
         prefs[Keys.ACTIVE_CARD_ID]
     }
 
-    val compatMode: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[Keys.COMPAT_MODE] ?: false
+    val emuMode: Flow<EmuMode> = context.dataStore.data.map { prefs ->
+        EmuMode.valueOf(prefs[Keys.EMU_MODE] ?: EmuMode.NORMAL.name)
     }
 
     val loadPmmtool: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -95,8 +96,8 @@ class AppDataStore(private val context: Context) {
             else prefs[Keys.ACTIVE_CARD_ID] = id
         }
 
-    suspend fun saveCompatMode(enabled: Boolean) =
-        context.dataStore.edit { it[Keys.COMPAT_MODE] = enabled }
+    suspend fun saveEmuMode(mode: EmuMode) =
+        context.dataStore.edit { it[Keys.EMU_MODE] = mode.name }
 
     suspend fun saveLoadPmmtool(enabled: Boolean) {
         context.dataStore.edit { it[Keys.LOAD_PMMTOOL] = enabled }

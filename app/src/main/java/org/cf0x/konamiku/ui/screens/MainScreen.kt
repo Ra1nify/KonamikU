@@ -74,9 +74,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.NfcCard
 import org.cf0x.konamiku.nfc.EmuCard
+import org.cf0x.konamiku.nfc.toCompatIdm
 import org.cf0x.konamiku.notification.LiveUpdateManager
 import org.cf0x.konamiku.ui.components.NfcCardItem
 import org.cf0x.konamiku.ui.components.StatusIndicatorBar
@@ -97,7 +99,7 @@ fun MainScreen(dataStore: AppDataStore) {
     var isLoading       by remember { mutableStateOf(true) }
 
     val activeCardId    by dataStore.activeCardId.collectAsState(initial = null)
-    val compatMode      by dataStore.compatMode.collectAsState(initial = false)
+    val emuMode         by dataStore.emuMode.collectAsState(initial = EmuMode.NORMAL)
 
     val nfcFEmulation = remember {
         runCatching {
@@ -127,31 +129,39 @@ fun MainScreen(dataStore: AppDataStore) {
         if (activeCardId != null && expandedId == null) expandedId = activeCardId
     }
 
-    LaunchedEffect(compatMode, activeCardId) {
+    LaunchedEffect(emuMode, activeCardId) {
         if (activeCardId != null) {
             val card = cards.find { it.id == activeCardId } ?: return@LaunchedEffect
-            LiveUpdateManager.postActive(context, card.name, compatMode)
+            LiveUpdateManager.postActive(context, card.name, emuMode)
         }
     }
 
     fun activateCard(card: NfcCard) {
         scope.launch {
-            val idm = if (compatMode) "02FE000000000000" else card.idm
+            val realIdm   = card.idm.uppercase()
+            val activeIdm = when (emuMode) {
+                EmuMode.NORMAL           -> realIdm
+                EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
+            }
+            val systemCode = when (emuMode) {
+                EmuMode.NATIVE -> "4000"
+                else           -> "88B4"
+            }
             val activity = context as? ComponentActivity
             if (activity == null) {
                 dataStore.saveActiveCardId(card.id)
-                LiveUpdateManager.postActive(context, card.name, compatMode)
+                LiveUpdateManager.postActive(context, card.name, emuMode)
                 return@launch
             }
             runCatching {
                 nfcFEmulation?.enableService(activity, serviceComponent)
-                nfcFEmulation?.setNfcid2ForService(serviceComponent, idm)
-                nfcFEmulation?.registerSystemCodeForService(serviceComponent, "88B4")
+                nfcFEmulation?.setNfcid2ForService(serviceComponent, activeIdm)
+                nfcFEmulation?.registerSystemCodeForService(serviceComponent, systemCode)
             }.onFailure {
                 android.util.Log.e("KonamikU", "NFC registration failed: ${it.message}")
             }
             dataStore.saveActiveCardId(card.id)
-            LiveUpdateManager.postActive(context, card.name, compatMode)
+            LiveUpdateManager.postActive(context, card.name, emuMode)
         }
     }
 
@@ -230,15 +240,23 @@ fun MainScreen(dataStore: AppDataStore) {
                                     card              = card,
                                     isExpanded        = isExpanded,
                                     isActive          = isActive,
-                                    compatMode        = compatMode,
+                                    emuMode           = emuMode,
                                     onExpandClick     = {
                                         expandedId = if (isExpanded) null else card.id
                                     },
                                     onActivateClick   = {
                                         if (isActive) deactivateCard() else activateCard(card)
                                     },
-                                    onCompatToggle    = {
-                                        scope.launch { dataStore.saveCompatMode(!compatMode) }
+                                    onEmuModeClick    = {
+                                        scope.launch {
+                                            val next = when (emuMode) {
+                                                EmuMode.NORMAL -> EmuMode.COMPAT
+                                                EmuMode.COMPAT -> EmuMode.NATIVE
+                                                EmuMode.NATIVE -> EmuMode.NORMAL
+                                            }
+                                            dataStore.saveEmuMode(next)
+                                            if (isActive) activateCard(card)
+                                        }
                                     },
                                     onDeleteConfirmed = {
                                         if (isActive) deactivateCard()
