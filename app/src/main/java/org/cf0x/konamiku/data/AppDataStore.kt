@@ -2,12 +2,16 @@ package org.cf0x.konamiku.data
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.edit
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import androidx.core.content.edit
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -27,7 +31,6 @@ class AppDataStore(private val context: Context) {
         val THEME_MODE      = stringPreferencesKey("theme_mode")
         val COLOR_SOURCE    = stringPreferencesKey("color_source")
         val PRESET_COLOR    = intPreferencesKey("preset_color")
-        val CUSTOM_COLOR    = intPreferencesKey("custom_color")
         val ACTIVE_CARD_ID  = stringPreferencesKey("active_card_id")
         val COMPAT_MODE     = booleanPreferencesKey("compat_mode")
         val LOAD_PMMTOOL    = booleanPreferencesKey("load_pmmtool")
@@ -55,10 +58,6 @@ class AppDataStore(private val context: Context) {
 
     val presetColor: Flow<Color> = context.dataStore.data.map { prefs ->
         Color(prefs[Keys.PRESET_COLOR] ?: 0xFF6750A4.toInt())
-    }
-
-    val customColor: Flow<Int> = context.dataStore.data.map { prefs ->
-        prefs[Keys.CUSTOM_COLOR] ?: 0xFF6750A4.toInt()
     }
 
     val activeCardId: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -90,9 +89,6 @@ class AppDataStore(private val context: Context) {
     suspend fun savePresetColor(color: Int) =
         context.dataStore.edit { it[Keys.PRESET_COLOR] = color }
 
-    suspend fun saveCustomColor(color: Int) =
-        context.dataStore.edit { it[Keys.CUSTOM_COLOR] = color }
-
     suspend fun saveActiveCardId(id: String?) =
         context.dataStore.edit { prefs ->
             if (id == null) prefs.remove(Keys.ACTIVE_CARD_ID)
@@ -105,9 +101,9 @@ class AppDataStore(private val context: Context) {
     suspend fun saveLoadPmmtool(enabled: Boolean) {
         context.dataStore.edit { it[Keys.LOAD_PMMTOOL] = enabled }
         context.getSharedPreferences("KonamikU", Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean("load_pmmtool", enabled)
-            .apply()
+            .edit {
+                putBoolean("load_pmmtool", enabled)
+            }
     }
 
     suspend fun saveAppLocale(locale: AppLocale) =

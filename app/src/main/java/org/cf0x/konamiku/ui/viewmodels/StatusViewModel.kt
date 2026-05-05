@@ -25,9 +25,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         refresh()
     }
 
-    /**
-     * 核心刷新逻辑：调用 Detector 并更新 Flow[cite: 7, 9]
-     */
     fun refresh() {
         if (_isRefreshing.value) return
         viewModelScope.launch {
@@ -37,9 +34,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-/**
-* 请求 Root 授权：支持 KernelSU/APatch 的静默检测及 Magisk 的弹窗提权[cite: 7, 9]
-*/
 fun requestRootPermission() {
 viewModelScope.launch {
     val success = StatusDetector.requestRoot()
@@ -47,9 +41,6 @@ viewModelScope.launch {
 }
 }
 
-/**
-* 重启 NFC 服务：执行完重启后自动刷新状态[cite: 9]
-*/
 fun restartNfcService() {
 val currentStatus = _status.value ?: return
 if (!currentStatus.isPrivileged) return

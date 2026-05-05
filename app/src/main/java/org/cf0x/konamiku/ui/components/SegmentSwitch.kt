@@ -1,8 +1,19 @@
 package org.cf0x.konamiku.ui.components
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -15,9 +26,11 @@ fun SegmentSwitch(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var localSelected by remember(selectedIndex) { mutableIntStateOf(selectedIndex) }
+
     Column(
-        modifier             = modifier.fillMaxWidth(),
-        verticalArrangement  = Arrangement.spacedBy(8.dp)
+        modifier            = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text  = label,
@@ -28,8 +41,11 @@ fun SegmentSwitch(
             options.forEachIndexed { index, item ->
                 SegmentedButton(
                     shape    = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    onClick  = { onSelect(index) },
-                    selected = index == selectedIndex
+                    onClick  = {
+                        localSelected = index
+                        onSelect(index)
+                    },
+                    selected = index == localSelected
                 ) { Text(item) }
             }
         }

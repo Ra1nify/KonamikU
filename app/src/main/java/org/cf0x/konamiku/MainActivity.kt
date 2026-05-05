@@ -11,7 +11,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -93,8 +94,7 @@ class MainActivity : ComponentActivity() {
             tag?.let {
                 val idm = it.id.joinToString("") { byte -> "%02X".format(byte) }
 
-                android.widget.Toast.makeText(applicationContext, "IDm:$idm", android.widget.Toast.LENGTH_SHORT).show()
-
+                Toast.makeText(applicationContext, "IDm:$idm", Toast.LENGTH_SHORT).show()
                 setIntent(Intent())
             }
         }

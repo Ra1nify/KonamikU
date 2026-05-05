@@ -1,16 +1,34 @@
 package org.cf0x.konamiku.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.CompareArrows
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -114,22 +132,21 @@ private fun KonamiConverterPanel() {
     val kidValidation: String? = when {
         kidInput.isEmpty()   -> null
         kidInput.length < 16 -> "需要16位，当前 ${kidInput.length} 位"
-        kidInput.any { it !in KONAMI_ALPHABET } -> "包含无效字符"
+        kidInput.any { it !in KONAMI_ALPHABET } -> "Invalid String"
         else -> null
     }
     val kidReady = kidInput.length == 16 && kidValidation == null
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        SectionLabel("IDm → Konami ID")
+        SectionLabel("IDm \n → \nKonami ID")
         ConverterTextField(
             value          = idmInput,
             onValueChange  = {
                 idmInput  = it.uppercase().filter { c -> c in '0'..'9' || c in 'A'..'F' }.take(16)
                 idmResult = null; idmError = null
             },
-            label          = "IDm（16位十六进制）",
+            label          = "IDm",
             placeholder    = "012E456789ABCDEF",
-            maxLength      = 16,
             isError        = idmValidation != null,
             supportText    = idmValidation ?: "${idmInput.length} / 16",
             keyboardType   = KeyboardType.Ascii,
@@ -154,16 +171,15 @@ private fun KonamiConverterPanel() {
 
         HorizontalDivider(thickness = 0.5.dp)
 
-        SectionLabel("Konami ID → IDm")
+        SectionLabel("Konami ID \n → \n IDm")
         ConverterTextField(
             value          = kidInput,
             onValueChange  = {
                 kidInput  = it.uppercase().filter { c -> c in KONAMI_ALPHABET }.take(16)
                 kidResult = null; kidError = null
             },
-            label          = "Konami ID（16位）",
+            label          = "Konami ID",
             placeholder    = "FW5331K31WT1ZY2U",
-            maxLength      = 16,
             isError        = kidValidation != null,
             supportText    = kidValidation ?: "${kidInput.length} / 16",
             keyboardType   = KeyboardType.Ascii,
@@ -178,7 +194,7 @@ private fun KonamiConverterPanel() {
             },
             enabled  = kidReady,
             modifier = Modifier.fillMaxWidth()
-        ) { Text("转换") }
+        ) { Text("Transfer") }
         AnimatedVisibility(visible = kidResult != null || kidError != null) {
             if (kidResult != null)
                 ResultCard("IDm", kidResult!!) { clipboard.setText(AnnotatedString(kidResult!!)) }
@@ -228,7 +244,6 @@ private fun AimeConverterPanel() {
             },
             label          = "IDm（最多16位十六进制）",
             placeholder    = "012E456789ABCDEF",
-            maxLength      = 16,
             isError        = idmValidation != null,
             supportText    = idmValidation ?: "${idmInput.length} / 16",
             keyboardType   = KeyboardType.Ascii,
@@ -270,7 +285,6 @@ private fun AimeConverterPanel() {
             },
             label          = "Access Code（20位数字）",
             placeholder    = "00081234123412341234",
-            maxLength      = 20,
             isError        = acValidation != null,
             supportText    = acValidation ?: "${acDigits.length} / 20",
             keyboardType   = KeyboardType.Number,
@@ -342,7 +356,6 @@ private fun ConverterTextField(
     onValueChange: (String) -> Unit,
     label: String,
     placeholder: String,
-    maxLength: Int,
     isError: Boolean,
     supportText: String,
     keyboardType: KeyboardType,

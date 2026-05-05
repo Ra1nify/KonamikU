@@ -19,13 +19,8 @@ object VibratorUtil {
 
         if (!vibrator.hasVibrator()) return
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val effect = VibrationEffect.createOneShot(duration, amplitude)
-            vibrator.vibrate(effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(duration)
-        }
+        val effect = VibrationEffect.createOneShot(duration, amplitude)
+        vibrator.vibrate(effect)
     }
 
     fun successTick(context: Context) {
@@ -43,11 +38,6 @@ object VibratorUtil {
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(longArrayOf(0, 30, 50, 30), -1)
-        }
+        vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
     }
 }

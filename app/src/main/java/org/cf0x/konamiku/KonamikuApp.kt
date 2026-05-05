@@ -1,7 +1,6 @@
 package org.cf0x.konamiku
 
 import android.app.Application
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
@@ -37,8 +36,8 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         else
             XposedActivationState.NEEDS_RESTART
 
-        XposedState.frameworkName    = service.frameworkName    ?: ""
-        XposedState.frameworkVersion = service.frameworkVersion ?: ""
+        XposedState.frameworkName    = service.frameworkName
+        XposedState.frameworkVersion = service.frameworkVersion
     }
 
     override fun onServiceDied(service: XposedService) {

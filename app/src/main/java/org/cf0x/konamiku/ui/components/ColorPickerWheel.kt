@@ -1,21 +1,40 @@
 package org.cf0x.konamiku.ui.components
 
-import android.graphics.SweepGradient as AndroidSweepGradient
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -24,7 +43,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import kotlin.math.*
+import androidx.core.graphics.toColorInt
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+import android.graphics.SweepGradient as AndroidSweepGradient
+
+private enum class DragZone { NONE, RING, SQUARE }
 
 @Composable
 fun ColorPickerWheel(
@@ -38,9 +66,9 @@ fun ColorPickerWheel(
         }
     }
 
-    var hue by remember { mutableStateOf(initHsv[0]) }
-    var sat by remember { mutableStateOf(initHsv[1]) }
-    var bri by remember { mutableStateOf(initHsv[2]) }
+    var hue by remember { mutableFloatStateOf(initHsv[0]) }
+    var sat by remember { mutableFloatStateOf(initHsv[1]) }
+    var bri by remember { mutableFloatStateOf(initHsv[2]) }
 
     val currentColor by remember(hue, sat, bri) {
         derivedStateOf { Color.hsv(hue, sat, bri) }
@@ -89,29 +117,50 @@ fun ColorPickerWheel(
             }
             fun inSquare(p: Offset) =
                 p.x in sqLeft..(sqLeft + squareSide) &&
-                p.y in sqTop..(sqTop + squareSide)
+                        p.y in sqTop..(sqTop + squareSide)
 
             fun handleRing(p: Offset) {
                 hue = (atan2(p.y - sizePx / 2f, p.x - sizePx / 2f)
-                    * (180f / PI.toFloat()) + 360f) % 360f
+                        * (180f / PI.toFloat()) + 360f) % 360f
             }
-            fun handleSq(p: Offset) {
-                sat = ((p.x - sqLeft) / squareSide).coerceIn(0f, 1f)
-                bri = (1f - (p.y - sqTop) / squareSide).coerceIn(0f, 1f)
+            fun handleSquareClamped(p: Offset) {
+                val cx = p.x.coerceIn(sqLeft, sqLeft + squareSide)
+                val cy = p.y.coerceIn(sqTop,  sqTop  + squareSide)
+                sat = ((cx - sqLeft) / squareSide).coerceIn(0f, 1f)
+                bri = (1f - (cy - sqTop) / squareSide).coerceIn(0f, 1f)
             }
+
+            var dragZone by remember { mutableStateOf(DragZone.NONE) }
 
             androidx.compose.foundation.Canvas(
                 modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(squareSide, sqLeft, sqTop) {
-                        detectDragGestures { change, _ ->
-                            val p = change.position
-                            when { inRing(p) -> handleRing(p); inSquare(p) -> handleSq(p) }
-                        }
+                        detectDragGestures(
+                            onDragStart = { p ->
+                                dragZone = when {
+                                    inRing(p)   -> DragZone.RING
+                                    inSquare(p) -> DragZone.SQUARE
+                                    else        -> DragZone.NONE
+                                }
+                            },
+                            onDragEnd    = { dragZone = DragZone.NONE },
+                            onDragCancel = { dragZone = DragZone.NONE },
+                            onDrag = { change, _ ->
+                                when (dragZone) {
+                                    DragZone.RING   -> handleRing(change.position)
+                                    DragZone.SQUARE -> handleSquareClamped(change.position)
+                                    DragZone.NONE   -> Unit
+                                }
+                            }
+                        )
                     }
                     .pointerInput(squareSide, sqLeft, sqTop) {
                         detectTapGestures { p ->
-                            when { inRing(p) -> handleRing(p); inSquare(p) -> handleSq(p) }
+                            when {
+                                inRing(p)   -> handleRing(p)
+                                inSquare(p) -> handleSquareClamped(p)
+                            }
                         }
                     }
             ) {
@@ -181,12 +230,12 @@ fun ColorPickerWheel(
                         it.isDigit() || it in 'A'..'F' || it in 'a'..'f' || it == '#'
                     }
                     hexInput = if (clean.startsWith("#")) clean.take(7)
-                               else "#${clean.take(6)}"
+                    else "#${clean.take(6)}"
                 },
-                label         = { Text("Hex") },
-                placeholder   = { Text("#6750A4") },
-                singleLine    = true,
-                isError       = hexError,
+                label          = { Text("Hex") },
+                placeholder    = { Text("#6750A4") },
+                singleLine     = true,
+                isError        = hexError,
                 supportingText = if (hexError) {{ Text("Invalid hex, format: #RRGGBB") }} else null,
                 textStyle      = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Monospace
@@ -222,6 +271,6 @@ private fun parseHexColor(input: String): Color? {
     if (clean.length != 6) return null
     if (clean.any { it !in '0'..'9' && it !in 'A'..'F' }) return null
     return runCatching {
-        Color(android.graphics.Color.parseColor("#$clean"))
+        Color("#$clean".toColorInt())
     }.getOrNull()
 }
