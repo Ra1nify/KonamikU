@@ -101,7 +101,6 @@ fun TilBar(
                     }
                 }
 
-                // 分割线
                 Box(
                     modifier = Modifier
                         .width(0.5.dp)
@@ -109,7 +108,6 @@ fun TilBar(
                         .background(MaterialTheme.colorScheme.outlineVariant)
                 )
 
-                // 箭头格
                 val arrowShape = RoundedCornerShape(
                     topStart    = 4.dp,
                     bottomStart = 4.dp,
@@ -142,7 +140,6 @@ fun TilBar(
             }
         }
 
-        // ── 展开内容 ──────────────────────────────────────────────
         AnimatedVisibility(
             visible = isExpanded,
             enter   = expandVertically() + fadeIn(),

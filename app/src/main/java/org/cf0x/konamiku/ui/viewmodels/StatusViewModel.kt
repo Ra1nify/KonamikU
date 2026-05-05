@@ -57,7 +57,6 @@ if (!currentStatus.isPrivileged) return
 viewModelScope.launch {
     val success = NfcRestart.restartNfcService(context, currentStatus)
     if (success) {
-        // 延迟给系统一点响应时间，然后刷新 UI
         kotlinx.coroutines.delay(1000)
         refresh()
     }

@@ -3,7 +3,6 @@
     <string name="app_name">KonamikU</string>
 
     <string name="nav_cards">Cards</string>
-    <string name="nav_status">Status</string>
     <string name="nav_tools">Tools</string>
     <string name="nav_settings">Settings</string>
 
@@ -17,20 +16,6 @@
     <string name="card_add_scanning">Scanning</string>
     <string name="card_add_confirm">Confirm</string>
     <string name="card_add_cancel">Cancel</string>
-
-    <string name="card_delete_title">Delete Card</string>
-    <string name="card_delete_message">Delete \"%s\"? This cannot be undone.</string>
-    <string name="card_delete_confirm">Delete</string>
-    <string name="card_delete_cancel">Cancel</string>
-
-    <string name="card_action_activate">Activate</string>
-    <string name="card_action_stop">Stop</string>
-    <string name="card_action_normal">Normal</string>
-    <string name="card_action_compat">Compat</string>
-    <string name="card_action_delete">Delete</string>
-    <string name="card_label_idm">IDm</string>
-    <string name="card_badge_on">ON</string>
-    <string name="idm_copied">IDm copied</string>
 
     <string name="cards_empty_title">No cards yet</string>
     <string name="cards_empty_hint">Tap + to add a card</string>
@@ -47,11 +32,7 @@
     <string name="notif_action_stop">Stop</string>
     <string name="notif_action_switch_mode">Switch Mode</string>
 
-    <string name="status_root">Root</string>
-    <string name="status_adb">ADB</string>
-    <string name="status_device_owner">Device Owner</string>
     <string name="status_nfc_rf">NFC Radio</string>
-    <string name="status_default_payment">Default Payment</string>
     <string name="status_lsposed">LSPosed</string>
     <string name="status_pmmtool">PMm Tool</string>
     <string name="status_hcef">HCE-F</string>
@@ -61,7 +42,6 @@
     <string name="status_not_injected">Not injected</string>
     <string name="status_rf_on">Enabled</string>
     <string name="status_rf_off">Disabled</string>
-    <string name="status_none">None</string>
 
     <string name="setting_appearance">Appearance</string>
     <string name="setting_nav_layout">Navigation Layout</string>
@@ -81,12 +61,9 @@
     <string name="setting_pmmtool_inactive">Inactive — restart NFC to apply</string>
     <string name="setting_nfc_default">NFC Default App</string>
     <string name="setting_nfc_default_desc">Set KonamikU as the default tap &amp; pay application from system settings.</string>
-    <string name="setting_nfc_default_open">Open NFC Payment Settings</string>
     <string name="status_xposed_needs_restart">Module active — restart com.android.nfc to apply hooks</string>
-    <string name="status_xposed_restart_nfc">Plz restart NFC</string>
 
     <string name="setting_language">Language</string>
-    <string name="setting_language_label">App Language</string>
     <string name="setting_language_system">System</string>
     <string name="setting_language_zh">简体中文</string>
     <string name="setting_language_en">English</string>

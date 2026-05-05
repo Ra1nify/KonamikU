@@ -3,7 +3,6 @@
     <string name="app_name">KonamikU</string>
 
     <string name="nav_cards">卡片</string>
-    <string name="nav_status">状态</string>
     <string name="nav_tools">工具</string>
     <string name="nav_settings">设置</string>
 
@@ -17,20 +16,6 @@
     <string name="card_add_scanning">扫描中</string>
     <string name="card_add_confirm">确认</string>
     <string name="card_add_cancel">取消</string>
-
-    <string name="card_delete_title">删除卡片</string>
-    <string name="card_delete_message">删除「%s」？此操作无法撤销。</string>
-    <string name="card_delete_confirm">删除</string>
-    <string name="card_delete_cancel">取消</string>
-
-    <string name="card_action_activate">激活</string>
-    <string name="card_action_stop">停止</string>
-    <string name="card_action_normal">普通</string>
-    <string name="card_action_compat">兼容</string>
-    <string name="card_action_delete">删除</string>
-    <string name="card_label_idm">IDm</string>
-    <string name="card_badge_on">开启</string>
-    <string name="idm_copied">IDm 已复制</string>
 
     <string name="cards_empty_title">还没有卡片</string>
     <string name="cards_empty_hint">点击 + 添加卡片</string>
@@ -47,11 +32,7 @@
     <string name="notif_action_stop">停止</string>
     <string name="notif_action_switch_mode">切换模式</string>
 
-    <string name="status_root">Root</string>
-    <string name="status_adb">ADB</string>
-    <string name="status_device_owner">设备管理员</string>
     <string name="status_nfc_rf">NFC 射频</string>
-    <string name="status_default_payment">默认支付</string>
     <string name="status_lsposed">LSPosed</string>
     <string name="status_pmmtool">PMm 工具</string>
     <string name="status_hcef">HCE-F</string>
@@ -61,7 +42,6 @@
     <string name="status_not_injected">未注入</string>
     <string name="status_rf_on">已开启</string>
     <string name="status_rf_off">已关闭</string>
-    <string name="status_none">无</string>
 
     <string name="setting_appearance">外观</string>
     <string name="setting_nav_layout">导航布局</string>
@@ -81,12 +61,9 @@
     <string name="setting_pmmtool_inactive">未运行 — 重启 NFC 后生效</string>
     <string name="setting_nfc_default">NFC 默认应用</string>
     <string name="setting_nfc_default_desc">在系统设置中将 KonamikU 设为默认 NFC 支付应用。</string>
-    <string name="setting_nfc_default_open">打开 NFC 支付设置</string>
     <string name="status_xposed_needs_restart">模块已激活 — 重启 com.android.nfc 以使 hook 生效</string>
-    <string name="status_xposed_restart_nfc">Plz restart NFC</string>
 
     <string name="setting_language">语言</string>
-    <string name="setting_language_label">应用语言</string>
     <string name="setting_language_system">跟随系统</string>
     <string name="setting_language_zh">简体中文</string>
     <string name="setting_language_en">English</string>

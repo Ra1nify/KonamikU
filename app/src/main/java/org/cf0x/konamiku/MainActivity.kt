@@ -69,11 +69,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // 处理从后台被 NFC 唤醒时的意图
         handleNfcIntent(intent)
     }
 
-    // 拦截全局 NFC 扫描意图
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -102,7 +100,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 暴露此方法，方便 Compose 取消扫卡模式后恢复默认监听
     fun enableDefaultReaderMode() {
         nfcAdapter?.enableReaderMode(
             this,

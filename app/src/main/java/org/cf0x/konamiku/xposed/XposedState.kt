@@ -9,7 +9,6 @@ package org.cf0x.konamiku.xposed
 enum class XposedActivationState { INACTIVE, NEEDS_RESTART, ACTIVE }
 
 object XposedState {
-    // 由 XposedServiceHelper 回调在 app 进程里更新
     @Volatile var activationState: XposedActivationState = XposedActivationState.INACTIVE
     @Volatile var frameworkName: String = ""
     @Volatile var frameworkVersion: String = ""
