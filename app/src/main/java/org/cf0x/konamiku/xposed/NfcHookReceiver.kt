@@ -5,10 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-/**
- * Receives a broadcast sent by KonamikuModule from inside com.android.nfc process
- * the moment NfcApplication.onCreate is hooked — confirming the NFC hook is live.
- */
 class NfcHookReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_NFC_HOOKED) return

@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.NfcFCardEmulation
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
@@ -22,21 +23,23 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         super.onCreate()
 
         val dataStore = AppDataStore(this)
-        val locale = runBlocking { dataStore.appLocale.first() }
+        val locale = runCatching {
+            runBlocking { dataStore.appLocale.first() }
+        }.getOrDefault(AppLocale.SYSTEM)
+
         if (locale != AppLocale.SYSTEM) {
-            LocaleListCompat.forLanguageTags(locale.tag)
+            AppCompatDelegate.setApplicationLocales(
+                LocaleListCompat.forLanguageTags(locale.tag)
+            )
         }
+
         XposedServiceHelper.registerListener(this)
     }
 
     override fun onServiceBind(service: XposedService) {
-        XposedState.frameworkName    = service.frameworkName
-        XposedState.frameworkVersion = service.frameworkVersion
+        XposedState.frameworkName    = service.frameworkName    ?: ""
+        XposedState.frameworkVersion = service.frameworkVersion ?: ""
 
-        // Framework is connected → at minimum NEEDS_RESTART.
-        // Probe to check if com.android.nfc is already hooked:
-        // registerSystemCodeForService("88B4") throws IllegalArgumentException
-        // unless isValidSystemCode hook is active.
         val hooked = probeNfcHookActive()
         XposedState.activationState = if (hooked)
             XposedActivationState.ACTIVE
@@ -47,22 +50,14 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
     }
 
     override fun onServiceDied(service: XposedService) {
-        XposedState.activationState  = XposedActivationState.INACTIVE
-        XposedState.frameworkName    = ""
-        XposedState.frameworkVersion = ""
+        XposedState.reset()
     }
 
-    /**
-     * Probes whether the isValidSystemCode hook is live by attempting to register
-     * system code "88B4" (rejected natively, accepted only when hook returns true).
-     * Does not require an Activity — only ComponentName is needed.
-     */
     private fun probeNfcHookActive(): Boolean {
         val adapter   = NfcAdapter.getDefaultAdapter(this) ?: return false
         val emulation = runCatching { NfcFCardEmulation.getInstance(adapter) }.getOrNull()
             ?: return false
         val component = ComponentName(this, EmuCard::class.java)
-
         return runCatching {
             val ok = emulation.registerSystemCodeForService(component, "88B4")
             if (ok) emulation.unregisterSystemCodeForService(component)

@@ -71,6 +71,7 @@
     <string name="setting_language_en">English</string>
     <string name="setting_language_change">Change</string>
 
+    <string name="tools_id_converter_title">ID Converter</string>
     <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
     <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
     <string name="tools_section_idm_to_kid">IDm → Konami ID</string>

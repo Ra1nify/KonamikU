@@ -7,7 +7,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,11 +53,11 @@ fun StatusIndicatorBar(
     viewModel: StatusViewModel,
     modifier: Modifier = Modifier
 ) {
-    val allStatus by viewModel.status.collectAsState()
-    var expanded  by remember { mutableStateOf<Panel?>(null) }
+    val allStatus  by viewModel.status.collectAsState()
+    val xposedState by XposedState.activationStateFlow.collectAsState()
+    var expanded   by remember { mutableStateOf<Panel?>(null) }
 
-    val hcefActive  = allStatus?.nfc?.hcefSupported == true && allStatus?.nfc?.rfEnabled == true
-    val xposedState = XposedState.activationState
+    val hcefActive = allStatus?.nfc?.hcefSupported == true && allStatus?.nfc?.rfEnabled == true
 
     Surface(
         color    = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -73,30 +74,31 @@ fun StatusIndicatorBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatusIconSlot(
-                    panel      = Panel.HCEF,
-                    expanded   = expanded,
-                    onToggle   = { expanded = if (expanded == it) null else it },
-                    activeIcon = Icons.Filled.Memory,
-                    idleIcon   = Icons.Outlined.Memory,
-                    tintState  = if (hcefActive) IconTint.Active else IconTint.Inactive,
-                    modifier   = Modifier.weight(1f)
+                    panel       = Panel.HCEF,
+                    expanded    = expanded,
+                    onToggle    = { expanded = if (expanded == it) null else it },
+                    onLongClick = { viewModel.refreshNfc() },
+                    activeIcon  = Icons.Filled.Memory,
+                    idleIcon    = Icons.Outlined.Memory,
+                    tintState   = if (hcefActive) IconTint.Active else IconTint.Inactive,
+                    modifier    = Modifier.weight(1f)
                 )
-
 
                 SlotDivider()
 
                 StatusIconSlot(
-                    panel      = Panel.XPOSED,
-                    expanded   = expanded,
-                    onToggle   = { expanded = if (expanded == it) null else it },
-                    activeIcon = Icons.Filled.Extension,
-                    idleIcon   = Icons.Outlined.Extension,
-                    tintState  = when (xposedState) {
+                    panel       = Panel.XPOSED,
+                    expanded    = expanded,
+                    onToggle    = { expanded = if (expanded == it) null else it },
+                    onLongClick = { viewModel.refreshXposed() },
+                    activeIcon  = Icons.Filled.Extension,
+                    idleIcon    = Icons.Outlined.Extension,
+                    tintState   = when (xposedState) {
                         XposedActivationState.INACTIVE      -> IconTint.Inactive
                         XposedActivationState.NEEDS_RESTART -> IconTint.Warning
                         XposedActivationState.ACTIVE        -> IconTint.Active
                     },
-                    modifier   = Modifier.weight(1f)
+                    modifier    = Modifier.weight(1f)
                 )
             }
 
@@ -125,29 +127,30 @@ fun StatusIndicatorBar(
     }
 }
 
-
 private enum class IconTint { Active, Warning, Inactive }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StatusIconSlot(
     panel: Panel,
     expanded: Panel?,
     onToggle: (Panel) -> Unit,
+    onLongClick: () -> Unit,
     activeIcon: ImageVector,
     idleIcon: ImageVector,
     tintState: IconTint,
     modifier: Modifier = Modifier
 ) {
-    val isExpanded  = expanded == panel
-    val primary     = MaterialTheme.colorScheme.primary
-    val tertiary    = MaterialTheme.colorScheme.tertiary
-    val onSurface   = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+    val isExpanded = expanded == panel
+    val primary    = MaterialTheme.colorScheme.primary
+    val tertiary   = MaterialTheme.colorScheme.tertiary
+    val onSurface  = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
 
     val targetTint = when {
-        isExpanded   -> primary
+        isExpanded                     -> primary
         tintState == IconTint.Active   -> primary
         tintState == IconTint.Warning  -> tertiary
-        else         -> onSurface
+        else                           -> onSurface
     }
 
     val tint by animateColorAsState(
@@ -159,7 +162,10 @@ private fun StatusIconSlot(
     Box(
         modifier         = modifier
             .fillMaxHeight()
-            .clickable { onToggle(panel) },
+            .combinedClickable(
+                onClick     = { onToggle(panel) },
+                onLongClick = onLongClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -182,7 +188,6 @@ private fun SlotDivider() {
     }
 }
 
-
 @Composable
 private fun PanelHcef(nfc: StatusDetector.NfcStatus?) {
     val supported = nfc?.hcefSupported == true
@@ -202,6 +207,7 @@ private fun PanelHcef(nfc: StatusDetector.NfcStatus?) {
         }
     }
 }
+
 @Composable
 private fun PanelXposed(xposed: StatusDetector.XposedStatus?) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -236,7 +242,7 @@ private fun PanelXposed(xposed: StatusDetector.XposedStatus?) {
                     label  = stringResource(R.string.status_pmmtool),
                     detail = stringResource(
                         if (xposed.pmmActive) R.string.status_injected
-                        else R.string.status_not_injected
+                        else                  R.string.status_not_injected
                     )
                 )
             }
