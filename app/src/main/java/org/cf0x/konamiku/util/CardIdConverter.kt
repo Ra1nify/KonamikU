@@ -122,7 +122,6 @@ object CardIdConverter {
         val t3 = toKonamiId("000000100200F000")
         if (t3 !is Result.Success) return false
         val t4 = toUid(t3.value)
-        if (t4 !is Result.Success || t4.value != "000000100200F000") return false
-        return true
+        return !(t4 !is Result.Success || t4.value != "000000100200F000")
     }
 }

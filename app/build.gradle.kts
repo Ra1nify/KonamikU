@@ -72,18 +72,3 @@ dependencies {
     implementation(libs.libxposed.service)
 
 }
-
-
-tasks.register<Exec>("buildRustArm64") {
-    workingDir = file("src/main/jni/pmm-rust")
-    commandLine("cargo", "ndk",
-        "--target", "arm64-v8a",
-        "--platform", "26",
-        "--",
-        "build", "--release"
-    )
-}
-
-tasks.named("preBuild") {
-    dependsOn("buildRustArm64")
-}

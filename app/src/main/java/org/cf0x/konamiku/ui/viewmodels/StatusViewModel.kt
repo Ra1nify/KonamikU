@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.system.StatusDetector
-import org.cf0x.konamiku.util.NfcRestart
 
 class StatusViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -33,24 +32,4 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             _isRefreshing.value = false
         }
     }
-
-fun requestRootPermission() {
-viewModelScope.launch {
-    val success = StatusDetector.requestRoot()
-    if (success) refresh()
-}
-}
-
-fun restartNfcService() {
-val currentStatus = _status.value ?: return
-if (!currentStatus.isPrivileged) return
-
-viewModelScope.launch {
-    val success = NfcRestart.restartNfcService(context, currentStatus)
-    if (success) {
-        kotlinx.coroutines.delay(1000)
-        refresh()
-    }
-}
-}
 }

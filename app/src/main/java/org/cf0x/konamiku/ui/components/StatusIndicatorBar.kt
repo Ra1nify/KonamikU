@@ -8,12 +8,32 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -25,7 +45,7 @@ import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
-private enum class Panel { HCEF, ROOT, XPOSED }
+private enum class Panel { HCEF, XPOSED }
 
 @Composable
 fun StatusIndicatorBar(
@@ -36,7 +56,6 @@ fun StatusIndicatorBar(
     var expanded  by remember { mutableStateOf<Panel?>(null) }
 
     val hcefActive  = allStatus?.nfc?.hcefSupported == true && allStatus?.nfc?.rfEnabled == true
-    val rootActive  = allStatus?.root?.available == true
     val xposedState = XposedState.activationState
 
     Surface(
@@ -63,17 +82,6 @@ fun StatusIndicatorBar(
                     modifier   = Modifier.weight(1f)
                 )
 
-                SlotDivider()
-
-                StatusIconSlot(
-                    panel      = Panel.ROOT,
-                    expanded   = expanded,
-                    onToggle   = { expanded = if (expanded == it) null else it },
-                    activeIcon = Icons.Filled.Tag,
-                    idleIcon   = Icons.Outlined.Tag,
-                    tintState  = if (rootActive) IconTint.Active else IconTint.Inactive,
-                    modifier   = Modifier.weight(1f)
-                )
 
                 SlotDivider()
 
@@ -108,7 +116,6 @@ fun StatusIndicatorBar(
                 ) {
                     when (expanded) {
                         Panel.HCEF   -> PanelHcef(allStatus?.nfc)
-                        Panel.ROOT   -> PanelRoot(allStatus?.root, viewModel)
                         Panel.XPOSED -> PanelXposed(allStatus?.xposed)
                         null         -> {}
                     }
@@ -195,28 +202,6 @@ private fun PanelHcef(nfc: StatusDetector.NfcStatus?) {
         }
     }
 }
-
-@Composable
-private fun PanelRoot(root: StatusDetector.RootStatus?, viewModel: StatusViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DetailRow(
-            active = root?.available == true,
-            label  = "Root",
-            detail = root?.provider?.ifEmpty {
-                stringResource(R.string.status_unavailable)
-            } ?: stringResource(R.string.status_unavailable)
-        )
-        if (root?.available != true) {
-            OutlinedButton(
-                onClick  = { viewModel.requestRootPermission() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Request Root Access")
-            }
-        }
-    }
-}
-
 @Composable
 private fun PanelXposed(xposed: StatusDetector.XposedStatus?) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

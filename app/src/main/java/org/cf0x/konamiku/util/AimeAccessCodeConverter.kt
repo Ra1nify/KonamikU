@@ -57,8 +57,7 @@ object AimeAccessCodeConverter {
     fun selfTest(): Boolean {
         val t1 = idmToAccessCode("012E456789ABCDEF")
         if (t1 !is Result.Single || t1.value != "00081234123412341234") return false
-        val t2 = accessCodeToIdm("00081234123412341234")
-        val t2p = when (t2) {
+        val t2p = when (val t2 = accessCodeToIdm("00081234123412341234")) {
             is Result.Single    -> t2.value
             is Result.Ambiguous -> t2.positive
             else                -> return false

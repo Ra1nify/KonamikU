@@ -294,7 +294,7 @@ private fun AddCardDialog(
     onConfirm: (name: String, idm: String) -> Unit
 ) {
     val context      = LocalContext.current
-    val scope        = rememberCoroutineScope()
+    rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
     var name       by remember { mutableStateOf("") }
@@ -308,7 +308,7 @@ private fun AddCardDialog(
     val nfcAdapter = remember { NfcAdapter.getDefaultAdapter(context) }
 
     DisposableEffect(isScanning) {
-        val activity = context as? android.app.Activity
+        val activity = context as? Activity
 
         if (!isScanning) {
             return@DisposableEffect onDispose {

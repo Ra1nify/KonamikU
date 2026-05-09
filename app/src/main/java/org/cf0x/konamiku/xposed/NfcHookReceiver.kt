@@ -12,8 +12,10 @@ import android.util.Log
 class NfcHookReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_NFC_HOOKED) return
-        Log.i("KonamikU", "NFC hook confirmed via broadcast from NFC process")
+        val pmmOk = intent.getBooleanExtra("pmmtool_active", false)
+        Log.i("KonamikU", "NFC hook confirmed via broadcast — pmmtool=$pmmOk")
         XposedState.activationState = XposedActivationState.ACTIVE
+        XposedState.pmmActive       = pmmOk
     }
 
     companion object {

@@ -2,10 +2,8 @@ package org.cf0x.konamiku.data
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
-import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -34,15 +32,11 @@ class AppDataStore(private val context: Context) {
         val PRESET_COLOR    = intPreferencesKey("preset_color")
         val ACTIVE_CARD_ID  = stringPreferencesKey("active_card_id")
         val EMU_MODE        = stringPreferencesKey("emu_mode")
-        val LOAD_PMMTOOL    = booleanPreferencesKey("load_pmmtool")
         val APP_LOCALE = stringPreferencesKey("app_locale")
     }
 
     init {
         val sp = context.getSharedPreferences("KonamikU", Context.MODE_PRIVATE)
-        if (!sp.contains("load_pmmtool")) {
-            sp.edit { putBoolean("load_pmmtool", true) }
-        }
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { prefs ->
@@ -67,10 +61,6 @@ class AppDataStore(private val context: Context) {
 
     val emuMode: Flow<EmuMode> = context.dataStore.data.map { prefs ->
         EmuMode.valueOf(prefs[Keys.EMU_MODE] ?: EmuMode.NORMAL.name)
-    }
-
-    val loadPmmtool: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[Keys.LOAD_PMMTOOL] ?: true
     }
 
     val appLocale: Flow<AppLocale> = context.dataStore.data.map { prefs ->
@@ -98,14 +88,6 @@ class AppDataStore(private val context: Context) {
 
     suspend fun saveEmuMode(mode: EmuMode) =
         context.dataStore.edit { it[Keys.EMU_MODE] = mode.name }
-
-    suspend fun saveLoadPmmtool(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.LOAD_PMMTOOL] = enabled }
-        context.getSharedPreferences("KonamikU", Context.MODE_PRIVATE)
-            .edit {
-                putBoolean("load_pmmtool", enabled)
-            }
-    }
 
     suspend fun saveAppLocale(locale: AppLocale) =
         context.dataStore.edit { it[Keys.APP_LOCALE] = locale.tag }

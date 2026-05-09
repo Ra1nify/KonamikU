@@ -28,10 +28,7 @@ class KonamikuModule : XposedModule() {
             Log.e("KonamikU", "failed to write hook flag: ${e.message}")
         }
 
-        val prefs = getRemotePreferences("KonamikU")
-        if (prefs.getBoolean("load_pmmtool", true)) {
-            hookNfcAppForPmmtool(param)
-        }
+        hookNfcAppForPmmtool(param)
     }
 
     private fun hookNfcValidation(param: PackageLoadedParam) {
@@ -63,17 +60,16 @@ class KonamikuModule : XposedModule() {
                 .loadClass("com.android.nfc.NfcApplication")
             val onCreate = nfcAppClass.getDeclaredMethod("onCreate")
             hook(onCreate).intercept { chain ->
-                val result = chain.proceed()
-                injectPmmtool(param)
-                // Notify the app that NFC process is alive and hooked.
-                // getRemotePreferences is read-only in hooked processes, so we use a broadcast.
+                val result   = chain.proceed()
+                val pmmOk    = injectPmmtool(param)
                 runCatching {
-                    val ctx = chain.getThisObject() as android.content.Context
+                    val ctx = chain.thisObject as android.content.Context
                     ctx.sendBroadcast(
                         android.content.Intent("org.cf0x.konamiku.ACTION_NFC_HOOKED")
                             .setPackage("org.cf0x.konamiku")
+                            .putExtra("pmmtool_active", pmmOk)
                     )
-                    Log.i("KonamikU", "NFC_HOOKED broadcast sent")
+                    Log.i("KonamikU", "NFC_HOOKED broadcast sent (pmmOk=$pmmOk)")
                 }.onFailure { e ->
                     Log.w("KonamikU", "broadcast failed: ${e.message}")
                 }
@@ -84,16 +80,18 @@ class KonamikuModule : XposedModule() {
         }
     }
 
-    private fun injectPmmtool(param: PackageLoadedParam) {
-        runCatching {
+    private fun injectPmmtool(param: PackageLoadedParam): Boolean {
+        return runCatching {
             val soPath = getModuleApplicationInfo().nativeLibraryDir + "/libpmm.so"
             Runtime::class.java
                 .getDeclaredMethod("nativeLoad", String::class.java, ClassLoader::class.java)
                 .also { it.isAccessible = true }
                 .invoke(Runtime.getRuntime(), soPath, param.defaultClassLoader)
             Log.i("KonamikU", "pmmtool injected from $soPath")
-        }.onFailure { e ->
+            true
+        }.getOrElse { e ->
             Log.e("KonamikU", "pmmtool inject failed: ${e.message}")
+            false
         }
     }
 }
