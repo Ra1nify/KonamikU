@@ -12,6 +12,9 @@ class NfcHookReceiver : BroadcastReceiver() {
         Log.i("KonamikU", "NFC hook confirmed via broadcast — pmmtool=$pmmOk")
         XposedState.activationState = XposedActivationState.ACTIVE
         XposedState.pmmActive       = pmmOk
+        // Persist so app restart can restore state without waiting for next broadcast
+        context.getSharedPreferences("KonamikU_xposed", Context.MODE_PRIVATE)
+            .edit().putBoolean("pmmtool_active", pmmOk).apply()
     }
 
     companion object {

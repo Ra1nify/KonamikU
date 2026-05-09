@@ -37,6 +37,5 @@ object XposedState {
         _activationState.value  = XposedActivationState.INACTIVE
         _frameworkName.value    = ""
         _frameworkVersion.value = ""
-        _pmmActive.value        = false
     }
 }

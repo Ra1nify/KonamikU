@@ -15,68 +15,94 @@ class KonamikuModule : XposedModule() {
     override fun onPackageLoaded(param: PackageLoadedParam) {
         if (param.packageName != "com.android.nfc") return
 
+        Log.i("KonamikU", ">>> onPackageLoaded: com.android.nfc pid=${android.os.Process.myPid()}")
+
         hookNfcValidation(param)
-
-        // nfc_hooked is set here — only when we're actually in the NFC process
-        runCatching {
-            getRemotePreferences("KonamikU").edit()
-                .putBoolean("nfc_hooked", true)
-                .putString("framework_name", getFrameworkName())
-                .putString("framework_version", getFrameworkVersion())
-                .apply()
-        }.onFailure { e ->
-            Log.e("KonamikU", "failed to write hook flag: ${e.message}")
-        }
-
         hookNfcAppForPmmtool(param)
     }
 
     private fun hookNfcValidation(param: PackageLoadedParam) {
         runCatching {
-            // Bug fix: correct package is android.nfc.cardemulation, not android.nfc
             val cls = param.defaultClassLoader
                 .loadClass("android.nfc.cardemulation.NfcFCardEmulation")
 
-            // Bug fix: isValidSystemCode takes String, not Int
             val isValidSystemCode = cls.getDeclaredMethod("isValidSystemCode", String::class.java)
-            hook(isValidSystemCode).intercept { _ ->
-                true // skip original, always allow any system code (e.g. 88B4)
-            }
+            hook(isValidSystemCode).intercept { _ -> true }
 
             val isValidNfcid2 = cls.getDeclaredMethod("isValidNfcid2", String::class.java)
-            hook(isValidNfcid2).intercept { _ ->
-                true // skip original, allow any NFCID2 prefix (e.g. 012E)
-            }
+            hook(isValidNfcid2).intercept { _ -> true }
 
-            Log.i("KonamikU", "NFC validation hooks installed")
+            Log.i("KonamikU", "NFC validation hooks installed OK")
         }.onFailure { e ->
             Log.e("KonamikU", "hook failed: ${e.message}")
         }
     }
 
     private fun hookNfcAppForPmmtool(param: PackageLoadedParam) {
-        runCatching {
-            val nfcAppClass = param.defaultClassLoader
-                .loadClass("com.android.nfc.NfcApplication")
-            val onCreate = nfcAppClass.getDeclaredMethod("onCreate")
-            hook(onCreate).intercept { chain ->
-                val result   = chain.proceed()
-                val pmmOk    = injectPmmtool(param)
-                runCatching {
-                    val ctx = chain.thisObject as android.content.Context
-                    ctx.sendBroadcast(
-                        android.content.Intent("org.cf0x.konamiku.ACTION_NFC_HOOKED")
-                            .setPackage("org.cf0x.konamiku")
-                            .putExtra("pmmtool_active", pmmOk)
-                    )
-                    Log.i("KonamikU", "NFC_HOOKED broadcast sent (pmmOk=$pmmOk)")
-                }.onFailure { e ->
-                    Log.w("KonamikU", "broadcast failed: ${e.message}")
+        // Try known NFC Application class names — MIUI may use a different one
+        val candidates = listOf(
+            "com.android.nfc.NfcApplication",
+            "com.miui.nfc.MiuiNfcApplication",
+            "com.android.nfc.NfcService",       // some ROMs embed init here
+        )
+
+        var hooked = false
+        for (className in candidates) {
+            val result = runCatching {
+                val cls     = param.defaultClassLoader.loadClass(className)
+                val onCreate = cls.getDeclaredMethod("onCreate")
+                hook(onCreate).intercept { chain ->
+                    Log.i("KonamikU", ">>> $className.onCreate() fired")
+                    val result = chain.proceed()
+                    val pmmOk  = injectPmmtool(param)
+                    sendHookedBroadcast(chain.thisObject as? android.content.Context, pmmOk)
+                    result
                 }
-                result
+                Log.i("KonamikU", "hooked $className.onCreate OK")
+                true
             }
+            if (result.getOrDefault(false)) {
+                hooked = true
+                break
+            } else {
+                Log.d("KonamikU", "class not found or hook failed: $className — ${result.exceptionOrNull()?.message}")
+            }
+        }
+
+        if (!hooked) {
+            // Last resort: hook android.app.Application.onCreate scoped to this process
+            Log.w("KonamikU", "all NfcApplication candidates failed — hooking Application.onCreate as fallback")
+            runCatching {
+                val appClass = android.app.Application::class.java
+                val onCreate = appClass.getDeclaredMethod("onCreate")
+                hook(onCreate).intercept { chain ->
+                    Log.i("KonamikU", ">>> Application.onCreate fired (fallback), class=${chain.thisObject?.javaClass?.name}")
+                    val result = chain.proceed()
+                    val pmmOk  = injectPmmtool(param)
+                    sendHookedBroadcast(chain.thisObject as? android.content.Context, pmmOk)
+                    result
+                }
+                Log.i("KonamikU", "fallback Application.onCreate hook installed")
+            }.onFailure { e ->
+                Log.e("KonamikU", "fallback hook also failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun sendHookedBroadcast(ctx: android.content.Context?, pmmOk: Boolean) {
+        if (ctx == null) {
+            Log.w("KonamikU", "sendHookedBroadcast: context is null")
+            return
+        }
+        runCatching {
+            ctx.sendBroadcast(
+                android.content.Intent("org.cf0x.konamiku.ACTION_NFC_HOOKED")
+                    .setPackage("org.cf0x.konamiku")
+                    .putExtra("pmmtool_active", pmmOk)
+            )
+            Log.i("KonamikU", "NFC_HOOKED broadcast sent (pmmOk=$pmmOk)")
         }.onFailure { e ->
-            Log.e("KonamikU", "NfcApplication hook failed: ${e.message}")
+            Log.w("KonamikU", "broadcast failed: ${e.message}")
         }
     }
 

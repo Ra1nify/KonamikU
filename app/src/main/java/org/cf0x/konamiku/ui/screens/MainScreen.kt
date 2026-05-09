@@ -101,12 +101,14 @@ fun MainScreen(dataStore: AppDataStore) {
     val activeCardId    by dataStore.activeCardId.collectAsState(initial = null)
     val emuMode         by dataStore.emuMode.collectAsState(initial = EmuMode.NORMAL)
 
-    val nfcFEmulation = remember {
-        runCatching {
-            NfcFCardEmulation.getInstance(NfcAdapter.getDefaultAdapter(context))
-        }.getOrNull()
-    }
+    val nfcAdapter       = remember { NfcAdapter.getDefaultAdapter(context) }
     val serviceComponent = remember { ComponentName(context, EmuCard::class.java) }
+
+    /** Always obtain a fresh NfcFCardEmulation instance.
+     *  The cached instance becomes a dead binder after NFC process restarts (HyperOS). */
+    fun freshEmulation() = nfcAdapter?.let {
+        runCatching { NfcFCardEmulation.getInstance(it) }.getOrNull()
+    }
 
     val notifPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -154,9 +156,10 @@ fun MainScreen(dataStore: AppDataStore) {
                 return@launch
             }
             runCatching {
-                nfcFEmulation?.enableService(activity, serviceComponent)
-                nfcFEmulation?.setNfcid2ForService(serviceComponent, activeIdm)
-                nfcFEmulation?.registerSystemCodeForService(serviceComponent, systemCode)
+                val emulation = freshEmulation()
+                emulation?.enableService(activity, serviceComponent)
+                emulation?.setNfcid2ForService(serviceComponent, activeIdm)
+                emulation?.registerSystemCodeForService(serviceComponent, systemCode)
             }.onFailure {
                 android.util.Log.e("KonamikU", "NFC registration failed: ${it.message}")
             }
@@ -169,7 +172,7 @@ fun MainScreen(dataStore: AppDataStore) {
         scope.launch {
             runCatching {
                 val activity = context as? Activity ?: return@launch
-                nfcFEmulation?.disableService(activity)
+                freshEmulation()?.disableService(activity)
             }
             dataStore.saveActiveCardId(null)
             LiveUpdateManager.cancel(context)

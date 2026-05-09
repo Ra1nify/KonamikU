@@ -40,6 +40,10 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         XposedState.frameworkName    = service.frameworkName    ?: ""
         XposedState.frameworkVersion = service.frameworkVersion ?: ""
 
+        // Restore pmmActive from last known state (persisted by NfcHookReceiver)
+        XposedState.pmmActive = getSharedPreferences("KonamikU_xposed", MODE_PRIVATE)
+            .getBoolean("pmmtool_active", false)
+
         val hooked = probeNfcHookActive()
         XposedState.activationState = if (hooked)
             XposedActivationState.ACTIVE
