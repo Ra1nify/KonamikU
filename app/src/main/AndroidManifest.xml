@@ -62,7 +62,7 @@
                 android:name="android.nfc.cardemulation.host_apdu_service"
                 android:resource="@xml/apdu_service" />
         </service>
-        
+
         <receiver
             android:name=".notification.ScanReceiver"
             android:exported="false">
@@ -78,6 +78,15 @@
                 <action android:name="org.cf0x.konamiku.ACTION_TOGGLE_ACTIVATE" />
                 <action android:name="org.cf0x.konamiku.ACTION_TOGGLE_MODE" />
                 <action android:name="org.cf0x.konamiku.ACTION_NOTIF_DISMISSED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Receives broadcast from com.android.nfc process confirming hook is live -->
+        <receiver
+            android:name=".xposed.NfcHookReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.cf0x.konamiku.ACTION_NFC_HOOKED" />
             </intent-filter>
         </receiver>
 

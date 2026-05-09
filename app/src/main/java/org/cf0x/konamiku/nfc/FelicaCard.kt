@@ -3,8 +3,8 @@ package org.cf0x.konamiku.nfc
 import org.cf0x.konamiku.data.EmuMode
 
 class FelicaCard(
-    val activeIdm: String,   // NFCID2 として登録される IDm
-    val realIdm:   String,   // block 0x82 に書き込む実 IDm
+    val activeIdm: String,
+    val realIdm:   String,
     val emuMode:   EmuMode
 ) {
     val activeIdmBytes: ByteArray = activeIdm.uppercase()
@@ -20,9 +20,8 @@ class FelicaCard(
     fun readBlock(blockNumber: Int): ByteArray =
         when (blockNumber) {
             0x82 -> ByteArray(16).also { realIdmBytes.copyInto(it, 0, 0, 8) }
-            else -> ByteArray(16) // unimplemented blocks → zeros
+            else -> ByteArray(16)
         }
 }
 
-/** 00 を 02FE に置換して compat/native 用 IDm を派生する */
 fun String.toCompatIdm(): String = "02FE" + this.uppercase().substring(4)

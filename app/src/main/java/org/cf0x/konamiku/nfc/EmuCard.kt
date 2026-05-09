@@ -54,7 +54,6 @@ class EmuCard : HostNfcFService() {
         }
     }
 
-    // ── Native: 0x04 Request Response → 0x05 ────────────────────────────
     private fun handleRequestResponse(cmd: ByteArray): ByteArray? {
         val card = felicaCard ?: return null
         if (cmd.size < 10) return null
@@ -67,7 +66,7 @@ class EmuCard : HostNfcFService() {
         return resp
     }
 
-    // ── SBGA: 0x06 Read Without Encryption → 0x07 ───────────────────────
+
     private fun handleRead(cmd: ByteArray): ByteArray? {
         if (cmd.size < 12) return null
         val card = felicaCard ?: return null
@@ -112,7 +111,6 @@ class EmuCard : HostNfcFService() {
         }.getOrNull()
     }
 
-    // ── SBGA: 0x08 Write stub → 0x09 ────────────────────────────────────
     private fun handleWrite(): ByteArray? {
         val card = felicaCard ?: return null
         val resp = ByteArray(11)
