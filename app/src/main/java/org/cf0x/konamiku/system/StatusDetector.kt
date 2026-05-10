@@ -12,7 +12,6 @@ import kotlinx.coroutines.withContext
 import org.cf0x.konamiku.nfc.EmuCard
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
-import java.io.File
 
 object StatusDetector {
 
@@ -98,34 +97,71 @@ object StatusDetector {
 
     suspend fun detectRoot(): RootStatus = withContext(Dispatchers.IO) {
         coroutineScope {
-            val providerDeferred  = async { scanProcForProvider() }
             val availableDeferred = async { checkSuAvailable() }
-            RootStatus(
-                available = availableDeferred.await(),
-                provider  = providerDeferred.await()
-            )
+            val dirDeferred       = async { checkAdbDirectories() }
+            val procDeferred      = async { checkDaemonProcesses() }
+
+            val available = availableDeferred.await()
+            val dirResult  = dirDeferred.await()
+            val procResult = procDeferred.await()
+
+            // Cross-validate: directory check is primary, process is fallback.
+            // If both agree → confident match; if one is UNKNOWN → use the other.
+            val provider = when {
+                dirResult != RootProvider.UNKNOWN && dirResult == procResult -> dirResult
+                dirResult  != RootProvider.UNKNOWN                          -> dirResult
+                procResult != RootProvider.UNKNOWN                          -> procResult
+                else                                                         -> RootProvider.UNKNOWN
+            }
+
+            RootStatus(available = available, provider = provider)
         }
     }
 
-    private fun scanProcForProvider(): RootProvider {
-        val pids = File("/proc").list()
-            ?.filter { it.all { c -> c.isDigit() } }
-            ?: return RootProvider.UNKNOWN
+    /**
+     * Checks /data/adb/ subdirectories to identify the root provider.
+     * Magisk → "magisk/", KernelSU → "ksu/", APatch → "ap/".
+     * Requires root — run via su.
+     */
+    private fun checkAdbDirectories(): RootProvider = runCatching {
+        val proc = Runtime.getRuntime()
+            .exec(arrayOf("su", "-c", "ls /data/adb/"))
+        val lines = proc.inputStream.bufferedReader()
+            .readLines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+        proc.waitFor()
 
-        for (pid in pids) {
-            val cmdline = runCatching {
-                File("/proc/$pid/cmdline")
-                    .readBytes()
-                    .map { b -> if (b == 0.toByte()) ' ' else b.toInt().toChar() }
-                    .joinToString("")
-                    .trim()
-            }.getOrNull() ?: continue
+        when {
+            "magisk" in lines -> RootProvider.MAGISK
+            "ksu"    in lines -> RootProvider.KERNELSU
+            "ap"     in lines -> RootProvider.APATCH
+            else              -> RootProvider.UNKNOWN
+        }
+    }.getOrDefault(RootProvider.UNKNOWN)
 
-            when {
-                "magiskd" in cmdline -> return RootProvider.MAGISK
-                "ksud"    in cmdline -> return RootProvider.KERNELSU
-                "apd"     in cmdline -> return RootProvider.APATCH
-            }
+    /**
+     * Cross-verifies root provider by checking if the corresponding daemon is alive.
+     * Uses pgrep -x for exact process name match via su.
+     *   magiskd  → Magisk
+     *   ksud     → KernelSU
+     *   apd      → APatch
+     */
+    private fun checkDaemonProcesses(): RootProvider {
+        val candidates = listOf(
+            "magiskd" to RootProvider.MAGISK,
+            "ksud"    to RootProvider.KERNELSU,
+            "apd"     to RootProvider.APATCH,
+        )
+        for ((daemon, provider) in candidates) {
+            val alive = runCatching {
+                val proc = Runtime.getRuntime()
+                    .exec(arrayOf("su", "-c", "pgrep -x $daemon"))
+                val out = proc.inputStream.bufferedReader().readText().trim()
+                proc.waitFor()
+                out.isNotBlank()
+            }.getOrDefault(false)
+            if (alive) return provider
         }
         return RootProvider.UNKNOWN
     }

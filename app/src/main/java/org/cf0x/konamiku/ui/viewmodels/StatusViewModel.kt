@@ -19,9 +19,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.StatusDetector
+import org.cf0x.konamiku.util.NfcRestart
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
-import java.io.File
 
 class StatusViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -97,39 +97,31 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
 
-            val oldPid = getNfcServicePid()
-
-            runCatching {
-                Runtime.getRuntime()
-                    .exec(arrayOf("su", "-c", "pkill -f com.android.nfc"))
-                    .waitFor()
-            }
-            delay(800)
-
-            val newPid = getNfcServicePid()
-
-            when {
-                oldPid == null -> {
+            when (val result = NfcRestart.restart()) {
+                is NfcRestart.Result.WasDead -> {
                     _toastEvent.emit(str(R.string.toast_nfc_was_dead))
-                    val ok = tryRestartNfcAndVerify()
+                    val newPid = result.newPid ?: NfcRestart.tryBringUp()
                     _toastEvent.emit(
-                        if (ok) str(R.string.toast_nfc_start_success)
-                        else    str(R.string.toast_nfc_start_fail)
+                        if (newPid != null) str(R.string.toast_nfc_start_success) + " (pid:$newPid)"
+                        else                str(R.string.toast_nfc_start_fail)
                     )
                 }
-                newPid != null && newPid == oldPid -> {
-                    _toastEvent.emit(str(R.string.toast_nfc_restart_failed))
+                is NfcRestart.Result.KillFailed -> {
+                    _toastEvent.emit(str(R.string.toast_nfc_restart_failed) + " (pid:${result.pid})")
                 }
-                newPid == null -> {
-                    _toastEvent.emit(str(R.string.toast_nfc_killed))
-                    val ok = tryRestartNfcAndVerify()
+                is NfcRestart.Result.Killed -> {
+                    _toastEvent.emit(str(R.string.toast_nfc_killed) + " (pid:${result.oldPid})")
+                    val newPid = NfcRestart.tryBringUp()
                     _toastEvent.emit(
-                        if (ok) str(R.string.toast_nfc_start_success)
-                        else    str(R.string.toast_nfc_start_fail)
+                        if (newPid != null) str(R.string.toast_nfc_start_success) + " (pid:$newPid)"
+                        else                str(R.string.toast_nfc_start_fail)
                     )
                 }
-                else -> {
-                    _toastEvent.emit(str(R.string.toast_nfc_restarted))
+                is NfcRestart.Result.Restarted -> {
+                    _toastEvent.emit(
+                        str(R.string.toast_nfc_restarted) +
+                                " (pid:${result.oldPid}→${result.newPid})"
+                    )
                 }
             }
 
@@ -145,31 +137,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun getNfcServicePid(): Int? {
-        val pids = File("/proc").list()
-            ?.filter { it.all { c -> c.isDigit() } }
-            ?: return null
-        for (pid in pids) {
-            val processName = runCatching {
-                File("/proc/$pid/cmdline").readBytes()
-                    .takeWhile { it != 0.toByte() }
-                    .toByteArray()
-                    .toString(Charsets.UTF_8)
-            }.getOrNull() ?: continue
-            if (processName == "com.android.nfc") return pid.toIntOrNull()
-        }
-        return null
-    }
-
-    private suspend fun tryRestartNfcAndVerify(): Boolean {
-        runCatching {
-            Runtime.getRuntime()
-                .exec(arrayOf("su", "-c", "svc nfc enable"))
-                .waitFor()
-        }
-        delay(2000)
-        return getNfcServicePid() != null
-    }
 
     private fun observeXposedState() {
         viewModelScope.launch {
