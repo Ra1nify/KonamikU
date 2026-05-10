@@ -16,7 +16,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Konamiku"
-        android:name=".KonamikuApp">
+        android:name=".KonamikuApp"
+        android:description="@string/mod_desc">
 
         <activity
             android:name=".MainActivity"
@@ -91,7 +92,6 @@
         </receiver>
 
         <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="KonamikU NFC card emulator" />
         <meta-data android:name="xposedminversion" android:value="101" />
 
     </application>

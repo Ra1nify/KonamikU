@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">KonamikU</string>
-
+    <string name="mod_desc">NEX aka.NfcExtended</string>
     <string name="nav_cards">Cards</string>
     <string name="nav_tools">Tools</string>
     <string name="nav_settings">Settings</string>
