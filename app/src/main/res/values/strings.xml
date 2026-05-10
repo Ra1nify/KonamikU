@@ -71,6 +71,21 @@
     <string name="setting_language_en">English</string>
     <string name="setting_language_change">Change</string>
 
+    <string name="status_root">Root</string>
+    <string name="status_root_unknown_provider">Unknown provider</string>
+    <string name="toast_nfc_already_on">NFC is already enabled</string>
+    <string name="toast_nfc_enabling">Attempting to enable NFC…</string>
+    <string name="toast_nfc_enable_success">NFC enabled</string>
+    <string name="toast_nfc_enable_fail">Failed to enable NFC</string>
+    <string name="toast_root_no_permission">No root permission</string>
+    <string name="toast_nfc_was_dead">NFC service not running, restarting…</string>
+    <string name="toast_nfc_killed">NFC service terminated, restarting…</string>
+    <string name="toast_nfc_restart_failed">Failed to restart NFC service</string>
+    <string name="toast_nfc_restarted">NFC service restarted successfully</string>
+    <string name="toast_nfc_start_success">NFC service started</string>
+    <string name="toast_nfc_start_fail">Failed to start NFC service</string>
+    <string name="toast_xposed_refreshing">Refreshing module status…</string>
+
     <string name="tools_id_converter_title">ID Converter</string>
     <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
     <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
