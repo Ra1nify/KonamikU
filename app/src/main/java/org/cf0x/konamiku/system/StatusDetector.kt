@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.CardEmulation
+import android.os.SystemClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -14,6 +15,11 @@ import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
 object StatusDetector {
+    private const val ROOT_CACHE_TTL_MS = 15_000L
+    @Volatile
+    private var cachedRootStatus: RootStatus? = null
+    @Volatile
+    private var cachedRootAtElapsedMs: Long = 0L
 
     enum class RootProvider { UNKNOWN, MAGISK, KERNELSU, APATCH }
 
@@ -96,6 +102,11 @@ object StatusDetector {
     }
 
     suspend fun detectRoot(): RootStatus = withContext(Dispatchers.IO) {
+        val now = SystemClock.elapsedRealtime()
+        val cached = cachedRootStatus
+        if (cached != null && now - cachedRootAtElapsedMs <= ROOT_CACHE_TTL_MS) {
+            return@withContext cached
+        }
         coroutineScope {
             val availableDeferred = async { checkSuAvailable() }
             val dirDeferred       = async { checkAdbDirectories() }
@@ -114,7 +125,10 @@ object StatusDetector {
                 else                                                         -> RootProvider.UNKNOWN
             }
 
-            RootStatus(available = available, provider = provider)
+            RootStatus(available = available, provider = provider).also { status ->
+                cachedRootStatus = status
+                cachedRootAtElapsedMs = SystemClock.elapsedRealtime()
+            }
         }
     }
 

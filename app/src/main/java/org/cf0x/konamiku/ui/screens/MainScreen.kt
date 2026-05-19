@@ -57,7 +57,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -72,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.EmuMode
@@ -92,8 +92,9 @@ fun MainScreen(dataStore: AppDataStore) {
     val scope           = rememberCoroutineScope()
     val jsonManager     = remember { JsonManager(context) }
     val snackbarState   = remember { SnackbarHostState() }
+    val statusViewModel: StatusViewModel = viewModel()
 
-    val cards           = remember { mutableStateListOf<NfcCard>() }
+    var cards           by remember { mutableStateOf<List<NfcCard>>(emptyList()) }
     var expandedId      by remember { mutableStateOf<String?>(null) }
     var showDialog      by remember { mutableStateOf(false) }
     var isLoading       by remember { mutableStateOf(true) }
@@ -113,6 +114,9 @@ fun MainScreen(dataStore: AppDataStore) {
     val notifPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
+    val promotedNotifPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {}
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -122,8 +126,8 @@ fun MainScreen(dataStore: AppDataStore) {
             }
         }
         LiveUpdateManager.createChannel(context)
-        cards.clear()
-        cards.addAll(jsonManager.loadCards())
+        val loadedCards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
+        cards = loadedCards
         isLoading = false
     }
 
@@ -140,6 +144,11 @@ fun MainScreen(dataStore: AppDataStore) {
 
     fun activateCard(card: NfcCard) {
         scope.launch {
+            if (Build.VERSION.SDK_INT >= 36 &&
+                context.checkSelfPermission(Manifest.permission.POST_PROMOTED_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                promotedNotifPermLauncher.launch(Manifest.permission.POST_PROMOTED_NOTIFICATIONS)
+            }
             val realIdm   = card.idm.uppercase()
             val activeIdm = when (emuMode) {
                 EmuMode.NORMAL           -> realIdm
@@ -199,8 +208,6 @@ fun MainScreen(dataStore: AppDataStore) {
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            val statusViewModel: StatusViewModel = viewModel()
-
             StatusIndicatorBar(viewModel = statusViewModel)
 
             Box(modifier = Modifier.weight(1f)) {
@@ -263,10 +270,10 @@ fun MainScreen(dataStore: AppDataStore) {
                                     },
                                     onDeleteConfirmed = {
                                         if (isActive) deactivateCard()
-                                        cards.remove(card)
+                                        cards = cards.filterNot { it.id == card.id }
                                         if (expandedId == card.id) expandedId = null
                                         scope.launch(Dispatchers.IO) {
-                                            jsonManager.saveCards(cards.toList())
+                                            jsonManager.saveCards(cards)
                                         }
                                     }
                                 )
@@ -280,8 +287,8 @@ fun MainScreen(dataStore: AppDataStore) {
                         onDismiss = { showDialog = false },
                         onConfirm = { name, idm ->
                             val newCard = NfcCard(UUID.randomUUID().toString(), name, idm)
-                            cards.add(newCard)
-                            scope.launch(Dispatchers.IO) { jsonManager.saveCards(cards.toList()) }
+                            cards = cards + newCard
+                            scope.launch(Dispatchers.IO) { jsonManager.saveCards(cards) }
                             showDialog = false
                         }
                     )
