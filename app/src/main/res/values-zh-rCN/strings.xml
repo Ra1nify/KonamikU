@@ -22,13 +22,13 @@
     <string name="cards_empty_hint">点击 + 添加卡片</string>
 
     <string name="toast_card_activated">%1$s 已激活 · %2$s</string>
-    <string name="mode_normal">正常</string>
+    <string name="mode_normal">全局</string>
     <string name="mode_compat">兼容</string>
     <string name="mode_native">原生</string>
 
     <string name="notif_channel_name">卡片模拟</string>
     <string name="notif_channel_desc">KonamikU NFC 卡片模拟状态</string>
-    <string name="notif_progress_normal">正常</string>
+    <string name="notif_progress_normal">全局</string>
     <string name="notif_progress_compat">兼容</string>
     <string name="notif_progress_native">原生</string>
     <string name="notif_progress_simulated">已模拟</string>
@@ -86,6 +86,10 @@
     <string name="toast_nfc_start_success">NFC 服务已拉起</string>
     <string name="toast_nfc_start_fail">NFC 服务拉起失败</string>
     <string name="toast_xposed_refreshing">正在刷新模块状态…</string>
+    <string name="toast_mode_locked">模块未激活/加载 · 仅 Native 模式可用</string>
+    <string name="setting_dev_mode">开发者模式</string>
+    <string name="setting_dev_force_emu">强制允许使用所有模式</string>
+    <string name="setting_dev_force_emu_desc">绕过模块激活检查，允许切换所有模式</string>
 
     <string name="tools_id_converter_title">ID 转换器</string>
     <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
@@ -100,8 +104,7 @@
     <string name="tools_label_idm_result">IDm</string>
     <string name="tools_label_kid_result">Konami ID</string>
     <string name="tools_label_ac_result">Access Code</string>
-    <string name="tools_label_idm_positive">IDm（正数，更常见）</string>
-    <string name="tools_label_idm_negative">IDm（负数补码）</string>
+    <string name="tools_label_idm_positive">IDm（取正数）</string>
     <string name="tools_convert">转换</string>
     <string name="tools_copy">复制</string>
     <string name="tools_copied">已复制</string>
@@ -113,5 +116,4 @@
     <string name="tools_validation_max_16">最多16位</string>
     <string name="tools_validation_max_20">最多20位数字</string>
     <string name="tools_validation_digits_only">只能包含数字</string>
-    <string name="tools_aime_ambiguous_warning">⚠ 存在两种可能结果（转换过程负号丢失）。\nAiMe FeliCa 卡通常为正数范围，优先使用第一个结果。</string>
 </resources>

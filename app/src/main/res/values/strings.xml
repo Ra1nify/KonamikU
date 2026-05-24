@@ -21,13 +21,13 @@
     <string name="cards_empty_hint">Tap + to add a card</string>
 
     <string name="toast_card_activated">%1$s activated · %2$s</string>
-    <string name="mode_normal">Normal</string>
+    <string name="mode_normal">Global</string>
     <string name="mode_compat">Compat</string>
     <string name="mode_native">Native</string>
 
     <string name="notif_channel_name">Card Emulation</string>
     <string name="notif_channel_desc">KonamikU NFC card emulation status</string>
-    <string name="notif_progress_normal">Normal</string>
+    <string name="notif_progress_normal">Global</string>
     <string name="notif_progress_compat">Compat</string>
     <string name="notif_progress_native">Native</string>
     <string name="notif_progress_simulated">Simulated</string>
@@ -85,6 +85,10 @@
     <string name="toast_nfc_start_success">NFC service started</string>
     <string name="toast_nfc_start_fail">Failed to start NFC service</string>
     <string name="toast_xposed_refreshing">Refreshing module status…</string>
+    <string name="toast_mode_locked">Module inactive/unloaded · Native mode only</string>
+    <string name="setting_dev_mode">Developer Mode</string>
+    <string name="setting_dev_force_emu">Force allow all modes</string>
+    <string name="setting_dev_force_emu_desc">Bypass module activation check for mode switching</string>
 
     <string name="tools_id_converter_title">ID Converter</string>
     <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
@@ -99,8 +103,7 @@
     <string name="tools_label_idm_result">IDm</string>
     <string name="tools_label_kid_result">Konami ID</string>
     <string name="tools_label_ac_result">Access Code</string>
-    <string name="tools_label_idm_positive">IDm (positive, more common)</string>
-    <string name="tools_label_idm_negative">IDm (negative, two\'s complement)</string>
+    <string name="tools_label_idm_positive">IDm (positive)</string>
     <string name="tools_convert">Convert</string>
     <string name="tools_copy">Copy</string>
     <string name="tools_copied">Copied</string>
@@ -112,5 +115,4 @@
     <string name="tools_validation_max_16">Maximum 16 characters</string>
     <string name="tools_validation_max_20">Maximum 20 digits</string>
     <string name="tools_validation_digits_only">Digits only</string>
-    <string name="tools_aime_ambiguous_warning">⚠ Two possible results (sign bit lost in conversion).\nAiMe FeliCa cards are usually in the positive range; prefer the first result.</string>
 </resources>

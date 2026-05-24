@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -63,11 +64,12 @@ fun SettingScreen(dataStore: AppDataStore) {
     val scope   = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val navMode     by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
-    val themeMode   by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
-    val colorSource by dataStore.colorSource.collectAsState(initial = ColorSource.PRESET)
-    val savedColor  by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
-    val appLocale   by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
+    val navMode         by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
+    val themeMode       by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+    val colorSource     by dataStore.colorSource.collectAsState(initial = ColorSource.PRESET)
+    val savedColor      by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
+    val appLocale       by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
+    val devModeForceEmu by dataStore.devModeForceEmu.collectAsState(initial = false)
     val supportsMonet = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     var previewColor by remember(savedColor) { mutableStateOf(savedColor) }
@@ -325,6 +327,36 @@ fun SettingScreen(dataStore: AppDataStore) {
                 imageVector        = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint               = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        HorizontalDivider()
+
+        Text(
+            stringResource(R.string.setting_dev_mode),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.setting_dev_force_emu),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    stringResource(R.string.setting_dev_force_emu_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+            Switch(
+                checked         = devModeForceEmu,
+                onCheckedChange = { scope.launch { dataStore.saveDevModeForceEmu(it) } }
             )
         }
     }

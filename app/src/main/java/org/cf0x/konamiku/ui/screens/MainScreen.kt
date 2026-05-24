@@ -8,6 +8,7 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.cardemulation.NfcFCardEmulation
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -83,6 +84,8 @@ import org.cf0x.konamiku.notification.LiveUpdateManager
 import org.cf0x.konamiku.ui.components.NfcCardItem
 import org.cf0x.konamiku.ui.components.StatusIndicatorBar
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
+import org.cf0x.konamiku.xposed.XposedActivationState
+import org.cf0x.konamiku.xposed.XposedState
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,6 +104,17 @@ fun MainScreen(dataStore: AppDataStore) {
 
     val activeCardId    by dataStore.activeCardId.collectAsState(initial = null)
     val emuMode         by dataStore.emuMode.collectAsState(initial = EmuMode.NORMAL)
+    val devModeForceEmu by dataStore.devModeForceEmu.collectAsState(initial = false)
+
+    val xposedState  by XposedState.activationStateFlow.collectAsState()
+    val pmmActive    by XposedState.pmmActiveFlow.collectAsState()
+    val modeUnlocked = (xposedState == XposedActivationState.ACTIVE && pmmActive) || devModeForceEmu
+
+    LaunchedEffect(modeUnlocked) {
+        if (!modeUnlocked && emuMode != EmuMode.NATIVE) {
+            dataStore.saveEmuMode(EmuMode.NATIVE)
+        }
+    }
 
     val nfcAdapter       = remember { NfcAdapter.getDefaultAdapter(context) }
     val serviceComponent = remember { ComponentName(context, EmuCard::class.java) }
@@ -259,6 +273,14 @@ fun MainScreen(dataStore: AppDataStore) {
                                     },
                                     onEmuModeClick    = {
                                         scope.launch {
+                                            if (!modeUnlocked) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.toast_mode_locked),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                return@launch
+                                            }
                                             val next = when (emuMode) {
                                                 EmuMode.NORMAL -> EmuMode.COMPAT
                                                 EmuMode.COMPAT -> EmuMode.NATIVE

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -31,8 +32,9 @@ class AppDataStore(private val context: Context) {
         val COLOR_SOURCE    = stringPreferencesKey("color_source")
         val PRESET_COLOR    = intPreferencesKey("preset_color")
         val ACTIVE_CARD_ID  = stringPreferencesKey("active_card_id")
-        val EMU_MODE        = stringPreferencesKey("emu_mode")
-        val APP_LOCALE = stringPreferencesKey("app_locale")
+        val EMU_MODE            = stringPreferencesKey("emu_mode")
+        val APP_LOCALE          = stringPreferencesKey("app_locale")
+        val DEV_MODE_FORCE_EMU  = booleanPreferencesKey("dev_mode_force_emu")
     }
 
     init {
@@ -68,6 +70,10 @@ class AppDataStore(private val context: Context) {
         AppLocale.entries.firstOrNull { it.tag == tag } ?: AppLocale.SYSTEM
     }
 
+    val devModeForceEmu: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.DEV_MODE_FORCE_EMU] ?: false
+    }
+
     suspend fun saveNavigationMode(mode: NavigationMode) =
         context.dataStore.edit { it[Keys.NAVIGATION_MODE] = mode.name }
 
@@ -91,4 +97,7 @@ class AppDataStore(private val context: Context) {
 
     suspend fun saveAppLocale(locale: AppLocale) =
         context.dataStore.edit { it[Keys.APP_LOCALE] = locale.tag }
+
+    suspend fun saveDevModeForceEmu(enabled: Boolean) =
+        context.dataStore.edit { it[Keys.DEV_MODE_FORCE_EMU] = enabled }
 }
