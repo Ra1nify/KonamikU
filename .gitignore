@@ -17,3 +17,5 @@ local.properties
 /app/src/main/jni/Dobby
 /app/src/main/jni/pmm-rust/target
 *.lock
+/.kotlin
+/app/release
