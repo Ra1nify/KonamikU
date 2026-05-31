@@ -2,5 +2,6 @@
 <host-nfcf-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/app_name">
     <system-code-filter android:name="88B4" />
-    <nfcid2-filter android:name="02FE000000000000" />
+    <nfcid2-filter      android:name="02FE000000000000" />
+    <t3tPmm-filter      android:name="00F1000000014300" />
 </host-nfcf-service>

@@ -84,6 +84,7 @@
     <string name="toast_nfc_restarted">NFC service restarted successfully</string>
     <string name="toast_nfc_start_success">NFC service started</string>
     <string name="toast_nfc_start_fail">Failed to start NFC service</string>
+    <string name="toast_nfc_waiting_bindable">Waiting for NFC service to be ready…</string>
     <string name="toast_xposed_refreshing">Refreshing module status…</string>
     <string name="toast_mode_locked">Module inactive/unloaded · Native mode only</string>
     <string name="setting_dev_mode">Developer Mode</string>

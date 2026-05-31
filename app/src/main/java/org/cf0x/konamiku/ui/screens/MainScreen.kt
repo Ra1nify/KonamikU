@@ -71,6 +71,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.cf0x.konamiku.R
@@ -179,12 +180,28 @@ fun MainScreen(dataStore: AppDataStore) {
                 return@launch
             }
             runCatching {
-                val emulation = freshEmulation()
-                emulation?.enableService(activity, serviceComponent)
-                emulation?.setNfcid2ForService(serviceComponent, activeIdm)
-                emulation?.registerSystemCodeForService(serviceComponent, systemCode)
-            }.onFailure {
-                android.util.Log.e("KonamikU", "NFC registration failed: ${it.message}")
+                val emulation = freshEmulation() ?: throw IllegalStateException("NFC not available")
+                
+                // Align with aicemu sequence: disable -> setIDm -> registerSys -> enable
+                emulation.disableService(activity)
+                
+                val resultIdm = emulation.setNfcid2ForService(serviceComponent, activeIdm)
+                val resultSys = emulation.registerSystemCodeForService(serviceComponent, systemCode)
+                
+                if (!resultIdm || !resultSys) {
+                    android.util.Log.w("KonamikU", "NFC setup partial failure: IDm=$resultIdm, Sys=$resultSys. Retrying...")
+                    delay(300)
+                    emulation.setNfcid2ForService(serviceComponent, activeIdm)
+                    emulation.registerSystemCodeForService(serviceComponent, systemCode)
+                }
+                
+                emulation.enableService(activity, serviceComponent)
+            }.onFailure { e ->
+                android.util.Log.e("KonamikU", "NFC registration failed: ${e.message}")
+                if (e is android.os.DeadObjectException || e.message?.contains("Failed to reach") == true) {
+                    android.util.Log.i("KonamikU", "Attempting binder recovery...")
+                    org.cf0x.konamiku.util.NfcRestart.clearNfcFCache()
+                }
             }
             dataStore.saveActiveCardId(card.id)
             LiveUpdateManager.postActive(context, card.name, emuMode)

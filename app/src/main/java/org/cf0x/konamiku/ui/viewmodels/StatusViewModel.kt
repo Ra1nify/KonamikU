@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.util.NfcRestart
+import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
@@ -101,10 +102,13 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 is NfcRestart.Result.WasDead -> {
                     _toastEvent.emit(str(R.string.toast_nfc_was_dead))
                     val newPid = result.newPid ?: NfcRestart.tryBringUp()
-                    _toastEvent.emit(
-                        if (newPid != null) str(R.string.toast_nfc_start_success) + " (pid:$newPid)"
-                        else                str(R.string.toast_nfc_start_fail)
-                    )
+                    if (newPid != null) {
+                        NfcRestart.clearNfcFCache()
+                        reprobeHook()
+                        _toastEvent.emit(str(R.string.toast_nfc_start_success) + " (pid:$newPid)")
+                    } else {
+                        _toastEvent.emit(str(R.string.toast_nfc_start_fail))
+                    }
                 }
                 is NfcRestart.Result.KillFailed -> {
                     _toastEvent.emit(str(R.string.toast_nfc_restart_failed) + " (pid:${result.pid})")
@@ -112,12 +116,17 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 is NfcRestart.Result.Killed -> {
                     _toastEvent.emit(str(R.string.toast_nfc_killed) + " (pid:${result.oldPid})")
                     val newPid = NfcRestart.tryBringUp()
-                    _toastEvent.emit(
-                        if (newPid != null) str(R.string.toast_nfc_start_success) + " (pid:$newPid)"
-                        else                str(R.string.toast_nfc_start_fail)
-                    )
+                    if (newPid != null) {
+                        NfcRestart.clearNfcFCache()
+                        reprobeHook()
+                        _toastEvent.emit(str(R.string.toast_nfc_start_success) + " (pid:$newPid)")
+                    } else {
+                        _toastEvent.emit(str(R.string.toast_nfc_start_fail))
+                    }
                 }
                 is NfcRestart.Result.Restarted -> {
+                    NfcRestart.clearNfcFCache()
+                    reprobeHook()
                     _toastEvent.emit(
                         str(R.string.toast_nfc_restarted) +
                                 " (pid:${result.oldPid}→${result.newPid})"
@@ -135,6 +144,14 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             _toastEvent.emit(str(R.string.toast_xposed_refreshing))
             refreshXposed()
         }
+    }
+
+    private fun reprobeHook() {
+        val hooked = NfcHookProber.probe(context)
+        XposedState.activationState = if (hooked)
+            XposedActivationState.ACTIVE
+        else
+            XposedActivationState.NEEDS_RESTART
     }
 
 

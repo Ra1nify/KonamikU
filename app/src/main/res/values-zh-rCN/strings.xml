@@ -85,6 +85,7 @@
     <string name="toast_nfc_restarted">NFC 服务重启成功</string>
     <string name="toast_nfc_start_success">NFC 服务已拉起</string>
     <string name="toast_nfc_start_fail">NFC 服务拉起失败</string>
+    <string name="toast_nfc_waiting_bindable">正在等待 NFC 服务就绪…</string>
     <string name="toast_xposed_refreshing">正在刷新模块状态…</string>
     <string name="toast_mode_locked">模块未激活/加载 · 仅 Native 模式可用</string>
     <string name="setting_dev_mode">开发者模式</string>

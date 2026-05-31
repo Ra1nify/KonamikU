@@ -21,13 +21,25 @@ class KonamikuModule : XposedModule() {
         hookNfcAppForPmmtool(param)
     }
 
+    private var pmmLoaded = false
+
     private fun hookNfcValidation(param: PackageLoadedParam) {
         runCatching {
             val cls = param.defaultClassLoader
                 .loadClass("android.nfc.cardemulation.NfcFCardEmulation")
 
             val isValidSystemCode = cls.getDeclaredMethod("isValidSystemCode", String::class.java)
-            hook(isValidSystemCode).intercept { _ -> true }
+            hook(isValidSystemCode).intercept { chain ->
+                if (!pmmLoaded) {
+                    Log.i("KonamikU", "isValidSystemCode triggered, attempting pmm injection")
+                    pmmLoaded = injectPmmtool(param)
+                    val activityThreadCls = Class.forName("android.app.ActivityThread")
+                    val currentApplicationMethod = activityThreadCls.getDeclaredMethod("currentApplication")
+                    val ctx = currentApplicationMethod.invoke(null) as? android.content.Context
+                    sendHookedBroadcast(ctx, pmmLoaded)
+                }
+                true
+            }
 
             val isValidNfcid2 = cls.getDeclaredMethod("isValidNfcid2", String::class.java)
             hook(isValidNfcid2).intercept { _ -> true }
@@ -54,8 +66,10 @@ class KonamikuModule : XposedModule() {
                 hook(onCreate).intercept { chain ->
                     Log.i("KonamikU", ">>> $className.onCreate() fired")
                     val result = chain.proceed()
-                    val pmmOk  = injectPmmtool(param)
-                    sendHookedBroadcast(chain.thisObject as? android.content.Context, pmmOk)
+                    if (!pmmLoaded) {
+                        pmmLoaded = injectPmmtool(param)
+                    }
+                    sendHookedBroadcast(chain.thisObject as? android.content.Context, pmmLoaded)
                     result
                 }
                 Log.i("KonamikU", "hooked $className.onCreate OK")
@@ -78,8 +92,10 @@ class KonamikuModule : XposedModule() {
                 hook(onCreate).intercept { chain ->
                     Log.i("KonamikU", ">>> Application.onCreate fired (fallback), class=${chain.thisObject?.javaClass?.name}")
                     val result = chain.proceed()
-                    val pmmOk  = injectPmmtool(param)
-                    sendHookedBroadcast(chain.thisObject as? android.content.Context, pmmOk)
+                    if (!pmmLoaded) {
+                        pmmLoaded = injectPmmtool(param)
+                    }
+                    sendHookedBroadcast(chain.thisObject as? android.content.Context, pmmLoaded)
                     result
                 }
                 Log.i("KonamikU", "fallback Application.onCreate hook installed")

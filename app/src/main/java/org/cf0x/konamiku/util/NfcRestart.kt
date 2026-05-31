@@ -1,5 +1,6 @@
 package org.cf0x.konamiku.util
 
+import android.nfc.NfcAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -60,7 +61,40 @@ object NfcRestart {
                 .exec(arrayOf("su", "-c", "svc nfc enable"))
                 .waitFor()
         }
-        delay(2000)
+        
+        // Wait for service to be ready (adapter enabled)
+        var retry = 0
+        while (retry < 10) {
+            val adapter = NfcAdapter.getDefaultAdapter(null) // Context-less often works for state check
+            if (adapter?.isEnabled == true) break
+            delay(500)
+            retry++
+        }
+        
+        delay(1000)
         getPid()
+    }
+
+    /**
+     * Clears the static cache in NfcFCardEmulation via reflection.
+     * This forces the app to re-obtain the service binder.
+     */
+    fun clearNfcFCache() {
+        runCatching {
+            val cls = Class.forName("android.nfc.cardemulation.NfcFCardEmulation")
+            val field = cls.getDeclaredField("sServiceCache")
+            field.isAccessible = true
+            val cache = field.get(null) as? MutableMap<*, *>
+            cache?.clear()
+            
+            // Also clear NfcAdapter's sServiceCache if it exists
+            val adapterCls = Class.forName("android.nfc.NfcAdapter")
+            val adapterCacheField = adapterCls.getDeclaredField("sServiceCache")
+            adapterCacheField.isAccessible = true
+            val adapterCache = adapterCacheField.get(null) as? MutableMap<*, *>
+            adapterCache?.clear()
+        }.onFailure {
+            android.util.Log.e("KonamikU", "Failed to clear NFC cache: ${it.message}")
+        }
     }
 }
