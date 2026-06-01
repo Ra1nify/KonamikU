@@ -201,25 +201,28 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
     suspend fun onCardActivated() {
         if (dataStore.autoExclusiveMode.first()) {
-            val current = NfcDefaultAppManager.getCurrentDefault()
-            val isUs    = NfcDefaultAppManager.isOurComponent(context, current)
-            if (!isUs) {
-                if (current != null && current.isNotBlank() && current != "null") {
-                    dataStore.saveLastPaymentApp(current)
-                }
-                NfcDefaultAppManager.setDefault(NfcDefaultAppManager.getOurComponent(context))
+            val ourComp = NfcDefaultAppManager.getOurComponent(context)
+            val ok = NfcDefaultAppManager.setDefault(ourComp)
+            if (ok) {
+                _toastEvent.emit("激活模拟，已把默认支付软件修改为KonamikU($ourComp)")
             }
         }
     }
 
     suspend fun onCardDeactivated() {
         if (dataStore.autoExclusiveMode.first()) {
-            val last = dataStore.lastPaymentApp.first()
-            if (last != null && last.isNotBlank() && last != "null") {
-                NfcDefaultAppManager.setDefault(last)
-            } else {
-                // If no backup, maybe just clear it or do nothing
-                // NfcDefaultAppManager.setDefault(null)
+            val fallback = dataStore.exclusiveFallbackApp.first()
+            if (!fallback.isNullOrBlank() && fallback != "null") {
+                if (NfcDefaultAppManager.isComponentValid(context, fallback)) {
+                    val ok = NfcDefaultAppManager.setDefault(fallback)
+                    if (ok) {
+                        _toastEvent.emit("停止模拟，已把默认支付软件修改为$fallback")
+                    }
+                } else {
+                    val ourComp = NfcDefaultAppManager.getOurComponent(context)
+                    NfcDefaultAppManager.setDefault(ourComp)
+                    _toastEvent.emit("停止模拟，原定支付软件不存在，回退为KonamikU")
+                }
             }
         }
     }

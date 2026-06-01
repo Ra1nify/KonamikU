@@ -61,6 +61,9 @@ import org.cf0x.konamiku.ui.components.SegmentSwitch
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.saveable.rememberSaveable
+import org.cf0x.konamiku.util.NfcDefaultAppManager
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.rememberScrollState
 
 @Composable
 fun SettingScreen(dataStore: AppDataStore) {
@@ -344,6 +347,9 @@ fun SettingScreen(dataStore: AppDataStore) {
         val rootAvailable = allStatus?.root?.available ?: org.cf0x.konamiku.system.StatusDetector.isRootCached()
         val autoExclusiveMode by dataStore.autoExclusiveMode.collectAsState(initial = dataStore.autoExclusiveModeSync)
         val isAlreadyDefault = allStatus?.nfc?.defaultPaymentIsUs == true
+        val fallbackApp by dataStore.exclusiveFallbackApp.collectAsState(initial = null)
+
+        var showAppSelector by remember { mutableStateOf(false) }
 
         Row(
             modifier              = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -359,9 +365,10 @@ fun SettingScreen(dataStore: AppDataStore) {
                 )
                 Text(
                     text = when {
-                        !rootAvailable    -> stringResource(R.string.toast_root_no_permission)
-                        isAlreadyDefault  -> stringResource(R.string.setting_nfc_exclusive_already_default)
-                        else              -> stringResource(R.string.setting_nfc_exclusive_desc)
+                        !rootAvailable    -> "未检测到 Root 权限"
+                        isAlreadyDefault  -> "当前已是默认支付应用，无需开启自动独占"
+                        autoExclusiveMode -> "回退目标: ${fallbackApp ?: "无"}"
+                        else              -> "激活模拟时自动设为默认支付 (仅限 Root)"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (rootAvailable && !isAlreadyDefault) MaterialTheme.colorScheme.outline
@@ -372,18 +379,68 @@ fun SettingScreen(dataStore: AppDataStore) {
                 checked         = isAlreadyDefault || autoExclusiveMode,
                 enabled         = rootAvailable && !isAlreadyDefault,
                 onCheckedChange = { checked ->
-                    scope.launch {
-                        dataStore.saveAutoExclusiveMode(checked)
-                        if (checked) {
-                            val current = org.cf0x.konamiku.util.NfcDefaultAppManager.getCurrentDefault()
-                            val isUs    = org.cf0x.konamiku.util.NfcDefaultAppManager.isOurComponent(context, current)
-                            if (!isUs && !current.isNullOrBlank()) {
-                                dataStore.saveLastPaymentApp(current)
-                            }
-                        } else {
-                            dataStore.saveLastPaymentApp(null)
+                    if (checked) {
+                        showAppSelector = true
+                    } else {
+                        scope.launch {
+                            dataStore.saveAutoExclusiveMode(false)
+                            dataStore.saveExclusiveFallbackApp(null)
                         }
                     }
+                }
+            )
+        }
+
+        if (showAppSelector) {
+            val apps = remember { NfcDefaultAppManager.getAvailablePaymentApps(context) }
+            AlertDialog(
+                onDismissRequest = { showAppSelector = false },
+                title = { Text("选择回退支付应用") },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        apps.forEach { app ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        scope.launch {
+                                            dataStore.saveAutoExclusiveMode(true)
+                                            dataStore.saveExclusiveFallbackApp(app.componentName)
+                                            showAppSelector = false
+                                        }
+                                    }
+                                    .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(app.label, style = MaterialTheme.typography.bodyLarge)
+                                    Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                }
+                            }
+                        }
+                        
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        
+                        // Null / Off option
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    scope.launch {
+                                        dataStore.saveAutoExclusiveMode(true)
+                                        dataStore.saveExclusiveFallbackApp(null)
+                                        showAppSelector = false
+                                    }
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("不回退 (保留 KonamikU)", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAppSelector = false }) { Text("取消") }
                 }
             )
         }

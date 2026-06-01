@@ -2,6 +2,7 @@ package org.cf0x.konamiku.util
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -19,7 +20,6 @@ object NfcDefaultAppManager {
 
     suspend fun setDefault(component: String?): Boolean = withContext(Dispatchers.IO) {
         if (component.isNullOrBlank() || component == "null") {
-            // If we try to set null, maybe it's better to just delete the key
             runCatching {
                 Runtime.getRuntime().exec(arrayOf("su", "-c", "settings delete secure $SETTING_KEY")).waitFor() == 0
             }.getOrDefault(false)
@@ -37,6 +37,34 @@ object NfcDefaultAppManager {
     }
 
     fun getOurComponent(context: Context): String {
-        return ComponentName(context, "org.cf0x.konamiku.nfc.DummyPaymentService").flattenToString()
+        return ComponentName(context.packageName, "org.cf0x.konamiku.nfc.DummyPaymentService").flattenToString()
+    }
+
+    data class PaymentAppInfo(val label: String, val componentName: String, val packageName: String)
+
+    fun getAvailablePaymentApps(context: Context): List<PaymentAppInfo> {
+        val pm = context.packageManager
+        val intent = Intent("android.nfc.cardemulation.action.HOST_APDU_SERVICE")
+        val services = pm.queryIntentServices(intent, 0)
+        return services.mapNotNull { resolveInfo ->
+            val serviceInfo = resolveInfo.serviceInfo ?: return@mapNotNull null
+            val packageName = serviceInfo.packageName
+            if (packageName == context.packageName) return@mapNotNull null
+            
+            val label = serviceInfo.loadLabel(pm).toString()
+            val componentName = ComponentName(packageName, serviceInfo.name).flattenToString()
+            PaymentAppInfo(label, componentName, packageName)
+        }.sortedBy { it.label }
+    }
+
+    suspend fun isComponentValid(context: Context, componentName: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val cn = ComponentName.unflattenFromString(componentName) ?: return@runCatching false
+            // Use pm query via root to be extra sure or just standard PM if possible
+            val intent = Intent("android.nfc.cardemulation.action.HOST_APDU_SERVICE")
+            intent.setComponent(cn)
+            val services = context.packageManager.queryIntentServices(intent, 0)
+            services.isNotEmpty()
+        }.getOrDefault(false)
     }
 }

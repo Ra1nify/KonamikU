@@ -17,5 +17,6 @@ class DummyPaymentService : HostApduService() {
     }
 
     override fun onDeactivated(reason: Int) {
+        android.util.Log.i("KonamikU", "DummyPaymentService: onDeactivated (reason: $reason)")
     }
 }

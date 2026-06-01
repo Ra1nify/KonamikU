@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -24,12 +25,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.ui.components.ConverterField
 import org.cf0x.konamiku.ui.components.ConvertResult
 import org.cf0x.konamiku.ui.components.ReorderableConverter
-import org.cf0x.konamiku.ui.components.TilBar
-import org.cf0x.konamiku.ui.components.TilSegment
 import org.cf0x.konamiku.util.AimeAccessCodeConverter
 import org.cf0x.konamiku.util.CardIdConverter
 
@@ -53,30 +61,50 @@ fun ToolsScreen() {
             color = MaterialTheme.colorScheme.primary
         )
 
-        TilBar(
-            segments = listOf(
-                TilSegment(content = {
-                    Row(
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier              = Modifier.padding(horizontal = 12.dp)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.CompareArrows, null,
-                            tint     = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            stringResource(R.string.tools_id_converter_title),
-                            style = MaterialTheme.typography.labelLarge
-                        )
+        ElevatedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness    = Spring.StiffnessMedium
+                    )
+                ),
+            onClick = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
+            colors  = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.CompareArrows, null,
+                        tint     = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        stringResource(R.string.tools_id_converter_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                if (expandedBar == "id_converter") {
+                    Column {
+                        Spacer(Modifier.height(14.dp))
+                        HorizontalDivider(thickness = 0.5.dp)
+                        Spacer(Modifier.height(12.dp))
+                        IdConverterPanel()
                     }
-                })
-            ),
-            isExpanded      = expandedBar == "id_converter",
-            onExpandToggle  = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
-            expandedContent = { IdConverterPanel() }
-        )
+                }
+            }
+        }
     }
 }
 

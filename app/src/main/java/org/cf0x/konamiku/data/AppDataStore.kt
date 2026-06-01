@@ -43,7 +43,7 @@ class AppDataStore(private val context: Context) {
         val APP_LOCALE          = stringPreferencesKey("app_locale")
         val DEV_MODE_FORCE_EMU  = booleanPreferencesKey("dev_mode_force_emu")
         val AUTO_EXCLUSIVE_MODE = booleanPreferencesKey("auto_exclusive_mode")
-        val LAST_PAYMENT_APP    = stringPreferencesKey("last_payment_app")
+        val EXCLUSIVE_FALLBACK_APP = stringPreferencesKey("exclusive_fallback_app")
     }
 
     init {
@@ -87,8 +87,8 @@ class AppDataStore(private val context: Context) {
         prefs[Keys.AUTO_EXCLUSIVE_MODE] ?: false
     }
 
-    val lastPaymentApp: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[Keys.LAST_PAYMENT_APP]
+    val exclusiveFallbackApp: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[Keys.EXCLUSIVE_FALLBACK_APP]
     }
 
     suspend fun saveNavigationMode(mode: NavigationMode) =
@@ -129,9 +129,9 @@ class AppDataStore(private val context: Context) {
             sp.edit().putBoolean("auto_exclusive_mode", enabled).apply()
         }
 
-    suspend fun saveLastPaymentApp(component: String?) =
+    suspend fun saveExclusiveFallbackApp(component: String?) =
         context.dataStore.edit { prefs ->
-            if (component == null) prefs.remove(Keys.LAST_PAYMENT_APP)
-            else prefs[Keys.LAST_PAYMENT_APP] = component
+            if (component == null) prefs.remove(Keys.EXCLUSIVE_FALLBACK_APP)
+            else prefs[Keys.EXCLUSIVE_FALLBACK_APP] = component
         }
 }
