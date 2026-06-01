@@ -23,6 +23,8 @@ object StatusDetector {
 
     enum class RootProvider { UNKNOWN, MAGISK, KERNELSU, APATCH }
 
+    fun isRootCached(): Boolean = cachedRootStatus?.available ?: false
+
     data class RootStatus(
         val available: Boolean,
         val provider: RootProvider = RootProvider.UNKNOWN
@@ -68,7 +70,7 @@ object StatusDetector {
             PackageManager.FEATURE_NFC_HOST_CARD_EMULATION_NFCF
         )
         val cardEmulation = runCatching { CardEmulation.getInstance(adapter) }.getOrNull()
-        val ourComponent  = ComponentName(context, EmuCard::class.java)
+        val ourComponent  = ComponentName(context, org.cf0x.konamiku.nfc.DummyPaymentService::class.java)
         val defaultIsUs = runCatching {
             cardEmulation?.isDefaultServiceForCategory(
                 ourComponent, CardEmulation.CATEGORY_PAYMENT

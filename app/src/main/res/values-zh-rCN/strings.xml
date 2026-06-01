@@ -20,6 +20,12 @@
 
     <string name="cards_empty_title">还没有卡片</string>
     <string name="cards_empty_hint">点击 + 添加卡片</string>
+    <string name="card_action_delete">删除</string>
+    <string name="card_action_activate">激活</string>
+    <string name="card_action_stop">停止</string>
+    <string name="card_delete_title">删除卡片</string>
+    <string name="card_delete_desc">确认删除 \"%1$s\"？此操作无法撤销。</string>
+    <string name="card_badge_on">运行中</string>
 
     <string name="toast_card_activated">%1$s 已激活 · %2$s</string>
     <string name="toast_card_scanned">%1$s 已被扫描！</string>
@@ -68,6 +74,7 @@
     <string name="setting_nfc_default_desc">在系统设置中将 KonamikU 设为默认 NFC 支付应用。</string>
     <string name="setting_nfc_exclusive">NFC 自动独占模式</string>
     <string name="setting_nfc_exclusive_desc">激活时自动设为默认支付应用 (仅限 Root)</string>
+    <string name="setting_nfc_exclusive_already_default">当前已是默认支付应用</string>
     <string name="status_xposed_needs_restart">模块已激活 — 重启 com.android.nfc 以使 hook 生效</string>
 
     <string name="setting_language">语言</string>
@@ -105,10 +112,10 @@
     <string name="tools_section_ac_to_idm">Access Code → IDm</string>
     <string name="tools_label_idm">IDm（16位十六进制）</string>
     <string name="tools_label_kid">Konami ID（16位）</string>
-    <string name="tools_label_ac">Access Code（20位数字）</string>
+    <string name="tools_label_ac">Access Code（20位数字,非官方逻辑）</string>
     <string name="tools_label_idm_result">IDm</string>
     <string name="tools_label_kid_result">Konami ID</string>
-    <string name="tools_label_ac_result">Access Code</string>
+    <string name="tools_label_ac_result">Access Code（非官方逻辑）</string>
     <string name="tools_label_idm_positive">IDm（取正数）</string>
     <string name="tools_convert">转换</string>
     <string name="tools_copy">复制</string>

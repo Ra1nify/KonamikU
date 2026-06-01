@@ -128,7 +128,7 @@ fun ReorderableConverter(
 
     LaunchedEffect(displayOrder) {
         if (focusPending) {
-            delay(220)
+            delay(100)
             runCatching { focusRequester.requestFocus() }
             focusPending = false
         }
@@ -138,8 +138,7 @@ fun ReorderableConverter(
         AnimatedContent(
             targetState  = displayOrder,
             transitionSpec = {
-                (fadeIn(tween(200)) + scaleIn(tween(200), initialScale = 0.97f)) togetherWith
-                        (fadeOut(tween(160)) + scaleOut(tween(160), targetScale = 0.97f))
+                fadeIn(tween(150)) togetherWith fadeOut(tween(100))
             },
             label = "converter_reorder"
         ) { order ->

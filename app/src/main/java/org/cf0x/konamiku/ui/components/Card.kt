@@ -44,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.NfcCard
 
@@ -132,7 +134,10 @@ fun NfcCardItem(
                 )
                 if (isActive) {
                     Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                        Text("ON", style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            stringResource(R.string.card_badge_on),
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                 }
             }
@@ -172,11 +177,11 @@ fun NfcCardItem(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = null,
                                 modifier           = Modifier.size(16.dp)
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text("Delete")
+                            Text(stringResource(R.string.card_action_delete))
                         }
 
                         Spacer(Modifier.weight(1f))
@@ -186,9 +191,9 @@ fun NfcCardItem(
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text(when (emuMode) {
-                                EmuMode.NORMAL -> "Normal"
-                                EmuMode.COMPAT -> "Compat"
-                                EmuMode.NATIVE -> "Native"
+                                EmuMode.NORMAL -> stringResource(R.string.mode_normal)
+                                EmuMode.COMPAT -> stringResource(R.string.mode_compat)
+                                EmuMode.NATIVE -> stringResource(R.string.mode_native)
                             })
                         }
 
@@ -201,7 +206,10 @@ fun NfcCardItem(
                                 )
                             else ButtonDefaults.buttonColors()
                         ) {
-                            Text(if (isActive) "Stop" else "Activate")
+                            Text(
+                                if (isActive) stringResource(R.string.card_action_stop)
+                                else stringResource(R.string.card_action_activate)
+                            )
                         }
                     }
                 }
@@ -212,18 +220,22 @@ fun NfcCardItem(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title            = { Text("Delete Card") },
-            text             = { Text("Delete \"${card.name}\"? This cannot be undone.") },
+            title            = { Text(stringResource(R.string.card_delete_title)) },
+            text             = {
+                Text(stringResource(R.string.card_delete_desc, card.name))
+            },
             confirmButton    = {
                 Button(
                     onClick = { showDeleteDialog = false; onDeleteConfirmed() },
                     colors  = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
-                ) { Text("Delete") }
+                ) { Text(stringResource(R.string.card_action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.card_add_cancel))
+                }
             }
         )
     }

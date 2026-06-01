@@ -23,7 +23,7 @@ class EmuCard : HostNfcFService() {
         val pm = getSystemService(PowerManager::class.java)
         wakeLock = pm.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "KonamikU::EmuCard"
+            "KonamikU::EmuCard",
         ).also { it.acquire(10 * 60 * 1000L) }
 
         runBlocking(Dispatchers.IO) {
@@ -74,7 +74,7 @@ class EmuCard : HostNfcFService() {
 
         return runCatching {
             val serviceCount = cmd[10].toInt() and 0xFF
-            var pos = 11 + serviceCount * 2
+            var pos = 11 + (serviceCount * 2)
             if (pos >= cmd.size) return null
             val blockCount = cmd[pos++].toInt() and 0xFF
 

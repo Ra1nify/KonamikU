@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
             KonamikuTheme(
                 themeMode   = themeMode,
                 colorSource = colorSource,
-                seedColor   = presetColor
+                seedColor   = presetColor,
             ) {
                 MainLayout(dataStore = dataStore)
             }
@@ -80,9 +80,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleNfcIntent(intent: Intent?) {
-        if (intent?.action == NfcAdapter.ACTION_TAG_DISCOVERED ||
-            intent?.action == NfcAdapter.ACTION_TECH_DISCOVERED ||
-            intent?.action == NfcAdapter.ACTION_NDEF_DISCOVERED) {
+        val action = intent?.action ?: return
+        if (action == NfcAdapter.ACTION_TAG_DISCOVERED ||
+            action == NfcAdapter.ACTION_TECH_DISCOVERED ||
+            action == NfcAdapter.ACTION_NDEF_DISCOVERED) {
 
             val tag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)

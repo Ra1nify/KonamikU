@@ -109,7 +109,7 @@ fun MainScreen(dataStore: AppDataStore) {
 
     val xposedState  by XposedState.activationStateFlow.collectAsState()
     val pmmActive    by XposedState.pmmActiveFlow.collectAsState()
-    val modeUnlocked = (xposedState == XposedActivationState.ACTIVE && pmmActive) || devModeForceEmu
+    val modeUnlocked = ((xposedState == XposedActivationState.ACTIVE) && pmmActive) || devModeForceEmu
 
     LaunchedEffect(modeUnlocked) {
         if (!modeUnlocked && emuMode != EmuMode.NATIVE) {
@@ -127,10 +127,7 @@ fun MainScreen(dataStore: AppDataStore) {
     }
 
     val notifPermLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {}
-    val promotedNotifPermLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestPermission(),
     ) {}
 
     LaunchedEffect(Unit) {
@@ -159,11 +156,12 @@ fun MainScreen(dataStore: AppDataStore) {
 
     fun activateCard(card: NfcCard) {
         scope.launch {
-            if (Build.VERSION.SDK_INT >= 36 &&
-                context.checkSelfPermission(Manifest.permission.POST_PROMOTED_NOTIFICATIONS)
+            if (Build.VERSION.SDK_INT >= 33 &&
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
-                promotedNotifPermLauncher.launch(Manifest.permission.POST_PROMOTED_NOTIFICATIONS)
+                notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+            
             val realIdm   = card.idm.uppercase()
             val activeIdm = when (emuMode) {
                 EmuMode.NORMAL           -> realIdm
@@ -330,7 +328,7 @@ fun MainScreen(dataStore: AppDataStore) {
                         onDismiss = { showDialog = false },
                         onConfirm = { name, idm ->
                             val newCard = NfcCard(UUID.randomUUID().toString(), name, idm)
-                            cards = cards + newCard
+                            cards += newCard
                             scope.launch(Dispatchers.IO) { jsonManager.saveCards(cards) }
                             showDialog = false
                         }
@@ -400,9 +398,7 @@ private fun AddCardDialog(
 
         onDispose {
             nfcAdapter?.disableReaderMode(act)
-            if (act is org.cf0x.konamiku.MainActivity) {
-                act.enableDefaultReaderMode()
-            }
+            (act as? org.cf0x.konamiku.MainActivity)?.enableDefaultReaderMode()
         }
     }
 

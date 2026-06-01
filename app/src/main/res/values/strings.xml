@@ -19,6 +19,12 @@
 
     <string name="cards_empty_title">No cards yet</string>
     <string name="cards_empty_hint">Tap + to add a card</string>
+    <string name="card_action_delete">Delete</string>
+    <string name="card_action_activate">Activate</string>
+    <string name="card_action_stop">Stop</string>
+    <string name="card_delete_title">Delete Card</string>
+    <string name="card_delete_desc">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="card_badge_on">ON</string>
 
     <string name="toast_card_activated">%1$s activated · %2$s</string>
     <string name="toast_card_scanned">%1$s scanned!</string>
@@ -67,6 +73,7 @@
     <string name="setting_nfc_default_desc">Set KonamikU as the default tap &amp; pay application from system settings.</string>
     <string name="setting_nfc_exclusive">NFC Auto-Exclusive Mode</string>
     <string name="setting_nfc_exclusive_desc">Auto set as default payment app on activation (Root only)</string>
+    <string name="setting_nfc_exclusive_already_default">Already set as default payment app</string>
     <string name="status_xposed_needs_restart">Module active — restart com.android.nfc to apply hooks</string>
 
     <string name="setting_language">Language</string>
@@ -104,10 +111,10 @@
     <string name="tools_section_ac_to_idm">Access Code → IDm</string>
     <string name="tools_label_idm">IDm (16 hex chars)</string>
     <string name="tools_label_kid">Konami ID (16 chars)</string>
-    <string name="tools_label_ac">Access Code (20 digits)</string>
+    <string name="tools_label_ac">Access Code (20 digits, unofficial logic)</string>
     <string name="tools_label_idm_result">IDm</string>
     <string name="tools_label_kid_result">Konami ID</string>
-    <string name="tools_label_ac_result">Access Code</string>
+    <string name="tools_label_ac_result">Access Code (unofficial logic))</string>
     <string name="tools_label_idm_positive">IDm (positive)</string>
     <string name="tools_convert">Convert</string>
     <string name="tools_copy">Copy</string>

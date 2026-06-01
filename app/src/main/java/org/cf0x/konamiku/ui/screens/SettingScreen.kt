@@ -67,14 +67,16 @@ fun SettingScreen(dataStore: AppDataStore) {
     val scope   = rememberCoroutineScope()
     val context = LocalContext.current
     val statusViewModel: StatusViewModel = viewModel()
+    val supportsMonet = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     val navMode         by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
     val themeMode       by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
-    val colorSource     by dataStore.colorSource.collectAsState(initial = ColorSource.PRESET)
+    val colorSource     by dataStore.colorSource.collectAsState(
+        initial = if (supportsMonet) ColorSource.MONET else ColorSource.PRESET
+    )
     val savedColor      by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
     val appLocale       by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
-    val devModeForceEmu by dataStore.devModeForceEmu.collectAsState(initial = false)
-    val supportsMonet = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val devModeForceEmu by dataStore.devModeForceEmu.collectAsState(initial = dataStore.devModeForceEmuSync)
 
     var previewColor by remember(savedColor) { mutableStateOf(savedColor) }
     var showPicker   by rememberSaveable { mutableStateOf(false) }
@@ -339,9 +341,10 @@ fun SettingScreen(dataStore: AppDataStore) {
         }
 
         val allStatus by statusViewModel.status.collectAsState()
-        val rootAvailable = allStatus?.root?.available == true
-        val autoExclusiveMode by dataStore.autoExclusiveMode.collectAsState(initial = false)
-        
+        val rootAvailable = allStatus?.root?.available ?: org.cf0x.konamiku.system.StatusDetector.isRootCached()
+        val autoExclusiveMode by dataStore.autoExclusiveMode.collectAsState(initial = dataStore.autoExclusiveModeSync)
+        val isAlreadyDefault = allStatus?.nfc?.defaultPaymentIsUs == true
+
         Row(
             modifier              = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             verticalAlignment     = Alignment.CenterVertically,
@@ -351,20 +354,37 @@ fun SettingScreen(dataStore: AppDataStore) {
                 Text(
                     stringResource(R.string.setting_nfc_exclusive),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (rootAvailable) MaterialTheme.colorScheme.onSurface 
+                    color = if (rootAvailable && !isAlreadyDefault) MaterialTheme.colorScheme.onSurface
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
                 Text(
-                    stringResource(R.string.setting_nfc_exclusive_desc),
+                    text = when {
+                        !rootAvailable    -> stringResource(R.string.toast_root_no_permission)
+                        isAlreadyDefault  -> stringResource(R.string.setting_nfc_exclusive_already_default)
+                        else              -> stringResource(R.string.setting_nfc_exclusive_desc)
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (rootAvailable) MaterialTheme.colorScheme.outline 
+                    color = if (rootAvailable && !isAlreadyDefault) MaterialTheme.colorScheme.outline
                             else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
                 )
             }
             Switch(
-                checked         = autoExclusiveMode,
-                enabled         = rootAvailable,
-                onCheckedChange = { scope.launch { dataStore.saveAutoExclusiveMode(it) } }
+                checked         = isAlreadyDefault || autoExclusiveMode,
+                enabled         = rootAvailable && !isAlreadyDefault,
+                onCheckedChange = { checked ->
+                    scope.launch {
+                        dataStore.saveAutoExclusiveMode(checked)
+                        if (checked) {
+                            val current = org.cf0x.konamiku.util.NfcDefaultAppManager.getCurrentDefault()
+                            val isUs    = org.cf0x.konamiku.util.NfcDefaultAppManager.isOurComponent(context, current)
+                            if (!isUs && !current.isNullOrBlank()) {
+                                dataStore.saveLastPaymentApp(current)
+                            }
+                        } else {
+                            dataStore.saveLastPaymentApp(null)
+                        }
+                    }
+                }
             )
         }
 

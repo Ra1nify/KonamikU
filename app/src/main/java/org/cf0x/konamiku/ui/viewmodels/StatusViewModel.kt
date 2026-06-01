@@ -202,10 +202,12 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun onCardActivated() {
         if (dataStore.autoExclusiveMode.first()) {
             val current = NfcDefaultAppManager.getCurrentDefault()
-            val ourComp = NfcDefaultAppManager.getOurComponent(context)
-            if (current != ourComp) {
-                dataStore.saveLastPaymentApp(current)
-                NfcDefaultAppManager.setDefault(ourComp)
+            val isUs    = NfcDefaultAppManager.isOurComponent(context, current)
+            if (!isUs) {
+                if (current != null && current.isNotBlank() && current != "null") {
+                    dataStore.saveLastPaymentApp(current)
+                }
+                NfcDefaultAppManager.setDefault(NfcDefaultAppManager.getOurComponent(context))
             }
         }
     }
@@ -213,7 +215,12 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun onCardDeactivated() {
         if (dataStore.autoExclusiveMode.first()) {
             val last = dataStore.lastPaymentApp.first()
-            NfcDefaultAppManager.setDefault(last)
+            if (last != null && last.isNotBlank() && last != "null") {
+                NfcDefaultAppManager.setDefault(last)
+            } else {
+                // If no backup, maybe just clear it or do nothing
+                // NfcDefaultAppManager.setDefault(null)
+            }
         }
     }
 }

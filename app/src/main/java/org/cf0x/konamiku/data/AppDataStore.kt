@@ -26,6 +26,13 @@ enum class AppLocale(val tag: String) {
 
 class AppDataStore(private val context: Context) {
 
+    private val sp = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+
+    var autoExclusiveModeSync = sp.getBoolean("auto_exclusive_mode", false)
+        private set
+    var devModeForceEmuSync = sp.getBoolean("dev_mode_force_emu", false)
+        private set
+
     private object Keys {
         val NAVIGATION_MODE = stringPreferencesKey("navigation_mode")
         val THEME_MODE      = stringPreferencesKey("theme_mode")
@@ -109,10 +116,18 @@ class AppDataStore(private val context: Context) {
         context.dataStore.edit { it[Keys.APP_LOCALE] = locale.tag }
 
     suspend fun saveDevModeForceEmu(enabled: Boolean) =
-        context.dataStore.edit { it[Keys.DEV_MODE_FORCE_EMU] = enabled }
+        context.dataStore.edit {
+            it[Keys.DEV_MODE_FORCE_EMU] = enabled
+            devModeForceEmuSync = enabled
+            sp.edit().putBoolean("dev_mode_force_emu", enabled).apply()
+        }
 
     suspend fun saveAutoExclusiveMode(enabled: Boolean) =
-        context.dataStore.edit { it[Keys.AUTO_EXCLUSIVE_MODE] = enabled }
+        context.dataStore.edit {
+            it[Keys.AUTO_EXCLUSIVE_MODE] = enabled
+            autoExclusiveModeSync = enabled
+            sp.edit().putBoolean("auto_exclusive_mode", enabled).apply()
+        }
 
     suspend fun saveLastPaymentApp(component: String?) =
         context.dataStore.edit { prefs ->

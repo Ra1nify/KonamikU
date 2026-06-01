@@ -18,14 +18,22 @@ object NfcDefaultAppManager {
     }
 
     suspend fun setDefault(component: String?): Boolean = withContext(Dispatchers.IO) {
-        val cmd = if (component == null) {
-            "settings delete secure $SETTING_KEY"
+        if (component.isNullOrBlank() || component == "null") {
+            // If we try to set null, maybe it's better to just delete the key
+            runCatching {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", "settings delete secure $SETTING_KEY")).waitFor() == 0
+            }.getOrDefault(false)
         } else {
-            "settings put secure $SETTING_KEY $component"
+            runCatching {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", "settings put secure $SETTING_KEY $component")).waitFor() == 0
+            }.getOrDefault(false)
         }
-        runCatching {
-            Runtime.getRuntime().exec(arrayOf("su", "-c", cmd)).waitFor() == 0
-        }.getOrDefault(false)
+    }
+
+    fun isOurComponent(context: Context, component: String?): Boolean {
+        if (component == null) return false
+        val our = getOurComponent(context)
+        return component.contains(context.packageName) || component == our
     }
 
     fun getOurComponent(context: Context): String {
