@@ -36,6 +36,23 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         val card     = jsonManager.loadCards().find { it.id == activeId }
                             ?: return@launch
                         LiveUpdateManager.postActive(context, card.name, next)
+                        
+                        // We need to re-enable service with new settings if active
+                        // But since we are in broadcast receiver, we don't have activity.
+                        // The user will have to manually re-activate or we rely on EmuCard
+                        // detecting the change if it's already bound.
+                    }
+                    LiveUpdateManager.ACTION_NEXT_CARD -> {
+                        val cards = jsonManager.loadCards()
+                        if (cards.isEmpty()) return@launch
+                        val activeId = dataStore.activeCardId.first()
+                        val currentIndex = cards.indexOfFirst { it.id == activeId }
+                        val nextIndex = (currentIndex + 1) % cards.size
+                        val nextCard = cards[nextIndex]
+                        
+                        dataStore.saveActiveCardId(nextCard.id)
+                        val mode = dataStore.emuMode.first()
+                        LiveUpdateManager.postActive(context, nextCard.name, mode)
                     }
                     LiveUpdateManager.ACTION_DISMISSED -> {
                         dataStore.saveActiveCardId(null)

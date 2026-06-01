@@ -58,11 +58,15 @@ import org.cf0x.konamiku.data.NavigationMode
 import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
+import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @Composable
 fun SettingScreen(dataStore: AppDataStore) {
     val scope   = rememberCoroutineScope()
     val context = LocalContext.current
+    val statusViewModel: StatusViewModel = viewModel()
 
     val navMode         by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
     val themeMode       by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
@@ -73,7 +77,11 @@ fun SettingScreen(dataStore: AppDataStore) {
     val supportsMonet = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     var previewColor by remember(savedColor) { mutableStateOf(savedColor) }
-    var showPicker   by remember { mutableStateOf(false) }
+    var showPicker   by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        showPicker = false
+    }
 
     LaunchedEffect(colorSource) {
         if (colorSource != ColorSource.PRESET) showPicker = false
@@ -327,6 +335,36 @@ fun SettingScreen(dataStore: AppDataStore) {
                 imageVector        = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint               = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        val allStatus by statusViewModel.status.collectAsState()
+        val rootAvailable = allStatus?.root?.available == true
+        val autoExclusiveMode by dataStore.autoExclusiveMode.collectAsState(initial = false)
+        
+        Row(
+            modifier              = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.setting_nfc_exclusive),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (rootAvailable) MaterialTheme.colorScheme.onSurface 
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+                Text(
+                    stringResource(R.string.setting_nfc_exclusive_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (rootAvailable) MaterialTheme.colorScheme.outline 
+                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
+                )
+            }
+            Switch(
+                checked         = autoExclusiveMode,
+                enabled         = rootAvailable,
+                onCheckedChange = { scope.launch { dataStore.saveAutoExclusiveMode(it) } }
             )
         }
 

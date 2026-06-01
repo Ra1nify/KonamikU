@@ -35,6 +35,8 @@ class AppDataStore(private val context: Context) {
         val EMU_MODE            = stringPreferencesKey("emu_mode")
         val APP_LOCALE          = stringPreferencesKey("app_locale")
         val DEV_MODE_FORCE_EMU  = booleanPreferencesKey("dev_mode_force_emu")
+        val AUTO_EXCLUSIVE_MODE = booleanPreferencesKey("auto_exclusive_mode")
+        val LAST_PAYMENT_APP    = stringPreferencesKey("last_payment_app")
     }
 
     init {
@@ -74,6 +76,14 @@ class AppDataStore(private val context: Context) {
         prefs[Keys.DEV_MODE_FORCE_EMU] ?: false
     }
 
+    val autoExclusiveMode: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.AUTO_EXCLUSIVE_MODE] ?: false
+    }
+
+    val lastPaymentApp: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[Keys.LAST_PAYMENT_APP]
+    }
+
     suspend fun saveNavigationMode(mode: NavigationMode) =
         context.dataStore.edit { it[Keys.NAVIGATION_MODE] = mode.name }
 
@@ -100,4 +110,13 @@ class AppDataStore(private val context: Context) {
 
     suspend fun saveDevModeForceEmu(enabled: Boolean) =
         context.dataStore.edit { it[Keys.DEV_MODE_FORCE_EMU] = enabled }
+
+    suspend fun saveAutoExclusiveMode(enabled: Boolean) =
+        context.dataStore.edit { it[Keys.AUTO_EXCLUSIVE_MODE] = enabled }
+
+    suspend fun saveLastPaymentApp(component: String?) =
+        context.dataStore.edit { prefs ->
+            if (component == null) prefs.remove(Keys.LAST_PAYMENT_APP)
+            else prefs[Keys.LAST_PAYMENT_APP] = component
+        }
 }

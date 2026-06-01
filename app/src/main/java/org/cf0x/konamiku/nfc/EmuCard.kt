@@ -39,6 +39,7 @@ class EmuCard : HostNfcFService() {
                 EmuMode.NORMAL           -> realIdm
                 EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
             }
+            android.util.Log.i("KonamikU", "EmuCard active: IDm=$activeIdm, real=$realIdm, mode=$emuMode")
             felicaCard = FelicaCard(activeIdm = activeIdm, realIdm = realIdm, emuMode = emuMode)
         }
     }

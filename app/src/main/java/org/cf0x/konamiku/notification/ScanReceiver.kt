@@ -28,17 +28,15 @@ class ScanReceiver : BroadcastReceiver() {
                 val emuMode     = dataStore.emuMode.first()
                 val card        = jsonManager.loadCards().find { it.id == activeId }
                     ?: return@launch
-                val modeLabel   = context.getString(when (emuMode) {
-                    EmuMode.NORMAL -> R.string.mode_normal
-                    EmuMode.COMPAT -> R.string.mode_compat
-                    EmuMode.NATIVE -> R.string.mode_native
-                })
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        context.getString(R.string.toast_card_activated, card.name, modeLabel),
+                        context.getString(R.string.toast_card_scanned, card.name),
                         Toast.LENGTH_SHORT
                     ).show()
+                    
+                    val vibrator = context.getSystemService(android.os.Vibrator::class.java)
+                    vibrator?.vibrate(android.os.VibrationEffect.createOneShot(100, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
                 }
                 LiveUpdateManager.pulse(context, card.name, emuMode, this)
             } finally {

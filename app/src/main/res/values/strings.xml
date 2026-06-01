@@ -21,6 +21,7 @@
     <string name="cards_empty_hint">Tap + to add a card</string>
 
     <string name="toast_card_activated">%1$s activated · %2$s</string>
+    <string name="toast_card_scanned">%1$s scanned!</string>
     <string name="mode_normal">Global</string>
     <string name="mode_compat">Compat</string>
     <string name="mode_native">Native</string>
@@ -33,6 +34,7 @@
     <string name="notif_progress_simulated">Simulated</string>
     <string name="notif_action_stop">Stop</string>
     <string name="notif_action_switch_mode">Switch Mode</string>
+    <string name="notif_action_next_card">Next Card</string>
 
     <string name="status_nfc_rf">NFC Radio</string>
     <string name="status_lsposed">LSPosed</string>
@@ -63,6 +65,8 @@
     <string name="setting_pmmtool_inactive">Inactive — restart NFC to apply</string>
     <string name="setting_nfc_default">NFC Default App</string>
     <string name="setting_nfc_default_desc">Set KonamikU as the default tap &amp; pay application from system settings.</string>
+    <string name="setting_nfc_exclusive">NFC Auto-Exclusive Mode</string>
+    <string name="setting_nfc_exclusive_desc">Auto set as default payment app on activation (Root only)</string>
     <string name="status_xposed_needs_restart">Module active — restart com.android.nfc to apply hooks</string>
 
     <string name="setting_language">Language</string>
@@ -116,4 +120,5 @@
     <string name="tools_validation_max_16">Maximum 16 characters</string>
     <string name="tools_validation_max_20">Maximum 20 digits</string>
     <string name="tools_validation_digits_only">Digits only</string>
+    <string name="tile_label">KonamikU</string>
 </resources>

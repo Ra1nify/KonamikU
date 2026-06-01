@@ -24,6 +24,12 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         super.onCreate()
 
         val dataStore = AppDataStore(this)
+        
+        // Reset active state on fresh start
+        runBlocking {
+            dataStore.saveActiveCardId(null)
+        }
+
         val locale = runCatching {
             runBlocking { dataStore.appLocale.first() }
         }.getOrDefault(AppLocale.SYSTEM)

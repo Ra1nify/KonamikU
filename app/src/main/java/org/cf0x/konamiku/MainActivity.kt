@@ -121,6 +121,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
-        nfcAdapter?.disableReaderMode(this)
+        runCatching { nfcAdapter?.disableReaderMode(this) }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -62,19 +63,21 @@ fun MainLayout(
     val navBackStackEntry  by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    var navLocked by remember { mutableStateOf(false) }
+    var navLocked by rememberSaveable { mutableStateOf(false) }
 
     fun navigate(screen: Screen) {
         if (navLocked) return
+        if (currentDestination?.route == screen.route) return
+
         navLocked = true
         scope.launch {
-            delay(350)
+            delay(400)
             navLocked = false
         }
         navController.navigate(screen.route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            // Remove popUpTo(findStartDestination().id) to allow direct exit from any page
             launchSingleTop = true
-            restoreState    = true
+            restoreState    = false // Fresh start to prevent overlapping stale state
         }
     }
 

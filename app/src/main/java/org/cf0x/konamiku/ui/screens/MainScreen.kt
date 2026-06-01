@@ -169,17 +169,20 @@ fun MainScreen(dataStore: AppDataStore) {
                 EmuMode.NORMAL           -> realIdm
                 EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
             }
+            android.util.Log.i("KonamikU", "Activating card: ${card.name} [IDm: $activeIdm] (mode: $emuMode)")
             val systemCode = when (emuMode) {
                 EmuMode.NATIVE -> "4000"
                 else           -> "88B4"
             }
             val activity = context as? ComponentActivity
             if (activity == null) {
+                statusViewModel.onCardActivated()
                 dataStore.saveActiveCardId(card.id)
                 LiveUpdateManager.postActive(context, card.name, emuMode)
                 return@launch
             }
             runCatching {
+                statusViewModel.onCardActivated()
                 val emulation = freshEmulation() ?: throw IllegalStateException("NFC not available")
                 
                 // Align with aicemu sequence: disable -> setIDm -> registerSys -> enable
@@ -211,6 +214,7 @@ fun MainScreen(dataStore: AppDataStore) {
     fun deactivateCard() {
         scope.launch {
             runCatching {
+                statusViewModel.onCardDeactivated()
                 val activity = context as? Activity ?: return@launch
                 freshEmulation()?.disableService(activity)
             }

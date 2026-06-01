@@ -24,6 +24,7 @@ object LiveUpdateManager {
     const val NOTIF_ID               = 1001
     const val ACTION_TOGGLE_ACTIVATE = "org.cf0x.konamiku.ACTION_TOGGLE_ACTIVATE"
     const val ACTION_TOGGLE_MODE     = "org.cf0x.konamiku.ACTION_TOGGLE_MODE"
+    const val ACTION_NEXT_CARD       = "org.cf0x.konamiku.ACTION_NEXT_CARD"
     const val ACTION_DISMISSED       = "org.cf0x.konamiku.ACTION_NOTIF_DISMISSED"
 
     private var pulseJob: Job? = null
@@ -101,6 +102,11 @@ object LiveUpdateManager {
             Intent(ACTION_TOGGLE_MODE).setPackage(context.packageName),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
+        val nextCardIntent = PendingIntent.getBroadcast(
+            context, 4,
+            Intent(ACTION_NEXT_CARD).setPackage(context.packageName),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
         val deleteIntent = PendingIntent.getBroadcast(
             context, 3,
             Intent(ACTION_DISMISSED).setPackage(context.packageName),
@@ -129,6 +135,13 @@ object LiveUpdateManager {
                     Icon.createWithResource(context, android.R.drawable.ic_menu_manage),
                     context.getString(R.string.notif_action_switch_mode),
                     toggleModeIntent
+                ).build()
+            )
+            .addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(context, android.R.drawable.ic_media_next),
+                    context.getString(R.string.notif_action_next_card),
+                    nextCardIntent
                 ).build()
             )
 

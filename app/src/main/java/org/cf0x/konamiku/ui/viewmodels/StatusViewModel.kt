@@ -19,14 +19,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.StatusDetector
+import org.cf0x.konamiku.util.NfcDefaultAppManager
 import org.cf0x.konamiku.util.NfcRestart
 import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
+import kotlinx.coroutines.flow.first
+import org.cf0x.konamiku.data.AppDataStore
 
 class StatusViewModel(application: Application) : AndroidViewModel(application) {
 
     private val context: Context get() = getApplication<Application>().applicationContext
+    private val dataStore = AppDataStore(context)
 
     private val _status       = MutableStateFlow<StatusDetector.AllStatus?>(null)
     val status: StateFlow<StatusDetector.AllStatus?> = _status.asStateFlow()
@@ -98,10 +102,10 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
 
-            when (val result = NfcRestart.restart()) {
+            when (val result = NfcRestart.restart(context)) {
                 is NfcRestart.Result.WasDead -> {
                     _toastEvent.emit(str(R.string.toast_nfc_was_dead))
-                    val newPid = result.newPid ?: NfcRestart.tryBringUp()
+                    val newPid = result.newPid ?: NfcRestart.tryBringUp(context)
                     if (newPid != null) {
                         NfcRestart.clearNfcFCache()
                         reprobeHook()
@@ -115,7 +119,7 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 is NfcRestart.Result.Killed -> {
                     _toastEvent.emit(str(R.string.toast_nfc_killed) + " (pid:${result.oldPid})")
-                    val newPid = NfcRestart.tryBringUp()
+                    val newPid = NfcRestart.tryBringUp(context)
                     if (newPid != null) {
                         NfcRestart.clearNfcFCache()
                         reprobeHook()
@@ -126,7 +130,11 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 is NfcRestart.Result.Restarted -> {
                     NfcRestart.clearNfcFCache()
-                    reprobeHook()
+                    viewModelScope.launch {
+                        delay(2000) // Give system time to settle
+                        reprobeHook()
+                        refreshNfc()
+                    }
                     _toastEvent.emit(
                         str(R.string.toast_nfc_restarted) +
                                 " (pid:${result.oldPid}→${result.newPid})"
@@ -147,11 +155,18 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun reprobeHook() {
-        val hooked = NfcHookProber.probe(context)
-        XposedState.activationState = if (hooked)
-            XposedActivationState.ACTIVE
-        else
-            XposedActivationState.NEEDS_RESTART
+        viewModelScope.launch {
+            var hooked = false
+            repeat(3) {
+                hooked = NfcHookProber.probe(context)
+                if (hooked) return@repeat
+                delay(1000)
+            }
+            XposedState.activationState = if (hooked)
+                XposedActivationState.ACTIVE
+            else
+                XposedActivationState.NEEDS_RESTART
+        }
     }
 
 
@@ -183,4 +198,22 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun str(@StringRes resId: Int): String =
         getApplication<Application>().getString(resId)
+
+    suspend fun onCardActivated() {
+        if (dataStore.autoExclusiveMode.first()) {
+            val current = NfcDefaultAppManager.getCurrentDefault()
+            val ourComp = NfcDefaultAppManager.getOurComponent(context)
+            if (current != ourComp) {
+                dataStore.saveLastPaymentApp(current)
+                NfcDefaultAppManager.setDefault(ourComp)
+            }
+        }
+    }
+
+    suspend fun onCardDeactivated() {
+        if (dataStore.autoExclusiveMode.first()) {
+            val last = dataStore.lastPaymentApp.first()
+            NfcDefaultAppManager.setDefault(last)
+        }
+    }
 }

@@ -78,6 +78,7 @@
             <intent-filter>
                 <action android:name="org.cf0x.konamiku.ACTION_TOGGLE_ACTIVATE" />
                 <action android:name="org.cf0x.konamiku.ACTION_TOGGLE_MODE" />
+                <action android:name="org.cf0x.konamiku.ACTION_NEXT_CARD" />
                 <action android:name="org.cf0x.konamiku.ACTION_NOTIF_DISMISSED" />
             </intent-filter>
         </receiver>
@@ -93,6 +94,17 @@
 
         <meta-data android:name="xposedmodule" android:value="true" />
         <meta-data android:name="xposedminversion" android:value="101" />
+
+        <service
+            android:name=".system.KonamikuTileService"
+            android:icon="@drawable/ic_nfc"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
     </application>
 

@@ -22,6 +22,7 @@
     <string name="cards_empty_hint">点击 + 添加卡片</string>
 
     <string name="toast_card_activated">%1$s 已激活 · %2$s</string>
+    <string name="toast_card_scanned">%1$s 已被扫描！</string>
     <string name="mode_normal">全局</string>
     <string name="mode_compat">兼容</string>
     <string name="mode_native">原生</string>
@@ -34,6 +35,7 @@
     <string name="notif_progress_simulated">已模拟</string>
     <string name="notif_action_stop">停止</string>
     <string name="notif_action_switch_mode">切换模式</string>
+    <string name="notif_action_next_card">下一张卡</string>
 
     <string name="status_nfc_rf">NFC 射频</string>
     <string name="status_lsposed">LSPosed</string>
@@ -64,6 +66,8 @@
     <string name="setting_pmmtool_inactive">未运行 — 重启 NFC 后生效</string>
     <string name="setting_nfc_default">NFC 默认应用</string>
     <string name="setting_nfc_default_desc">在系统设置中将 KonamikU 设为默认 NFC 支付应用。</string>
+    <string name="setting_nfc_exclusive">NFC 自动独占模式</string>
+    <string name="setting_nfc_exclusive_desc">激活时自动设为默认支付应用 (仅限 Root)</string>
     <string name="status_xposed_needs_restart">模块已激活 — 重启 com.android.nfc 以使 hook 生效</string>
 
     <string name="setting_language">语言</string>
@@ -117,4 +121,5 @@
     <string name="tools_validation_max_16">最多16位</string>
     <string name="tools_validation_max_20">最多20位数字</string>
     <string name="tools_validation_digits_only">只能包含数字</string>
+    <string name="tile_label">KonamikU</string>
 </resources>
