@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -11,6 +13,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +22,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
@@ -59,11 +67,14 @@ import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.saveable.rememberSaveable
 import org.cf0x.konamiku.util.NfcDefaultAppManager
+import kotlinx.coroutines.flow.first
 import androidx.compose.material3.AlertDialog
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.outlined.Search
 
 @Composable
 fun SettingScreen(dataStore: AppDataStore) {
@@ -345,14 +356,25 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         val allStatus by statusViewModel.status.collectAsState()
         val rootAvailable = allStatus?.root?.available ?: org.cf0x.konamiku.system.StatusDetector.isRootCached()
-        val autoExclusiveMode by dataStore.autoExclusiveMode.collectAsState(initial = dataStore.autoExclusiveModeSync)
         val isAlreadyDefault = allStatus?.nfc?.defaultPaymentIsUs == true
         val fallbackApp by dataStore.exclusiveFallbackApp.collectAsState(initial = null)
-
+        
         var showAppSelector by remember { mutableStateOf(false) }
 
         Row(
-            modifier              = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    enabled = rootAvailable && !isAlreadyDefault,
+                    onClick = { showAppSelector = true },
+                    onLongClick = {
+                        scope.launch {
+                            dataStore.saveAutoExclusiveMode(false)
+                            dataStore.saveExclusiveFallbackApp(null)
+                        }
+                    }
+                )
+                .padding(vertical = 12.dp),
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -361,81 +383,104 @@ fun SettingScreen(dataStore: AppDataStore) {
                     stringResource(R.string.setting_nfc_exclusive),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (rootAvailable && !isAlreadyDefault) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
                 Text(
                     text = when {
                         !rootAvailable    -> "未检测到 Root 权限"
                         isAlreadyDefault  -> "当前已是默认支付应用，无需开启自动独占"
-                        autoExclusiveMode -> "回退目标: ${fallbackApp ?: "无"}"
-                        else              -> "激活模拟时自动设为默认支付 (仅限 Root)"
+                        fallbackApp != null -> "轮换目标: ${NfcDefaultAppManager.getAppLabel(context, fallbackApp!!)}"
+                        else              -> "点击选择回退应用，长按关闭此功能 (仅限 Root)"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (rootAvailable && !isAlreadyDefault) MaterialTheme.colorScheme.outline
-                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
+                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
                 )
             }
-            Switch(
-                checked         = isAlreadyDefault || autoExclusiveMode,
-                enabled         = rootAvailable && !isAlreadyDefault,
-                onCheckedChange = { checked ->
-                    if (checked) {
-                        showAppSelector = true
-                    } else {
-                        scope.launch {
-                            dataStore.saveAutoExclusiveMode(false)
-                            dataStore.saveExclusiveFallbackApp(null)
-                        }
-                    }
-                }
+            Icon(
+                imageVector        = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint               = if (rootAvailable && !isAlreadyDefault) MaterialTheme.colorScheme.onSurfaceVariant
+                                     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
             )
         }
 
         if (showAppSelector) {
-            val apps = remember { NfcDefaultAppManager.getAvailablePaymentApps(context) }
+            var apps by remember { mutableStateOf<List<NfcDefaultAppManager.PaymentAppInfo>?>(null) }
+            var searchQuery by remember { mutableStateOf("") }
+            
+            LaunchedEffect(Unit) {
+                apps = NfcDefaultAppManager.getAvailablePaymentApps(context)
+            }
+
             AlertDialog(
                 onDismissRequest = { showAppSelector = false },
                 title = { Text("选择回退支付应用") },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        apps.forEach { app ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        scope.launch {
-                                            dataStore.saveAutoExclusiveMode(true)
-                                            dataStore.saveExclusiveFallbackApp(app.componentName)
-                                            showAppSelector = false
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            placeholder = { Text("搜索软件名或包名...") },
+                            leadingIcon = { Icon(Icons.Outlined.Search, null) },
+                            singleLine = true
+                        )
+
+                        Box(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+                            val currentApps = apps
+                            if (currentApps == null) {
+                                Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            } else {
+                                val filteredApps = currentApps.filter {
+                                    it.label.contains(searchQuery, ignoreCase = true) ||
+                                    it.packageName.contains(searchQuery, ignoreCase = true)
+                                }
+
+                                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                    items(filteredApps) { app ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    scope.launch {
+                                                        dataStore.saveAutoExclusiveMode(true)
+                                                        dataStore.saveExclusiveFallbackApp(app.componentName)
+                                                        showAppSelector = false
+                                                    }
+                                                }
+                                                .padding(vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(app.label, style = MaterialTheme.typography.bodyLarge)
+                                                Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                            }
                                         }
                                     }
-                                    .padding(vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(app.label, style = MaterialTheme.typography.bodyLarge)
-                                    Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                                }
-                            }
-                        }
-                        
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        
-                        // Null / Off option
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    scope.launch {
-                                        dataStore.saveAutoExclusiveMode(true)
-                                        dataStore.saveExclusiveFallbackApp(null)
-                                        showAppSelector = false
+                                    
+                                    item {
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    scope.launch {
+                                                        dataStore.saveAutoExclusiveMode(false)
+                                                        dataStore.saveExclusiveFallbackApp(null)
+                                                        showAppSelector = false
+                                                    }
+                                                }
+                                                .padding(vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("不回退 (保留 KonamikU / NULL)", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+                                        }
                                     }
                                 }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("不回退 (保留 KonamikU)", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 },

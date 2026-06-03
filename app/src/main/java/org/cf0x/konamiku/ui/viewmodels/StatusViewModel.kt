@@ -204,7 +204,7 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             val ourComp = NfcDefaultAppManager.getOurComponent(context)
             val ok = NfcDefaultAppManager.setDefault(ourComp)
             if (ok) {
-                _toastEvent.emit("激活模拟，已把默认支付软件修改为KonamikU($ourComp)")
+                _toastEvent.emit("激活模拟，已把默认支付软件修改为KonamikU(org.cf0x.konamiku)")
             }
         }
     }
@@ -212,17 +212,18 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun onCardDeactivated() {
         if (dataStore.autoExclusiveMode.first()) {
             val fallback = dataStore.exclusiveFallbackApp.first()
-            if (!fallback.isNullOrBlank() && fallback != "null") {
-                if (NfcDefaultAppManager.isComponentValid(context, fallback)) {
-                    val ok = NfcDefaultAppManager.setDefault(fallback)
-                    if (ok) {
-                        _toastEvent.emit("停止模拟，已把默认支付软件修改为$fallback")
-                    }
-                } else {
-                    val ourComp = NfcDefaultAppManager.getOurComponent(context)
-                    NfcDefaultAppManager.setDefault(ourComp)
-                    _toastEvent.emit("停止模拟，原定支付软件不存在，回退为KonamikU")
+            if (fallback.isNullOrBlank() || fallback == "null") return
+
+            if (NfcDefaultAppManager.isComponentValid(context, fallback)) {
+                val ok = NfcDefaultAppManager.setDefault(fallback)
+                if (ok) {
+                    val appLabel = NfcDefaultAppManager.getAppLabel(context, fallback)
+                    _toastEvent.emit("停止模拟，已把默认支付软件修改为$appLabel($fallback)")
                 }
+            } else {
+                val ourComp = NfcDefaultAppManager.getOurComponent(context)
+                NfcDefaultAppManager.setDefault(ourComp)
+                _toastEvent.emit("停止模拟，原定支付软件不存在，回退为KonamikU")
             }
         }
     }
