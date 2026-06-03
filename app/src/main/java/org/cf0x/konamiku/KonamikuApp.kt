@@ -25,7 +25,7 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
 
         val dataStore = AppDataStore(this)
         
-        // Reset active state on fresh start
+        // Reset state on start
         runBlocking {
             dataStore.saveActiveCardId(null)
         }
@@ -47,17 +47,15 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         XposedState.frameworkName    = service.frameworkName    ?: ""
         XposedState.frameworkVersion = service.frameworkVersion ?: ""
 
-        // Restore pmmActive from last known state (persisted by NfcHookReceiver)
+        // Restore last known pmm state
         XposedState.pmmActive = getSharedPreferences("KonamikU_xposed", MODE_PRIVATE)
             .getBoolean("pmmtool_active", false)
 
         val hooked = NfcHookProber.probe(this)
-        XposedState.activationState = if (hooked)
-            XposedActivationState.ACTIVE
-        else
-            XposedActivationState.NEEDS_RESTART
+        XposedState.activationState = if (hooked) XposedActivationState.ACTIVE 
+                                      else XposedActivationState.NEEDS_RESTART
 
-        Log.i("KonamikU", "service bound — state=${XposedState.activationState} hooked=$hooked")
+        Log.i("KonamikU", "Bound: state=${XposedState.activationState} hooked=$hooked")
     }
 
     override fun onServiceDied(service: XposedService) {

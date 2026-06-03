@@ -436,7 +436,7 @@ private fun AddCardDialog(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             idm.isNotEmpty() && !isIdmValid && idm.length == 16 ->
-                                Text("Invalid hex characters",
+                                Text(stringResource(R.string.card_add_err_invalid_hex),
                                     color = MaterialTheme.colorScheme.error)
                             else -> Text("${idm.length} / 16")
                         }

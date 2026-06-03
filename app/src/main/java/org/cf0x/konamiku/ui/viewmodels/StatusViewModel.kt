@@ -102,45 +102,23 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
 
-            when (val result = NfcRestart.restart(context)) {
-                is NfcRestart.Result.WasDead -> {
-                    _toastEvent.emit(str(R.string.toast_nfc_was_dead))
-                    val newPid = result.newPid ?: NfcRestart.tryBringUp(context)
-                    if (newPid != null) {
-                        NfcRestart.clearNfcFCache()
-                        reprobeHook()
-                        _toastEvent.emit(str(R.string.toast_nfc_start_success) + " (pid:$newPid)")
-                    } else {
-                        _toastEvent.emit(str(R.string.toast_nfc_start_fail))
-                    }
-                }
-                is NfcRestart.Result.KillFailed -> {
-                    _toastEvent.emit(str(R.string.toast_nfc_restart_failed) + " (pid:${result.pid})")
-                }
-                is NfcRestart.Result.Killed -> {
-                    _toastEvent.emit(str(R.string.toast_nfc_killed) + " (pid:${result.oldPid})")
-                    val newPid = NfcRestart.tryBringUp(context)
-                    if (newPid != null) {
-                        NfcRestart.clearNfcFCache()
-                        reprobeHook()
-                        _toastEvent.emit(str(R.string.toast_nfc_start_success) + " (pid:$newPid)")
-                    } else {
-                        _toastEvent.emit(str(R.string.toast_nfc_start_fail))
-                    }
-                }
-                is NfcRestart.Result.Restarted -> {
-                    NfcRestart.clearNfcFCache()
-                    viewModelScope.launch {
-                        delay(2000) // Give system time to settle
-                        reprobeHook()
-                        refreshNfc()
-                    }
-                    _toastEvent.emit(
-                        str(R.string.toast_nfc_restarted) +
-                                " (pid:${result.oldPid}→${result.newPid})"
-                    )
+            val result = NfcRestart.restart(context)
+            if (result is NfcRestart.Result.Restarted || result is NfcRestart.Result.Killed || result is NfcRestart.Result.WasDead) {
+                NfcRestart.clearNfcFCache()
+                viewModelScope.launch {
+                    delay(2000)
+                    reprobeHook()
+                    refreshNfc()
                 }
             }
+            
+            val msg = when (result) {
+                is NfcRestart.Result.WasDead   -> str(R.string.toast_nfc_was_dead)
+                is NfcRestart.Result.KillFailed -> str(R.string.toast_nfc_restart_failed) + " (pid:${result.pid})"
+                is NfcRestart.Result.Killed     -> str(R.string.toast_nfc_killed) + " (pid:${result.oldPid})"
+                is NfcRestart.Result.Restarted  -> str(R.string.toast_nfc_restarted) + " (pid:${result.oldPid}→${result.newPid})"
+            }
+            _toastEvent.emit(msg)
 
             delay(300)
             refreshNfc()
@@ -202,9 +180,8 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     suspend fun onCardActivated() {
         if (dataStore.autoExclusiveMode.first()) {
             val ourComp = NfcDefaultAppManager.getOurComponent(context)
-            val ok = NfcDefaultAppManager.setDefault(ourComp)
-            if (ok) {
-                _toastEvent.emit("激活模拟，已把默认支付软件修改为KonamikU(org.cf0x.konamiku)")
+            if (NfcDefaultAppManager.setDefault(ourComp)) {
+                _toastEvent.emit(str(R.string.toast_exclusive_activated))
             }
         }
     }
@@ -215,15 +192,13 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             if (fallback.isNullOrBlank() || fallback == "null") return
 
             if (NfcDefaultAppManager.isComponentValid(context, fallback)) {
-                val ok = NfcDefaultAppManager.setDefault(fallback)
-                if (ok) {
-                    val appLabel = NfcDefaultAppManager.getAppLabel(context, fallback)
-                    _toastEvent.emit("停止模拟，已把默认支付软件修改为$appLabel($fallback)")
+                if (NfcDefaultAppManager.setDefault(fallback)) {
+                    val label = NfcDefaultAppManager.getAppLabel(context, fallback)
+                    _toastEvent.emit(context.getString(R.string.toast_exclusive_restored, label, fallback))
                 }
             } else {
-                val ourComp = NfcDefaultAppManager.getOurComponent(context)
-                NfcDefaultAppManager.setDefault(ourComp)
-                _toastEvent.emit("停止模拟，原定支付软件不存在，回退为KonamikU")
+                NfcDefaultAppManager.setDefault(NfcDefaultAppManager.getOurComponent(context))
+                _toastEvent.emit(str(R.string.toast_exclusive_restore_fail))
             }
         }
     }

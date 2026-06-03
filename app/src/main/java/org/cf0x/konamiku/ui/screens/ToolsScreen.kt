@@ -143,41 +143,39 @@ private fun IdConverterPanel() {
         )
     )
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     ReorderableConverter(
         fields    = fields,
-        onConvert = { sourceIndex, value -> convertAll(sourceIndex, value) },
+        onConvert = { sourceIndex, value -> convertAll(sourceIndex, value, context) },
         modifier  = Modifier.padding(top = 4.dp)
     )
 }
 
-private fun convertAll(sourceIndex: Int, value: String): List<ConvertResult> {
+private fun convertAll(sourceIndex: Int, value: String, context: android.content.Context): List<ConvertResult> {
     return when (sourceIndex) {
         0 -> {
-            // IDm → KonamiID + AccessCode
-            val kid = when (val r = CardIdConverter.toKonamiId(value)) {
+            val kid = when (val r = CardIdConverter.toKonamiId(value, context)) {
                 is CardIdConverter.Result.Success -> ConvertResult.Success(r.value)
                 is CardIdConverter.Result.Failure -> ConvertResult.Failure(r.reason)
             }
-            val ac = idmToAccessCodeResult(value)
+            val ac = idmToAccessCodeResult(value, context)
             listOf(ConvertResult.Skip, kid, ac)
         }
         1 -> {
-            // KonamiID → IDm → AccessCode
-            val idmResult = CardIdConverter.toUid(value)
+            val idmResult = CardIdConverter.toUid(value, context)
             val idm = when (idmResult) {
                 is CardIdConverter.Result.Success -> ConvertResult.Success(idmResult.value)
                 is CardIdConverter.Result.Failure -> ConvertResult.Failure(idmResult.reason)
             }
             val ac = if (idmResult is CardIdConverter.Result.Success)
-                idmToAccessCodeResult(idmResult.value)
+                idmToAccessCodeResult(idmResult.value, context)
             else
-                ConvertResult.Failure("IDm conversion failed")
+                ConvertResult.Failure(context.getString(R.string.tools_err_generic))
             listOf(idm, ConvertResult.Skip, ac)
         }
         2 -> {
-            // AccessCode → IDm → KonamiID
             val digits = value.filter { it.isDigit() }
-            val idmResult = AimeAccessCodeConverter.accessCodeToIdm(digits)
+            val idmResult = AimeAccessCodeConverter.accessCodeToIdm(digits, context)
             val (idmStr, idmConvertResult) = when (idmResult) {
                 is AimeAccessCodeConverter.Result.Single -> {
                     idmResult.value to ConvertResult.Success(idmResult.value)
@@ -185,7 +183,7 @@ private fun convertAll(sourceIndex: Int, value: String): List<ConvertResult> {
                 is AimeAccessCodeConverter.Result.Ambiguous -> {
                     idmResult.positive to ConvertResult.Warning(
                         value = idmResult.positive,
-                        note  = "Two possible results; showing positive (more common)"
+                        note  = context.getString(R.string.tools_warn_ambiguous)
                     )
                 }
                 is AimeAccessCodeConverter.Result.Failure -> {
@@ -193,12 +191,12 @@ private fun convertAll(sourceIndex: Int, value: String): List<ConvertResult> {
                 }
             }
             val kid = if (idmStr != null) {
-                when (val r = CardIdConverter.toKonamiId(idmStr)) {
+                when (val r = CardIdConverter.toKonamiId(idmStr, context)) {
                     is CardIdConverter.Result.Success -> ConvertResult.Success(r.value)
                     is CardIdConverter.Result.Failure -> ConvertResult.Failure(r.reason)
                 }
             } else {
-                ConvertResult.Failure("IDm conversion failed")
+                ConvertResult.Failure(context.getString(R.string.tools_err_generic))
             }
             listOf(idmConvertResult, kid, ConvertResult.Skip)
         }
@@ -206,14 +204,14 @@ private fun convertAll(sourceIndex: Int, value: String): List<ConvertResult> {
     }
 }
 
-private fun idmToAccessCodeResult(idm: String): ConvertResult {
-    return when (val r = AimeAccessCodeConverter.idmToAccessCode(idm)) {
+private fun idmToAccessCodeResult(idm: String, context: android.content.Context): ConvertResult {
+    return when (val r = AimeAccessCodeConverter.idmToAccessCode(idm, context)) {
         is AimeAccessCodeConverter.Result.Single ->
             ConvertResult.Success(AimeAccessCodeConverter.formatAccessCode(r.value))
         is AimeAccessCodeConverter.Result.Ambiguous ->
             ConvertResult.Warning(
                 value = AimeAccessCodeConverter.formatAccessCode(r.positive),
-                note  = "Two possible results; showing positive (more common)"
+                note  = context.getString(R.string.tools_warn_ambiguous)
             )
         is AimeAccessCodeConverter.Result.Failure ->
             ConvertResult.Failure(r.reason)

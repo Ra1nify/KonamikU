@@ -20,15 +20,14 @@ object NfcDefaultAppManager {
     }
 
     suspend fun setDefault(component: String?): Boolean = withContext(Dispatchers.IO) {
-        if (component.isNullOrBlank() || component == "null") {
-            runCatching {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "settings delete secure $SETTING_KEY")).waitFor() == 0
-            }.getOrDefault(false)
+        val cmd = if (component.isNullOrBlank() || component == "null") {
+            "settings delete secure $SETTING_KEY"
         } else {
-            runCatching {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "settings put secure $SETTING_KEY $component")).waitFor() == 0
-            }.getOrDefault(false)
+            "settings put secure $SETTING_KEY $component"
         }
+        runCatching {
+            Runtime.getRuntime().exec(arrayOf("su", "-c", cmd)).waitFor() == 0
+        }.getOrDefault(false)
     }
 
     fun isOurComponent(context: Context, component: String?): Boolean {
@@ -54,29 +53,19 @@ object NfcDefaultAppManager {
 
     suspend fun getAvailablePaymentApps(context: Context): List<PaymentAppInfo> = withContext(Dispatchers.IO) {
         val pm = context.packageManager
-        // No filter: list all installed applications
-        val packages = pm.getInstalledPackages(0)
-        
-        packages.mapNotNull { pkg ->
+        pm.getInstalledPackages(0).mapNotNull { pkg ->
             val packageName = pkg.packageName
             if (packageName == context.packageName) return@mapNotNull null
             
             val appInfo = pkg.applicationInfo ?: return@mapNotNull null
-            val label = appInfo.loadLabel(pm).toString()
+            val label   = appInfo.loadLabel(pm).toString()
             
-            // For general apps, try to find a default HCE service if it exists to make it a valid component.
-            // Some systems require the full component name for nfc_payment_default_component.
-            val intent = Intent("android.nfc.cardemulation.action.HOST_APDU_SERVICE")
-            intent.setPackage(packageName)
+            val intent = Intent("android.nfc.cardemulation.action.HOST_APDU_SERVICE").setPackage(packageName)
             val services = pm.queryIntentServices(intent, 0)
             
             val componentName = if (services.isNotEmpty()) {
                 ComponentName(packageName, services[0].serviceInfo.name).flattenToString()
-            } else {
-                // Fallback to a common naming convention or just package name
-                // Note: Settings put secure usually expects pkg/class.
-                packageName
-            }
+            } else packageName
             
             PaymentAppInfo(label, componentName, packageName)
         }.distinctBy { it.packageName }.sortedBy { it.label }

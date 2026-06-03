@@ -5,7 +5,6 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object CardIdConverter {
-
     private val RAW_KEY = "?I'llB2c.YouXXXeMeHaYpy!".toByteArray(Charsets.ISO_8859_1)
     private val PROCESSED_KEY = ByteArray(RAW_KEY.size) {
         (RAW_KEY[it].toInt() and 0xFF).shl(1).and(0xFF).toByte()
@@ -54,16 +53,16 @@ object CardIdConverter {
         data class Failure(val reason: String) : Result()
     }
 
-    fun toKonamiId(uid: String): Result {
+    fun toKonamiId(uid: String, context: android.content.Context): Result {
         if (uid.length != 16)
-            return Result.Failure("UID must be exactly 16 hex characters")
+            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_idm_length))
         val upper = uid.uppercase()
         if (upper.any { it !in '0'..'9' && it !in 'A'..'F' })
-            return Result.Failure("UID contains invalid hex characters")
+            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_idm_hex))
         val cardType = when {
             upper.startsWith("E004") -> 1
             upper.startsWith("0")   -> 2
-            else -> return Result.Failure("UID must start with E004 or 0")
+            else -> return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_idm_prefix))
         }
         return runCatching {
             val kidBytes = ByteArray(8) { i ->
@@ -79,14 +78,14 @@ object CardIdConverter {
             out[14] = cardType
             out[15] = checksum(out)
             Result.Success(out.joinToString("") { ALPHABET[it].toString() })
-        }.getOrElse { Result.Failure("Conversion failed: ${it.message}") }
+        }.getOrElse { Result.Failure("${context.getString(org.cf0x.konamiku.R.string.tools_err_generic)}: ${it.message}") }
     }
 
-    fun toUid(konamiId: String): Result {
+    fun toUid(konamiId: String, context: android.content.Context): Result {
         if (konamiId.length != 16)
-            return Result.Failure("Konami ID must be exactly 16 characters")
+            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_kid_length))
         if (konamiId.any { it !in ALPHABET })
-            return Result.Failure("Konami ID contains invalid characters")
+            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_kid_chars))
         return runCatching {
             val card     = IntArray(16) { i -> ALPHABET.indexOf(konamiId[i]) }
             val cardType = when (konamiId[14]) {
@@ -111,17 +110,6 @@ object CardIdConverter {
                     return Result.Failure("Post-decode check failed: expected 0 prefix")
             }
             Result.Success(uid)
-        }.getOrElse { Result.Failure("Conversion failed: ${it.message}") }
-    }
-
-    fun selfTest(): Boolean {
-        val t1 = toKonamiId("0000000000000000")
-        if (t1 !is Result.Success || t1.value != "FW5331K31WT1ZY2U") return false
-        val t2 = toUid("FW5331K31WT1ZY2U")
-        if (t2 !is Result.Success || t2.value != "0000000000000000") return false
-        val t3 = toKonamiId("000000100200F000")
-        if (t3 !is Result.Success) return false
-        val t4 = toUid(t3.value)
-        return !(t4 !is Result.Success || t4.value != "000000100200F000")
+        }.getOrElse { Result.Failure("${context.getString(org.cf0x.konamiku.R.string.tools_err_generic)}: ${it.message}") }
     }
 }

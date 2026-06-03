@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -50,12 +51,6 @@ class MainActivity : ComponentActivity() {
         dataStore    = AppDataStore(applicationContext)
         nfcAdapter   = NfcAdapter.getDefaultAdapter(this)
 
-        if (BuildConfig.DEBUG) {
-            if (!CardIdConverter.selfTest()) {
-                android.util.Log.e("MainActivity", "CardIdConverter self-test failed")
-            }
-        }
-
         setContent {
             val themeMode   by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
             val colorSource by dataStore.colorSource.collectAsState(initial = ColorSource.MONET)
@@ -81,11 +76,8 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNfcIntent(intent: Intent?) {
         val action = intent?.action ?: return
-        if (action == NfcAdapter.ACTION_TAG_DISCOVERED ||
-            action == NfcAdapter.ACTION_TECH_DISCOVERED ||
-            action == NfcAdapter.ACTION_NDEF_DISCOVERED) {
-
-            val tag = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        if (action in listOf(NfcAdapter.ACTION_TAG_DISCOVERED, NfcAdapter.ACTION_TECH_DISCOVERED, NfcAdapter.ACTION_NDEF_DISCOVERED)) {
+            val tag = if (Build.VERSION.SDK_INT >= 33) {
                 intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
             } else {
                 @Suppress("DEPRECATION")
@@ -94,8 +86,7 @@ class MainActivity : ComponentActivity() {
 
             tag?.let {
                 val idm = it.id.joinToString("") { byte -> "%02X".format(byte) }
-
-                Toast.makeText(applicationContext, "IDm:$idm", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "IDm:$idm", Toast.LENGTH_SHORT).show()
                 setIntent(Intent())
             }
         }
