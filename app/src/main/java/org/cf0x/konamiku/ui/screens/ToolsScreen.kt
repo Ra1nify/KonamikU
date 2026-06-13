@@ -1,39 +1,22 @@
 package org.cf0x.konamiku.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.CompareArrows
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.HorizontalDivider
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.ui.components.ConverterField
 import org.cf0x.konamiku.ui.components.ConvertResult
@@ -44,63 +27,79 @@ import org.cf0x.konamiku.util.CardIdConverter
 private val HEX_CHARS    = ('0'..'9') + ('A'..'F')
 private val KONAMI_ALPHA = "0123456789ABCDEFGHJKLMNPRSTUWXYZ".toSet()
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToolsScreen() {
     var expandedBar by remember { mutableStateOf<String?>(null) }
+    val topBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    Column(
-        modifier            = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text  = stringResource(R.string.nav_tools),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        ElevatedCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness    = Spring.StiffnessMedium
-                    )
-                ),
-            onClick = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
-            colors  = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(stringResource(R.string.nav_tools)) },
+                scrollBehavior = topBarScrollBehavior
             )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
+            ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .animateContentSize(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness    = Spring.StiffnessMedium
+                        )
+                    ),
+                onClick = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
+                shape   = MaterialTheme.shapes.extraLarge,
+                colors  = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                )
             ) {
-                Row(
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Outlined.CompareArrows, null,
-                        tint     = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        stringResource(R.string.tools_id_converter_title),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(48.dp),
+                            shape    = MaterialTheme.shapes.large,
+                            color    = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.CompareArrows, null,
+                                    tint     = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.tools_id_converter_title),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
 
-                if (expandedBar == "id_converter") {
-                    Column {
-                        Spacer(Modifier.height(14.dp))
-                        HorizontalDivider(thickness = 0.5.dp)
-                        Spacer(Modifier.height(12.dp))
-                        IdConverterPanel()
+                    if (expandedBar == "id_converter") {
+                        Column {
+                            Spacer(Modifier.height(18.dp))
+                            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            Spacer(Modifier.height(16.dp))
+                            IdConverterPanel()
+                        }
                     }
                 }
             }
@@ -143,11 +142,11 @@ private fun IdConverterPanel() {
         )
     )
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     ReorderableConverter(
         fields    = fields,
         onConvert = { sourceIndex, value -> convertAll(sourceIndex, value, context) },
-        modifier  = Modifier.padding(top = 4.dp)
+        modifier  = Modifier.padding(top = 8.dp)
     )
 }
 

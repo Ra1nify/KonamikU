@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,7 +40,7 @@ fun SettingScreen(dataStore: AppDataStore) {
     val context = LocalContext.current
     val supportsMonet = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
-    val navMode     by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
+    val navMode      by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
     val themeMode    by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
     val colorSource  by dataStore.colorSource.collectAsState(initial = if (supportsMonet) ColorSource.MONET else ColorSource.PRESET)
     val savedColor   by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
@@ -54,10 +55,9 @@ fun SettingScreen(dataStore: AppDataStore) {
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Text(stringResource(R.string.setting_appearance), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-
+        // --- Appearance ---
         SegmentSwitch(
             label         = stringResource(R.string.setting_nav_layout),
             options       = listOf(stringResource(R.string.setting_nav_auto), stringResource(R.string.setting_nav_bottom), stringResource(R.string.setting_nav_rail)),
@@ -108,71 +108,78 @@ fun SettingScreen(dataStore: AppDataStore) {
             onSelect      = { scope.launch { dataStore.saveThemeMode(ThemeMode.entries[it]) } }
         )
 
-        HorizontalDivider()
-        LanguageSection(dataStore, appLocale)
-        HorizontalDivider()
-        NfcSection(context)
-        HorizontalDivider()
-        DevSection(dataStore, devModeForce, scope)
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // --- Language ---
+        LanguageItem(dataStore, appLocale)
+
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // --- System & NFC ---
+        NfcSettingsItem(context)
+
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // --- Developer ---
+        DevModeItem(dataStore, devModeForce, scope)
     }
 }
 
 @Composable
-private fun LanguageSection(dataStore: AppDataStore, appLocale: AppLocale) {
+private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
     val scope   = rememberCoroutineScope()
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     var pending  by remember(appLocale) { mutableStateOf(appLocale) }
     val options  = listOf(stringResource(R.string.setting_language_system) to AppLocale.SYSTEM, stringResource(R.string.setting_language_zh) to AppLocale.ZH_CN, stringResource(R.string.setting_language_en) to AppLocale.EN_US)
 
-    Text(stringResource(R.string.setting_language), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-    
-    AnimatedVisibility(visible = !expanded) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(options.first { it.second == appLocale }.first, style = MaterialTheme.typography.bodyLarge)
-            TextButton(onClick = { expanded = true }) { Text(stringResource(R.string.setting_language_change)) }
-        }
-    }
-
-    AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-        Column {
-            options.forEach { (label, value) ->
-                Row(Modifier.fillMaxWidth().clickable { pending = value }.padding(vertical = 10.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    RadioButton(selected = pending == value, onClick = { pending = value })
-                    Text(label, style = MaterialTheme.typography.bodyLarge)
-                }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.setting_language), style = MaterialTheme.typography.bodyLarge)
+                if (!expanded) Text(options.first { it.second == appLocale }.first, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { pending = appLocale; expanded = false }) { Text(stringResource(R.string.card_add_cancel)) }
-                Spacer(Modifier.width(8.dp))
-                Button(onClick = {
-                    expanded = false
-                    if (pending == appLocale) return@Button
-                    scope.launch { dataStore.saveAppLocale(pending) }
-                    AppCompatDelegate.setApplicationLocales(if (pending == AppLocale.SYSTEM) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(pending.tag))
-                    (context as? Activity)?.let { it.finish(); it.startActivity(it.intent) }
-                }) { Text(stringResource(R.string.card_add_confirm)) }
+            Icon(imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        }
+
+        AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                options.forEach { (label, value) ->
+                    Row(Modifier.fillMaxWidth().clickable { pending = value }.padding(vertical = 12.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        RadioButton(selected = pending == value, onClick = { pending = value })
+                        Text(label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { pending = appLocale; expanded = false }) { Text(stringResource(R.string.card_add_cancel)) }
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = {
+                        expanded = false
+                        if (pending == appLocale) return@Button
+                        scope.launch { dataStore.saveAppLocale(pending) }
+                        AppCompatDelegate.setApplicationLocales(if (pending == AppLocale.SYSTEM) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(pending.tag))
+                        (context as? Activity)?.let { it.finish(); it.startActivity(it.intent) }
+                    }) { Text(stringResource(R.string.card_add_confirm)) }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun NfcSection(context: android.content.Context) {
-    Text(stringResource(R.string.setting_nfc_module), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-    Row(Modifier.fillMaxWidth().clickable { runCatching { context.startActivity(Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+private fun NfcSettingsItem(context: android.content.Context) {
+    Row(Modifier.fillMaxWidth().clickable { runCatching { context.startActivity(Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_nfc_default), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_nfc_default_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
 
 @Composable
-private fun DevSection(dataStore: AppDataStore, devMode: Boolean, scope: kotlinx.coroutines.CoroutineScope) {
-    Text(stringResource(R.string.setting_dev_mode), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+private fun DevModeItem(dataStore: AppDataStore, devMode: Boolean, scope: kotlinx.coroutines.CoroutineScope) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_dev_force_emu), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_dev_force_emu_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)

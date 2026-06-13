@@ -12,17 +12,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -65,6 +61,8 @@ fun MainScreen(dataStore: AppDataStore) {
     val jsonManager     = remember { JsonManager(context) }
     val snackbarState   = remember { SnackbarHostState() }
     val statusViewModel: StatusViewModel = viewModel()
+    val scrollState     = rememberLazyListState()
+    val topBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var cards           by remember { mutableStateOf<List<NfcCard>>(emptyList()) }
     var expandedId      by remember { mutableStateOf<String?>(null) }
@@ -97,47 +95,35 @@ fun MainScreen(dataStore: AppDataStore) {
     ) {}
 
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
         LiveUpdateManager.createChannel(context)
-        val loadedCards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
-        cards = loadedCards
+        cards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
         isLoading = false
     }
 
-    LaunchedEffect(activeCardId) {
-        if (activeCardId != null && expandedId == null) expandedId = activeCardId
-    }
+    LaunchedEffect(activeCardId) { if (activeCardId != null && expandedId == null) expandedId = activeCardId }
 
     LaunchedEffect(emuMode, activeCardId) {
         if (activeCardId != null) {
-            val card = cards.find { it.id == activeCardId } ?: return@LaunchedEffect
-            LiveUpdateManager.postActive(context, card.name, emuMode)
+            cards.find { it.id == activeCardId }?.let { LiveUpdateManager.postActive(context, it.name, emuMode) }
         }
     }
 
     fun activateCard(card: NfcCard) {
         scope.launch {
-            if (Build.VERSION.SDK_INT >= 33 &&
-                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
             
             val realIdm   = card.idm.uppercase()
-            val activeIdm = when (emuMode) {
-                EmuMode.NORMAL           -> realIdm
-                EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
-            }
+            val activeIdm = if (emuMode == EmuMode.NORMAL) realIdm else realIdm.toCompatIdm()
             android.util.Log.i("KonamikU", "Activating card: ${card.name} [IDm: $activeIdm] (mode: $emuMode)")
-            val systemCode = when (emuMode) {
-                EmuMode.NATIVE -> "4000"
-                else           -> "88B4"
-            }
+            
+            val systemCode = if (emuMode == EmuMode.NATIVE) "4000" else "88B4"
             val activity = context as? ComponentActivity
             if (activity == null) {
                 dataStore.saveActiveCardId(card.id)
@@ -180,76 +166,80 @@ fun MainScreen(dataStore: AppDataStore) {
     }
 
     Scaffold(
+        modifier     = Modifier.nestedScroll(topBarScrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarState) },
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) }
+        topBar       = {
+            LargeTopAppBar( // M3E: Large emphasized app bar
+                title = { Text(stringResource(R.string.app_name)) },
+                scrollBehavior = topBarScrollBehavior
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick        = { showDialog = true },
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Card")
+            val isExpanded by remember {
+                derivedStateOf {
+                    scrollState.firstVisibleItemIndex == 0 && scrollState.firstVisibleItemScrollOffset < 10
+                }
             }
+            ExtendedFloatingActionButton(
+                text     = { Text(stringResource(R.string.card_add_title)) },
+                icon     = { Icon(Icons.Default.Add, null) },
+                expanded = isExpanded,
+                onClick  = { showDialog = true },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
+                shape          = MaterialTheme.shapes.large
+            )
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             StatusIndicatorBar(viewModel = statusViewModel)
 
             Box(modifier = Modifier.weight(1f)) {
-                when {
-                    isLoading -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                if (isLoading) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                } else if (cards.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Outlined.CreditCard, null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.height(20.dp))
+                            Text(stringResource(R.string.cards_empty_title), color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.headlineSmall)
+                            Spacer(Modifier.height(8.dp))
+                            Text(stringResource(R.string.cards_empty_hint), color = MaterialTheme.colorScheme.outlineVariant, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                    cards.isEmpty() -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Outlined.CreditCard, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outlineVariant)
-                                Spacer(Modifier.height(16.dp))
-                                Text(stringResource(R.string.cards_empty_title), color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.bodyLarge)
-                                Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.cards_empty_hint), color = MaterialTheme.colorScheme.outlineVariant, style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                    else -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(cards, key = { it.id }) { card ->
-                                val isActive = card.id == activeCardId
-                                NfcCardItem(
-                                    card              = card,
-                                    isExpanded        = card.id == expandedId,
-                                    isActive          = isActive,
-                                    emuMode           = emuMode,
-                                    onExpandClick     = { expandedId = if (card.id == expandedId) null else card.id },
-                                    onActivateClick   = { if (isActive) deactivateCard() else activateCard(card) },
-                                    onEmuModeClick    = {
-                                        scope.launch {
-                                            if (!modeUnlocked) {
-                                                Toast.makeText(context, context.getString(R.string.toast_mode_locked), Toast.LENGTH_SHORT).show()
-                                                return@launch
-                                            }
-                                            val next = when (emuMode) {
-                                                EmuMode.NORMAL -> EmuMode.COMPAT
-                                                EmuMode.COMPAT -> EmuMode.NATIVE
-                                                EmuMode.NATIVE -> EmuMode.NORMAL
-                                            }
-                                            dataStore.saveEmuMode(next)
-                                            if (isActive) activateCard(card)
+                } else {
+                    LazyColumn(state = scrollState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
+                        items(cards, key = { it.id }) { card ->
+                            val isActive = card.id == activeCardId
+                            NfcCardItem(
+                                card              = card,
+                                isExpanded        = card.id == expandedId,
+                                isActive          = isActive,
+                                emuMode           = emuMode,
+                                onExpandClick     = { expandedId = if (card.id == expandedId) null else card.id },
+                                onActivateClick   = { if (isActive) deactivateCard() else activateCard(card) },
+                                onEmuModeClick    = {
+                                    scope.launch {
+                                        if (!modeUnlocked) {
+                                            Toast.makeText(context, context.getString(R.string.toast_mode_locked), Toast.LENGTH_SHORT).show()
+                                            return@launch
                                         }
-                                    },
-                                    onDeleteConfirmed = {
-                                        if (isActive) deactivateCard()
-                                        cards = cards.filterNot { it.id == card.id }
-                                        if (expandedId == card.id) expandedId = null
-                                        scope.launch(Dispatchers.IO) { jsonManager.saveCards(cards) }
+                                        val next = when (emuMode) {
+                                            EmuMode.NORMAL -> EmuMode.COMPAT
+                                            EmuMode.COMPAT -> EmuMode.NATIVE
+                                            EmuMode.NATIVE -> EmuMode.NORMAL
+                                        }
+                                        dataStore.saveEmuMode(next)
+                                        if (isActive) activateCard(card)
                                     }
-                                )
-                            }
+                                },
+                                onDeleteConfirmed = {
+                                    if (isActive) deactivateCard()
+                                    cards = cards.filterNot { it.id == card.id }
+                                    if (expandedId == card.id) expandedId = null
+                                    scope.launch(Dispatchers.IO) { jsonManager.saveCards(cards) }
+                                }
+                            )
                         }
                     }
                 }
@@ -314,10 +304,10 @@ private fun AddCardDialog(onDismiss: () -> Unit, onConfirm: (name: String, idm: 
 
     AlertDialog(
         onDismissRequest = { isScanning = false; onDismiss() },
-        title            = { Text(stringResource(R.string.card_add_title)) },
+        title            = { Text(stringResource(R.string.card_add_title), style = MaterialTheme.typography.headlineSmall) },
         text             = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.card_add_name_label)) }, placeholder = { Text(stringResource(R.string.card_add_name_placeholder)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.card_add_name_label)) }, placeholder = { Text(stringResource(R.string.card_add_name_placeholder)) }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                 OutlinedTextField(
                     value = idm, 
                     onValueChange = { if (!isScanning && it.length <= 16) idm = it.uppercase() }, 
@@ -326,6 +316,7 @@ private fun AddCardDialog(onDismiss: () -> Unit, onConfirm: (name: String, idm: 
                     singleLine = true, 
                     enabled = !isScanning, 
                     isError = !isScanning && idm.isNotEmpty() && !isIdmValid,
+                    shape = MaterialTheme.shapes.medium,
                     supportingText = {
                         if (isScanning) Text(stringResource(R.string.card_add_idm_scanning_hint), color = MaterialTheme.colorScheme.primary)
                         else if (idm.isNotEmpty() && !isIdmValid && idm.length == 16) Text(stringResource(R.string.card_add_err_invalid_hex), color = MaterialTheme.colorScheme.error)
@@ -337,12 +328,11 @@ private fun AddCardDialog(onDismiss: () -> Unit, onConfirm: (name: String, idm: 
         },
         confirmButton = {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                val pulseAlpha by infiniteTransition.animateFloat(1f, if (isScanning) 0.3f else 1f, infiniteRepeatable(androidx.compose.animation.core.tween(800), RepeatMode.Reverse), label = "alpha")
+                val pulseAlpha by rememberInfiniteTransition(label = "pulse").animateFloat(1f, if (isScanning) 0.3f else 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "alpha")
 
                 Surface(
                     onClick = { isScanning = !isScanning; if (isScanning) { idm = ""; focusManager.clearFocus() } },
-                    shape = if (isScanning) CircleShape else MaterialTheme.shapes.medium,
+                    shape = if (isScanning) CircleShape else MaterialTheme.shapes.large,
                     color = if (isScanning) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
                     border = if (!isScanning) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
                     modifier = Modifier.animateContentSize()
@@ -355,7 +345,7 @@ private fun AddCardDialog(onDismiss: () -> Unit, onConfirm: (name: String, idm: 
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { isScanning = false; onDismiss() }) { Text(stringResource(R.string.card_add_cancel)) }
                 Spacer(Modifier.width(4.dp))
-                Button(onClick = { onConfirm(name, idm) }, enabled = isConfirmEnabled) { Text(stringResource(R.string.card_add_confirm)) }
+                Button(onClick = { onConfirm(name, idm) }, enabled = isConfirmEnabled, shape = MaterialTheme.shapes.medium) { Text(stringResource(R.string.card_add_confirm)) }
             }
         }
     )

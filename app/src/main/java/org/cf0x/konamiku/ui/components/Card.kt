@@ -1,50 +1,25 @@
 package org.cf0x.konamiku.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material.icons.outlined.Nfc
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.NfcCard
@@ -68,26 +43,32 @@ fun NfcCardItem(
         animationSpec = tween(300),
         label         = "glow"
     )
+    
+    // M3E: More vibrant color usage
     val primary = MaterialTheme.colorScheme.primary
+    val containerColor = if (isActive) 
+        MaterialTheme.colorScheme.tertiaryContainer // Emphasized state
+    else 
+        MaterialTheme.colorScheme.surfaceContainerHigh
 
     val borderModifier = if (glowAlpha > 0f) {
         Modifier.border(
-            width  = 1.5.dp,
+            width  = 2.dp, // Increased border for M3E
             brush  = Brush.linearGradient(
                 colors = listOf(
                     primary.copy(alpha = glowAlpha),
-                    primary.copy(alpha = glowAlpha * 0.3f),
+                    primary.copy(alpha = glowAlpha * 0.4f),
                     primary.copy(alpha = glowAlpha)
                 )
             ),
-            shape  = MaterialTheme.shapes.medium
+            shape  = MaterialTheme.shapes.extraLarge // Large rounded corners
         )
     } else Modifier
 
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .then(borderModifier)
             .animateContentSize(
                 animationSpec = spring(
@@ -96,72 +77,77 @@ fun NfcCardItem(
                 )
             ),
         onClick = onExpandClick,
-        colors  = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        )
+        shape   = MaterialTheme.shapes.extraLarge, // Expressive shape
+        colors  = CardDefaults.elevatedCardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(20.dp) // More spacious padding
                 .fillMaxWidth()
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    modifier = Modifier.size(44.dp),
-                    shape    = MaterialTheme.shapes.medium,
+                    modifier = Modifier.size(48.dp),
+                    shape    = MaterialTheme.shapes.large, // Larger inner corners
                     color    = if (isActive)
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary
                     else
-                        MaterialTheme.colorScheme.surfaceVariant
+                        MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector        = if (isActive) Icons.Filled.Nfc
-                            else          Icons.Outlined.Nfc,
+                            imageVector        = if (isActive) Icons.Filled.Nfc else Icons.Outlined.Nfc,
                             contentDescription = null,
                             tint               = if (isActive)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.onPrimary
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                                MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text     = card.name,
-                    style    = MaterialTheme.typography.titleMedium,
+                    style    = MaterialTheme.typography.titleLarge, // Emphasized title
                     modifier = Modifier.weight(1f)
                 )
                 if (isActive) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                    Badge(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
                         Text(
                             stringResource(R.string.card_badge_on),
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelMedium // Semi-bold label
                         )
                     }
                 }
             }
 
-            AnimatedVisibility(visible = isExpanded) {
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
                 Column {
-                    Spacer(Modifier.height(14.dp))
-                    HorizontalDivider(thickness = 0.5.dp)
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(18.dp))
+                    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Spacer(Modifier.height(16.dp))
 
                     Text(
-                        text  = "IDm",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        text  = "IDENTIFIER", // More stylistic label
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.secondary
                     )
 
                     SelectionContainer {
                         Text(
                             text     = card.idm,
-                            style    = MaterialTheme.typography.bodyMedium.copy(
+                            style    = MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = FontFamily.Monospace
                             ),
                             color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
+                            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
                         )
                     }
 
@@ -171,45 +157,39 @@ fun NfcCardItem(
                     ) {
                         TextButton(
                             onClick = { showDeleteDialog = true },
-                            colors  = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                            colors  = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = null,
-                                modifier           = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.card_action_delete))
                         }
 
                         Spacer(Modifier.weight(1f))
 
-                        OutlinedButton(
+                        FilledTonalButton( // Emphasized button
                             onClick  = onEmuModeClick,
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp),
+                            shape    = MaterialTheme.shapes.medium
                         ) {
-                            Text(when (emuMode) {
+                            val modeStr = when (emuMode) {
                                 EmuMode.NORMAL -> stringResource(R.string.mode_normal)
                                 EmuMode.COMPAT -> stringResource(R.string.mode_compat)
                                 EmuMode.NATIVE -> stringResource(R.string.mode_native)
-                            })
+                            }
+                            Text(modeStr)
                         }
 
                         Button(
                             onClick = onActivateClick,
+                            shape   = MaterialTheme.shapes.medium,
                             colors  = if (isActive)
                                 ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor   = MaterialTheme.colorScheme.onErrorContainer
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor   = MaterialTheme.colorScheme.onError
                                 )
                             else ButtonDefaults.buttonColors()
                         ) {
-                            Text(
-                                if (isActive) stringResource(R.string.card_action_stop)
-                                else stringResource(R.string.card_action_activate)
-                            )
+                            Text(if (isActive) stringResource(R.string.card_action_stop) else stringResource(R.string.card_action_activate))
                         }
                     }
                 }
@@ -221,22 +201,18 @@ fun NfcCardItem(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title            = { Text(stringResource(R.string.card_delete_title)) },
-            text             = {
-                Text(stringResource(R.string.card_delete_desc, card.name))
-            },
+            text             = { Text(stringResource(R.string.card_delete_desc, card.name)) },
             confirmButton    = {
                 Button(
                     onClick = { showDeleteDialog = false; onDeleteConfirmed() },
-                    colors  = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
+                    colors  = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) { Text(stringResource(R.string.card_action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.card_add_cancel))
-                }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.card_add_cancel)) }
             }
         )
     }
 }
+
+private val FontWeight = androidx.compose.ui.text.font.FontWeight

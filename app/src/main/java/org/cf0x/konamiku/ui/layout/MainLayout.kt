@@ -1,6 +1,8 @@
 package org.cf0x.konamiku.ui.layout
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -148,8 +150,7 @@ fun MainLayout(
                         if (navLocked) Modifier.pointerInput(Unit) {
                             awaitPointerEventScope {
                                 while (true) {
-                                    awaitPointerEvent(PointerEventPass.Initial)
-                                        .changes.forEach { it.consume() }
+                                    awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
                                 }
                             }
                         } else Modifier
@@ -157,7 +158,9 @@ fun MainLayout(
             ) {
                 NavHost(
                     navController    = navController,
-                    startDestination = Screen.Main.route
+                    startDestination = Screen.Main.route,
+                    enterTransition = { fadeIn(tween(300)) + slideInHorizontally(tween(300)) { 20 } },
+                    exitTransition  = { fadeOut(tween(250)) + slideOutHorizontally(tween(250)) { -20 } }
                 ) {
                     composable(Screen.Main.route)     { MainScreen(dataStore = dataStore) }
                     composable(Screen.Tools.route)    { ToolsScreen() }
