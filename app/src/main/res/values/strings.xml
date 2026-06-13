@@ -24,7 +24,7 @@
     <string name="card_action_activate">Activate</string>
     <string name="card_action_stop">Stop</string>
     <string name="card_delete_title">Delete Card</string>
-    <string name="card_delete_desc">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="card_delete_desc">Delete "%1$s"? This cannot be undone.</string>
     <string name="card_badge_on">ON</string>
 
     <string name="toast_card_activated">%1$s activated · %2$s</string>
@@ -72,19 +72,6 @@
     <string name="setting_pmmtool_inactive">Inactive — restart NFC to apply</string>
     <string name="setting_nfc_default">NFC Default App</string>
     <string name="setting_nfc_default_desc">Set KonamikU as the default tap &amp; pay application from system settings.</string>
-    <string name="setting_nfc_exclusive">NFC Auto-Exclusive Mode</string>
-    <string name="setting_nfc_exclusive_desc">Auto set as default payment app on activation (Root only)</string>
-    <string name="setting_nfc_exclusive_already_default">Already set as default payment app</string>
-    <string name="setting_nfc_exclusive_fallback_none">Not set</string>
-    <string name="setting_nfc_exclusive_fallback_prefix">Fallback: %1$s</string>
-    <string name="setting_nfc_exclusive_hint">Click to select fallback, long-press to clear (Root only)</string>
-    <string name="dialog_nfc_exclusive_title">Select Fallback App</string>
-    <string name="dialog_nfc_exclusive_search_hint">Search app or package...</string>
-    <string name="dialog_nfc_exclusive_null_option">No fallback (Keep KonamikU / NULL)</string>
-
-    <string name="toast_exclusive_activated">Exclusive Mode: KonamikU(org.cf0x.konamiku) set as default</string>
-    <string name="toast_exclusive_restored">Exclusive Mode: %1$s(%2$s) set as default</string>
-    <string name="toast_exclusive_restore_fail">Exclusive Mode: Target app not found, KonamikU kept as default</string>
     <string name="status_xposed_needs_restart">Module active — restart com.android.nfc to apply hooks</string>
 
     <string name="setting_language">Language</string>
@@ -114,16 +101,6 @@
     <string name="setting_dev_force_emu_desc">Bypass module activation check for mode switching</string>
 
     <string name="tools_id_converter_title">ID Converter</string>
-    <string name="tools_warn_ambiguous">Two possible results; showing positive (more common)</string>
-    <string name="tools_err_idm_empty">IDm cannot be empty</string>
-    <string name="tools_err_idm_length">IDm must be at most 16 hex characters</string>
-    <string name="tools_err_idm_hex">IDm contains invalid hex characters</string>
-    <string name="tools_err_idm_prefix">IDm must start with E004 or 0</string>
-    <string name="tools_err_ac_empty">Access Code cannot be empty</string>
-    <string name="tools_err_ac_length">Access Code must be at most 20 digits</string>
-    <string name="tools_err_kid_length">Konami ID must be exactly 16 characters</string>
-    <string name="tools_err_kid_chars">Konami ID contains invalid characters</string>
-    <string name="tools_err_generic">Conversion failed</string>
     <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
     <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
     <string name="tools_section_idm_to_kid">IDm → Konami ID</string>
@@ -148,5 +125,15 @@
     <string name="tools_validation_max_16">Maximum 16 characters</string>
     <string name="tools_validation_max_20">Maximum 20 digits</string>
     <string name="tools_validation_digits_only">Digits only</string>
+    <string name="tools_warn_ambiguous">Two possible results; showing positive (more common)</string>
+    <string name="tools_err_idm_empty">IDm cannot be empty</string>
+    <string name="tools_err_idm_length">IDm must be at most 16 hex characters</string>
+    <string name="tools_err_idm_hex">IDm contains invalid hex characters</string>
+    <string name="tools_err_idm_prefix">IDm must start with E004 or 0</string>
+    <string name="tools_err_ac_empty">Access Code cannot be empty</string>
+    <string name="tools_err_ac_length">Access Code must be at most 20 digits</string>
+    <string name="tools_err_kid_length">Konami ID must be exactly 16 characters</string>
+    <string name="tools_err_kid_chars">Konami ID contains invalid characters</string>
+    <string name="tools_err_generic">Conversion failed</string>
     <string name="tile_label">KonamikU</string>
 </resources>

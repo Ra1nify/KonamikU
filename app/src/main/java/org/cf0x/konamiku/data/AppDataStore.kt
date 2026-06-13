@@ -21,8 +21,6 @@ enum class AppLocale(val tag: String) {
 class AppDataStore(private val context: Context) {
     private val sp = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
 
-    var autoExclusiveModeSync = sp.getBoolean("auto_exclusive_mode", false)
-        private set
     var devModeForceEmuSync = sp.getBoolean("dev_mode_force_emu", false)
         private set
 
@@ -35,8 +33,6 @@ class AppDataStore(private val context: Context) {
         val EMU_MODE           = stringPreferencesKey("emu_mode")
         val APP_LOCALE         = stringPreferencesKey("app_locale")
         val DEV_FORCE_EMU      = booleanPreferencesKey("dev_mode_force_emu")
-        val AUTO_EXCLUSIVE     = booleanPreferencesKey("auto_exclusive_mode")
-        val EXCLUSIVE_FALLBACK = stringPreferencesKey("exclusive_fallback_app")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -67,8 +63,6 @@ class AppDataStore(private val context: Context) {
     }
 
     val devModeForceEmu: Flow<Boolean> = context.dataStore.data.map { it[Keys.DEV_FORCE_EMU] ?: false }
-    val autoExclusiveMode: Flow<Boolean> = context.dataStore.data.map { it[Keys.AUTO_EXCLUSIVE] ?: false }
-    val exclusiveFallbackApp: Flow<String?> = context.dataStore.data.map { it[Keys.EXCLUSIVE_FALLBACK] }
 
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
@@ -86,15 +80,5 @@ class AppDataStore(private val context: Context) {
         it[Keys.DEV_FORCE_EMU] = v
         devModeForceEmuSync = v
         sp.edit().putBoolean("dev_mode_force_emu", v).apply()
-    }
-
-    suspend fun saveAutoExclusiveMode(v: Boolean) = context.dataStore.edit {
-        it[Keys.AUTO_EXCLUSIVE] = v
-        autoExclusiveModeSync = v
-        sp.edit().putBoolean("auto_exclusive_mode", v).apply()
-    }
-
-    suspend fun saveExclusiveFallbackApp(app: String?) = context.dataStore.edit { p ->
-        if (app == null) p.remove(Keys.EXCLUSIVE_FALLBACK) else p[Keys.EXCLUSIVE_FALLBACK] = app
     }
 }

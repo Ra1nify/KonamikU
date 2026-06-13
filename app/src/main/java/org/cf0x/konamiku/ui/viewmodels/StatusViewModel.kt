@@ -19,12 +19,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.StatusDetector
-import org.cf0x.konamiku.util.NfcDefaultAppManager
 import org.cf0x.konamiku.util.NfcRestart
 import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
-import kotlinx.coroutines.flow.first
 import org.cf0x.konamiku.data.AppDataStore
 
 class StatusViewModel(application: Application) : AndroidViewModel(application) {
@@ -111,7 +109,7 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                     refreshNfc()
                 }
             }
-            
+
             val msg = when (result) {
                 is NfcRestart.Result.WasDead   -> str(R.string.toast_nfc_was_dead)
                 is NfcRestart.Result.KillFailed -> str(R.string.toast_nfc_restart_failed) + " (pid:${result.pid})"
@@ -176,30 +174,4 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun str(@StringRes resId: Int): String =
         getApplication<Application>().getString(resId)
-
-    suspend fun onCardActivated() {
-        if (dataStore.autoExclusiveMode.first()) {
-            val ourComp = NfcDefaultAppManager.getOurComponent(context)
-            if (NfcDefaultAppManager.setDefault(ourComp)) {
-                _toastEvent.emit(str(R.string.toast_exclusive_activated))
-            }
-        }
-    }
-
-    suspend fun onCardDeactivated() {
-        if (dataStore.autoExclusiveMode.first()) {
-            val fallback = dataStore.exclusiveFallbackApp.first()
-            if (fallback.isNullOrBlank() || fallback == "null") return
-
-            if (NfcDefaultAppManager.isComponentValid(context, fallback)) {
-                if (NfcDefaultAppManager.setDefault(fallback)) {
-                    val label = NfcDefaultAppManager.getAppLabel(context, fallback)
-                    _toastEvent.emit(context.getString(R.string.toast_exclusive_restored, label, fallback))
-                }
-            } else {
-                NfcDefaultAppManager.setDefault(NfcDefaultAppManager.getOurComponent(context))
-                _toastEvent.emit(str(R.string.toast_exclusive_restore_fail))
-            }
-        }
-    }
 }
