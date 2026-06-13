@@ -32,14 +32,22 @@ private val KONAMI_ALPHA = "0123456789ABCDEFGHJKLMNPRSTUWXYZ".toSet()
 fun ToolsScreen() {
     var expandedBar by remember { mutableStateOf<String?>(null) }
     val topBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val isExpressive = org.cf0x.konamiku.ui.theme.LocalExpressiveMode.current
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            LargeTopAppBar(
-                title = { Text(stringResource(R.string.nav_tools)) },
-                scrollBehavior = topBarScrollBehavior
-            )
+            if (isExpressive) {
+                LargeTopAppBar(
+                    title = { Text(stringResource(R.string.nav_tools)) },
+                    scrollBehavior = topBarScrollBehavior
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.nav_tools)) },
+                    scrollBehavior = topBarScrollBehavior
+                )
+            }
         }
     ) { innerPadding ->
         Column(

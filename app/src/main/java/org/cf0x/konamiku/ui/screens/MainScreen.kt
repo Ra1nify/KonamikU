@@ -169,26 +169,47 @@ fun MainScreen(dataStore: AppDataStore) {
         modifier     = Modifier.nestedScroll(topBarScrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarState) },
         topBar       = {
-            LargeTopAppBar( // M3E: Large emphasized app bar
-                title = { Text(stringResource(R.string.app_name)) },
-                scrollBehavior = topBarScrollBehavior
-            )
+            val isExpressive = org.cf0x.konamiku.ui.theme.LocalExpressiveMode.current
+            if (isExpressive) {
+                LargeTopAppBar(
+                    title = { Text(stringResource(R.string.app_name)) },
+                    scrollBehavior = topBarScrollBehavior
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.app_name)) },
+                    scrollBehavior = topBarScrollBehavior
+                )
+            }
         },
         floatingActionButton = {
+            val isExpressive = org.cf0x.konamiku.ui.theme.LocalExpressiveMode.current
             val isExpanded by remember {
                 derivedStateOf {
                     scrollState.firstVisibleItemIndex == 0 && scrollState.firstVisibleItemScrollOffset < 10
                 }
             }
-            ExtendedFloatingActionButton(
-                text     = { Text(stringResource(R.string.card_add_title)) },
-                icon     = { Icon(Icons.Default.Add, null) },
-                expanded = isExpanded,
-                onClick  = { showDialog = true },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
-                shape          = MaterialTheme.shapes.large
-            )
+
+            if (isExpressive) {
+                ExtendedFloatingActionButton(
+                    text     = { Text(stringResource(R.string.card_add_title)) },
+                    icon     = { Icon(Icons.Default.Add, null) },
+                    expanded = isExpanded,
+                    onClick  = { showDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape          = MaterialTheme.shapes.large
+                )
+            } else {
+                FloatingActionButton(
+                    onClick = { showDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape          = MaterialTheme.shapes.large
+                ) {
+                    Icon(Icons.Default.Add, null)
+                }
+            }
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {

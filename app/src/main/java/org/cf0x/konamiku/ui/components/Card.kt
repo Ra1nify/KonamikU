@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.NfcCard
+import org.cf0x.konamiku.ui.theme.LocalExpressiveMode
 
 @Composable
 fun NfcCardItem(
@@ -37,23 +38,24 @@ fun NfcCardItem(
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
-
+    val isExpressive = LocalExpressiveMode.current
     val glowAlpha by animateFloatAsState(
         targetValue   = if (isExpanded) 1f else 0f,
         animationSpec = tween(300),
         label         = "glow"
     )
     
-    // M3E: More vibrant color usage
     val primary = MaterialTheme.colorScheme.primary
-    val containerColor = if (isActive) 
-        MaterialTheme.colorScheme.tertiaryContainer // Emphasized state
+    val containerColor = if (isActive && isExpressive) 
+        MaterialTheme.colorScheme.tertiaryContainer 
+    else if (isActive)
+        MaterialTheme.colorScheme.primaryContainer
     else 
         MaterialTheme.colorScheme.surfaceContainerHigh
 
     val borderModifier = if (glowAlpha > 0f) {
         Modifier.border(
-            width  = 2.dp, // Increased border for M3E
+            width  = if (isExpressive) 2.dp else 1.dp,
             brush  = Brush.linearGradient(
                 colors = listOf(
                     primary.copy(alpha = glowAlpha),
@@ -61,7 +63,7 @@ fun NfcCardItem(
                     primary.copy(alpha = glowAlpha)
                 )
             ),
-            shape  = MaterialTheme.shapes.extraLarge // Large rounded corners
+            shape  = MaterialTheme.shapes.extraLarge
         )
     } else Modifier
 

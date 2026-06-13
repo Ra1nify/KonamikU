@@ -33,6 +33,7 @@ class AppDataStore(private val context: Context) {
         val EMU_MODE           = stringPreferencesKey("emu_mode")
         val APP_LOCALE         = stringPreferencesKey("app_locale")
         val DEV_FORCE_EMU      = booleanPreferencesKey("dev_mode_force_emu")
+        val THEME_EXPRESSIVE   = booleanPreferencesKey("theme_expressive")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -63,6 +64,7 @@ class AppDataStore(private val context: Context) {
     }
 
     val devModeForceEmu: Flow<Boolean> = context.dataStore.data.map { it[Keys.DEV_FORCE_EMU] ?: false }
+    val themeExpressive: Flow<Boolean> = context.dataStore.data.map { it[Keys.THEME_EXPRESSIVE] ?: true }
 
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
@@ -81,4 +83,6 @@ class AppDataStore(private val context: Context) {
         devModeForceEmuSync = v
         sp.edit().putBoolean("dev_mode_force_emu", v).apply()
     }
+
+    suspend fun saveThemeExpressive(v: Boolean) = context.dataStore.edit { it[Keys.THEME_EXPRESSIVE] = v }
 }

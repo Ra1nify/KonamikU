@@ -52,14 +52,16 @@ class MainActivity : ComponentActivity() {
         nfcAdapter   = NfcAdapter.getDefaultAdapter(this)
 
         setContent {
-            val themeMode   by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
-            val colorSource by dataStore.colorSource.collectAsState(initial = ColorSource.MONET)
-            val presetColor by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
+            val themeMode       by dataStore.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
+            val colorSource     by dataStore.colorSource.collectAsState(initial = ColorSource.MONET)
+            val presetColor     by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
+            val themeExpressive by dataStore.themeExpressive.collectAsState(initial = true)
 
             KonamikuTheme(
-                themeMode   = themeMode,
-                colorSource = colorSource,
-                seedColor   = presetColor,
+                themeMode    = themeMode,
+                colorSource  = colorSource,
+                seedColor    = presetColor,
+                isExpressive = themeExpressive,
             ) {
                 MainLayout(dataStore = dataStore)
             }

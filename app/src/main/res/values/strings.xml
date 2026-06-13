@@ -65,6 +65,8 @@
     <string name="setting_theme_system">Follow System</string>
     <string name="setting_theme_light">Light</string>
     <string name="setting_theme_dark">Dark</string>
+    <string name="setting_theme_expressive">Material You Expressive</string>
+    <string name="setting_theme_expressive_desc">Enable more fluid M3 designs with larger corners and higher contrast.</string>
     <string name="setting_nfc_default">Default Payment App</string>
     <string name="setting_nfc_default_desc">Manage which app handles standard NFC payments.</string>
     <string name="status_xposed_needs_restart">Module active — restart NFC process to apply.</string>

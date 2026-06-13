@@ -66,6 +66,8 @@
     <string name="setting_theme_system">跟随系统</string>
     <string name="setting_theme_light">浅色</string>
     <string name="setting_theme_dark">深色</string>
+    <string name="setting_theme_expressive">Material You 灵动设计</string>
+    <string name="setting_theme_expressive_desc">开启更具表现力的 M3 设计（超大圆角、高对比度）。</string>
     <string name="setting_nfc_default">默认支付应用</string>
     <string name="setting_nfc_default_desc">点击以管理系统默认付款应用。</string>
     <string name="status_xposed_needs_restart">模块已激活 — 请重启 NFC 相关进程以生效。</string>

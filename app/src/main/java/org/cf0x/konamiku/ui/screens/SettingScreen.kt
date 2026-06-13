@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,6 +46,7 @@ fun SettingScreen(dataStore: AppDataStore) {
     val savedColor   by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
     val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
     val devModeForce by dataStore.devModeForceEmu.collectAsState(initial = dataStore.devModeForceEmuSync)
+    val isExpressive by dataStore.themeExpressive.collectAsState(initial = true)
 
     var previewColor by remember(savedColor) { mutableStateOf(savedColor) }
     var showPicker   by rememberSaveable { mutableStateOf(false) }
@@ -57,7 +58,7 @@ fun SettingScreen(dataStore: AppDataStore) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // --- Appearance ---
+        // --- Navigation Layout ---
         SegmentSwitch(
             label         = stringResource(R.string.setting_nav_layout),
             options       = listOf(stringResource(R.string.setting_nav_auto), stringResource(R.string.setting_nav_bottom), stringResource(R.string.setting_nav_rail)),
@@ -65,6 +66,7 @@ fun SettingScreen(dataStore: AppDataStore) {
             onSelect      = { scope.launch { dataStore.saveNavigationMode(NavigationMode.entries[it]) } }
         )
 
+        // --- Color System ---
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             val colorOptions = if (supportsMonet) listOf(stringResource(R.string.setting_color_system), stringResource(R.string.setting_color_custom)) else listOf(stringResource(R.string.setting_color_custom))
             val selectedIndex = if (supportsMonet && colorSource == ColorSource.MONET) 0 else 1
@@ -101,12 +103,18 @@ fun SettingScreen(dataStore: AppDataStore) {
             }
         }
 
+        // --- Dark Mode ---
         SegmentSwitch(
             label         = stringResource(R.string.setting_theme_mode),
             options       = listOf(stringResource(R.string.setting_theme_system), stringResource(R.string.setting_theme_light), stringResource(R.string.setting_theme_dark)),
             selectedIndex = themeMode.ordinal,
             onSelect      = { scope.launch { dataStore.saveThemeMode(ThemeMode.entries[it]) } }
         )
+
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // --- Expressive Style Toggle ---
+        ExpressiveToggleItem(isExpressive) { scope.launch { dataStore.saveThemeExpressive(it) } }
 
         HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
@@ -122,6 +130,21 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Developer ---
         DevModeItem(dataStore, devModeForce, scope)
+    }
+}
+
+@Composable
+private fun ExpressiveToggleItem(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.setting_theme_expressive), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.setting_theme_expressive_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        }
+        Switch(checked = enabled, onCheckedChange = onToggle)
     }
 }
 
