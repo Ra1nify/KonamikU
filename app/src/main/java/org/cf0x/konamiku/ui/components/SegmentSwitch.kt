@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,14 +36,23 @@ fun SegmentSwitch(
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(MaterialTheme.shapes.extraLarge)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             options.forEachIndexed { index, option ->
                 val isSelected = index == selectedIndex
-                val targetColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-                val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                
+                // Color Correction: Use primaryContainer for background to stay "light" in light mode
+                val targetColor = if (isSelected) 
+                    MaterialTheme.colorScheme.primaryContainer 
+                else 
+                    Color.Transparent
+                
+                val contentColor = if (isSelected) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 
                 val bgColor by animateColorAsState(targetColor, tween(300), label = "bg")
                 val textColor by animateColorAsState(contentColor, tween(300), label = "text")

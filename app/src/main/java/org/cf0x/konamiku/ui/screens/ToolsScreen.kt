@@ -70,7 +70,7 @@ fun ToolsScreen() {
                 onClick = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
                 shape   = MaterialTheme.shapes.extraLarge,
                 colors  = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
             ) {
                 Column(
@@ -85,12 +85,13 @@ fun ToolsScreen() {
                         Surface(
                             modifier = Modifier.size(48.dp),
                             shape    = MaterialTheme.shapes.large,
+                            // Color Correction: Use Container roles
                             color    = MaterialTheme.colorScheme.secondaryContainer
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.AutoMirrored.Outlined.CompareArrows, null,
-                                    tint     = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    tint     = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }

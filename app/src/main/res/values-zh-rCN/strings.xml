@@ -59,7 +59,7 @@
     <string name="setting_nav_auto">自动</string>
     <string name="setting_nav_bottom">底栏</string>
     <string name="setting_nav_rail">侧栏</string>
-    <string name="setting_color_source">主题色来源</string>
+    <string name="setting_color_source">主题色</string>
     <string name="setting_color_system">系统取色</string>
     <string name="setting_color_custom">自定义</string>
     <string name="setting_theme_mode">深色模式</string>

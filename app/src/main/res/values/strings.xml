@@ -58,7 +58,7 @@
     <string name="setting_nav_auto">Auto</string>
     <string name="setting_nav_bottom">Bottom</string>
     <string name="setting_nav_rail">Rail</string>
-    <string name="setting_color_source">Theme Color Source</string>
+    <string name="setting_color_source">Theme Color</string>
     <string name="setting_color_system">System Accent</string>
     <string name="setting_color_custom">Custom Pick</string>
     <string name="setting_theme_mode">Dark Mode Preference</string>

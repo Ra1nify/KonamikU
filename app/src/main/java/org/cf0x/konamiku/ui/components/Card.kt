@@ -39,6 +39,7 @@ fun NfcCardItem(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val isExpressive = LocalExpressiveMode.current
+
     val glowAlpha by animateFloatAsState(
         targetValue   = if (isExpanded) 1f else 0f,
         animationSpec = tween(300),
@@ -46,12 +47,14 @@ fun NfcCardItem(
     )
     
     val primary = MaterialTheme.colorScheme.primary
+    
+    // Fixed Color Logic: Containers follow theme luminosity
     val containerColor = if (isActive && isExpressive) 
         MaterialTheme.colorScheme.tertiaryContainer 
     else if (isActive)
         MaterialTheme.colorScheme.primaryContainer
     else 
-        MaterialTheme.colorScheme.surfaceContainerHigh
+        MaterialTheme.colorScheme.surfaceContainer
 
     val borderModifier = if (glowAlpha > 0f) {
         Modifier.border(
@@ -79,20 +82,21 @@ fun NfcCardItem(
                 )
             ),
         onClick = onExpandClick,
-        shape   = MaterialTheme.shapes.extraLarge, // Expressive shape
+        shape   = MaterialTheme.shapes.extraLarge,
         colors  = CardDefaults.elevatedCardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier
-                .padding(20.dp) // More spacious padding
+                .padding(20.dp)
                 .fillMaxWidth()
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(48.dp),
-                    shape    = MaterialTheme.shapes.large, // Larger inner corners
+                    shape    = MaterialTheme.shapes.large,
+                    // Fixed Color Logic: Use Container for background to avoid inversion
                     color    = if (isActive)
-                        MaterialTheme.colorScheme.primary
+                        MaterialTheme.colorScheme.primaryContainer
                     else
                         MaterialTheme.colorScheme.secondaryContainer
                 ) {
@@ -100,8 +104,9 @@ fun NfcCardItem(
                         Icon(
                             imageVector        = if (isActive) Icons.Filled.Nfc else Icons.Outlined.Nfc,
                             contentDescription = null,
+                            // Use onContainer/Primary for the icon
                             tint               = if (isActive)
-                                MaterialTheme.colorScheme.onPrimary
+                                MaterialTheme.colorScheme.primary
                             else
                                 MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -110,7 +115,7 @@ fun NfcCardItem(
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text     = card.name,
-                    style    = MaterialTheme.typography.titleLarge, // Emphasized title
+                    style    = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f)
                 )
                 if (isActive) {
@@ -120,7 +125,7 @@ fun NfcCardItem(
                     ) {
                         Text(
                             stringResource(R.string.card_badge_on),
-                            style = MaterialTheme.typography.labelMedium // Semi-bold label
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                 }
@@ -137,8 +142,8 @@ fun NfcCardItem(
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        text  = "IDENTIFIER", // More stylistic label
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        text  = "IDENTIFIER",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                         color = MaterialTheme.colorScheme.secondary
                     )
 
@@ -168,17 +173,16 @@ fun NfcCardItem(
 
                         Spacer(Modifier.weight(1f))
 
-                        FilledTonalButton( // Emphasized button
+                        FilledTonalButton(
                             onClick  = onEmuModeClick,
                             modifier = Modifier.padding(end = 8.dp),
                             shape    = MaterialTheme.shapes.medium
                         ) {
-                            val modeStr = when (emuMode) {
+                            Text(when (emuMode) {
                                 EmuMode.NORMAL -> stringResource(R.string.mode_normal)
                                 EmuMode.COMPAT -> stringResource(R.string.mode_compat)
                                 EmuMode.NATIVE -> stringResource(R.string.mode_native)
-                            }
-                            Text(modeStr)
+                            })
                         }
 
                         Button(
@@ -216,5 +220,3 @@ fun NfcCardItem(
         )
     }
 }
-
-private val FontWeight = androidx.compose.ui.text.font.FontWeight

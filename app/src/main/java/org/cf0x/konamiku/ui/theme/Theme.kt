@@ -62,15 +62,21 @@ fun KonamikuTheme(
         }
     } ?: seedColor
 
+    val dynamicTypography = getTypography(isExpressive)
+
     CompositionLocalProvider(LocalExpressiveMode provides isExpressive) {
         DynamicMaterialTheme(
             seedColor  = effectiveSeed,
             isDark     = isDark,
             animate    = true,
             style      = if (isExpressive) PaletteStyle.Expressive else PaletteStyle.TonalSpot,
-            typography = Typography,
-            shapes     = if (isExpressive) ExpressiveShapes else StandardShapes,
-            content    = content
-        )
+            typography = dynamicTypography,
+            shapes     = if (isExpressive) ExpressiveShapes else StandardShapes
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                content = content
+            )
+        }
     }
 }

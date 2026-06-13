@@ -56,87 +56,111 @@ fun SettingScreen(dataStore: AppDataStore) {
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // --- Navigation Layout ---
-        SegmentSwitch(
-            label         = stringResource(R.string.setting_nav_layout),
-            options       = listOf(stringResource(R.string.setting_nav_auto), stringResource(R.string.setting_nav_bottom), stringResource(R.string.setting_nav_rail)),
-            selectedIndex = navMode.ordinal,
-            onSelect      = { scope.launch { dataStore.saveNavigationMode(NavigationMode.entries[it]) } }
-        )
-
-        // --- Color System ---
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            val colorOptions = if (supportsMonet) listOf(stringResource(R.string.setting_color_system), stringResource(R.string.setting_color_custom)) else listOf(stringResource(R.string.setting_color_custom))
-            val selectedIndex = if (supportsMonet && colorSource == ColorSource.MONET) 0 else 1
-
+        // --- Group 1: Navigation ---
+        SettingGroup {
             SegmentSwitch(
-                label         = stringResource(R.string.setting_color_source),
-                options       = colorOptions,
-                selectedIndex = selectedIndex,
-                onSelect      = { index ->
-                    val next = if (supportsMonet && index == 0) ColorSource.MONET else ColorSource.PRESET
-                    scope.launch { dataStore.saveColorSource(next) }
-                    if (next == ColorSource.PRESET && colorSource == ColorSource.PRESET) showPicker = !showPicker
-                }
+                label         = stringResource(R.string.setting_nav_layout),
+                options       = listOf(stringResource(R.string.setting_nav_auto), stringResource(R.string.setting_nav_bottom), stringResource(R.string.setting_nav_rail)),
+                selectedIndex = navMode.ordinal,
+                onSelect      = { scope.launch { dataStore.saveNavigationMode(NavigationMode.entries[it]) } }
             )
+        }
 
-            AnimatedVisibility(visible = colorSource == ColorSource.PRESET && showPicker, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ColorPickerWheel(initialColor = previewColor, onColorChanged = { previewColor = it }, modifier = Modifier.padding(top = 8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { previewColor = savedColor; showPicker = false }) { Text(stringResource(R.string.card_add_cancel)) }
-                        Spacer(Modifier.width(8.dp))
-                        Button(onClick = { scope.launch { dataStore.savePresetColor(previewColor.toArgb()) }; showPicker = false }) { Text(stringResource(R.string.card_add_confirm)) }
+        // --- Group 2: Theme Color & Style (Merged) ---
+        SettingGroup {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                val colorOptions = if (supportsMonet) listOf(stringResource(R.string.setting_color_system), stringResource(R.string.setting_color_custom)) else listOf(stringResource(R.string.setting_color_custom))
+                val selectedIndex = if (supportsMonet && colorSource == ColorSource.MONET) 0 else 1
+
+                SegmentSwitch(
+                    label         = stringResource(R.string.setting_color_source),
+                    options       = colorOptions,
+                    selectedIndex = selectedIndex,
+                    onSelect      = { index ->
+                        val next = if (supportsMonet && index == 0) ColorSource.MONET else ColorSource.PRESET
+                        scope.launch { dataStore.saveColorSource(next) }
+                        if (next == ColorSource.PRESET && colorSource == ColorSource.PRESET) showPicker = !showPicker
+                    }
+                )
+
+                AnimatedVisibility(visible = colorSource == ColorSource.PRESET && showPicker, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ColorPickerWheel(initialColor = previewColor, onColorChanged = { previewColor = it }, modifier = Modifier.padding(top = 8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { previewColor = savedColor; showPicker = false }) { Text(stringResource(R.string.card_add_cancel)) }
+                            Spacer(Modifier.width(8.dp))
+                            Button(onClick = { scope.launch { dataStore.savePresetColor(previewColor.toArgb()) }; showPicker = false }) { Text(stringResource(R.string.card_add_confirm)) }
+                        }
                     }
                 }
-            }
 
-            AnimatedVisibility(visible = colorSource == ColorSource.PRESET && !showPicker, enter = fadeIn(), exit = fadeOut()) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(modifier = Modifier.size(28.dp), shape = MaterialTheme.shapes.small, color = savedColor, tonalElevation = 2.dp) {}
-                    Text(text = "#%06X".format(savedColor.toArgb() and 0xFFFFFF), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { showPicker = true }) { Text(stringResource(R.string.setting_color_custom)) }
+                AnimatedVisibility(visible = colorSource == ColorSource.PRESET && !showPicker, enter = fadeIn(), exit = fadeOut()) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Surface(modifier = Modifier.size(28.dp), shape = MaterialTheme.shapes.small, color = savedColor, tonalElevation = 2.dp) {}
+                        Text(text = "#%06X".format(savedColor.toArgb() and 0xFFFFFF), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.weight(1f))
+                        TextButton(onClick = { showPicker = true }) { Text(stringResource(R.string.card_add_confirm)) }
+                    }
                 }
+
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                // Style Toggle moved into this group
+                ExpressiveToggleItem(isExpressive) { scope.launch { dataStore.saveThemeExpressive(it) } }
             }
         }
 
-        // --- Dark Mode ---
-        SegmentSwitch(
-            label         = stringResource(R.string.setting_theme_mode),
-            options       = listOf(stringResource(R.string.setting_theme_system), stringResource(R.string.setting_theme_light), stringResource(R.string.setting_theme_dark)),
-            selectedIndex = themeMode.ordinal,
-            onSelect      = { scope.launch { dataStore.saveThemeMode(ThemeMode.entries[it]) } }
+        // --- Group 3: Dark Mode ---
+        SettingGroup {
+            SegmentSwitch(
+                label         = stringResource(R.string.setting_theme_mode),
+                options       = listOf(stringResource(R.string.setting_theme_system), stringResource(R.string.setting_theme_light), stringResource(R.string.setting_theme_dark)),
+                selectedIndex = themeMode.ordinal,
+                onSelect      = { scope.launch { dataStore.saveThemeMode(ThemeMode.entries[it]) } }
+            )
+        }
+
+        // --- Group 4: Language ---
+        SettingGroup {
+            LanguageItem(dataStore, appLocale)
+        }
+
+        // --- Group 5: System ---
+        SettingGroup {
+            NfcSettingsItem(context)
+        }
+
+        // --- Group 6: Developer ---
+        SettingGroup {
+            DevModeItem(dataStore, devModeForce, scope)
+        }
+        
+        Spacer(Modifier.height(32.dp))
+    }
+}
+
+@Composable
+private fun SettingGroup(content: @Composable ColumnScope.() -> Unit) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape    = MaterialTheme.shapes.extraLarge,
+        colors   = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
         )
-
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        // --- Expressive Style Toggle ---
-        ExpressiveToggleItem(isExpressive) { scope.launch { dataStore.saveThemeExpressive(it) } }
-
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        // --- Language ---
-        LanguageItem(dataStore, appLocale)
-
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        // --- System & NFC ---
-        NfcSettingsItem(context)
-
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        // --- Developer ---
-        DevModeItem(dataStore, devModeForce, scope)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            content  = content
+        )
     }
 }
 
 @Composable
 private fun ExpressiveToggleItem(enabled: Boolean, onToggle: (Boolean) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -157,7 +181,7 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
     val options  = listOf(stringResource(R.string.setting_language_system) to AppLocale.SYSTEM, stringResource(R.string.setting_language_zh) to AppLocale.ZH_CN, stringResource(R.string.setting_language_en) to AppLocale.EN_US)
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.setting_language), style = MaterialTheme.typography.bodyLarge)
                 if (!expanded) Text(options.first { it.second == appLocale }.first, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -166,14 +190,14 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
         }
 
         AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-            Column(modifier = Modifier.padding(bottom = 8.dp)) {
+            Column(modifier = Modifier.padding(top = 12.dp)) {
                 options.forEach { (label, value) ->
                     Row(Modifier.fillMaxWidth().clickable { pending = value }.padding(vertical = 12.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         RadioButton(selected = pending == value, onClick = { pending = value })
                         Text(label, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = { pending = appLocale; expanded = false }) { Text(stringResource(R.string.card_add_cancel)) }
                     Spacer(Modifier.width(8.dp))
                     Button(onClick = {
@@ -191,7 +215,7 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
 
 @Composable
 private fun NfcSettingsItem(context: android.content.Context) {
-    Row(Modifier.fillMaxWidth().clickable { runCatching { context.startActivity(Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth().clickable { runCatching { context.startActivity(Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_nfc_default), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_nfc_default_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -202,7 +226,7 @@ private fun NfcSettingsItem(context: android.content.Context) {
 
 @Composable
 private fun DevModeItem(dataStore: AppDataStore, devMode: Boolean, scope: kotlinx.coroutines.CoroutineScope) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_dev_force_emu), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_dev_force_emu_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
