@@ -92,8 +92,6 @@ object LiveUpdateManager {
 
         val tapIntent = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stopIntent = PendingIntent.getBroadcast(context, 1, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_TOGGLE_ACTIVATE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val modeIntent = PendingIntent.getBroadcast(context, 2, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_TOGGLE_MODE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val nextIntent = PendingIntent.getBroadcast(context, 4, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_NEXT_CARD), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val delIntent  = PendingIntent.getBroadcast(context, 3, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_DISMISSED), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         val builder = Notification.Builder(context, channelId)
@@ -107,8 +105,6 @@ object LiveUpdateManager {
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setProgress(100, progress, false)
             .addAction(Notification.Action.Builder(Icon.createWithResource(context, android.R.drawable.ic_menu_close_clear_cancel), context.getString(R.string.notif_action_stop), stopIntent).build())
-            .addAction(Notification.Action.Builder(Icon.createWithResource(context, android.R.drawable.ic_menu_manage), context.getString(R.string.notif_action_switch_mode), modeIntent).build())
-            .addAction(Notification.Action.Builder(Icon.createWithResource(context, android.R.drawable.ic_media_next), context.getString(R.string.notif_action_next_card), nextIntent).build())
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)

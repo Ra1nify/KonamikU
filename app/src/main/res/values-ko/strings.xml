@@ -75,6 +75,7 @@
     <string name="setting_nfc_default_desc">표준 NFC 결제를 처리할 앱을 관리합니다.</string>
     <string name="status_xposed_needs_restart">모듈 활성화 — NFC 프로세스를 재시작하세요.</string>
 
+    <string name="setting_language_system_managed">시스템 설정에서 관리</string>
     <string name="setting_language">앱 언어</string>
     <string name="setting_language_system">시스템 기본값</string>
     <string name="setting_language_zh">简体中文</string>

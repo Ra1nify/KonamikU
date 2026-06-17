@@ -76,6 +76,7 @@
     <string name="setting_nfc_default_desc">点击以管理系统默认付款应用。</string>
     <string name="status_xposed_needs_restart">模块已激活 — 请重启 NFC 相关进程以生效。</string>
 
+    <string name="setting_language_system_managed">由系统设置管理</string>
     <string name="setting_language">界面语言</string>
     <string name="setting_language_system">系统默认</string>
     <string name="setting_language_zh">简体中文</string>

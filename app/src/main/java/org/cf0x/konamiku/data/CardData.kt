@@ -13,7 +13,8 @@ import java.io.File
 data class NfcCard(
     val id: String,
     val name: String,
-    val idm: String
+    val idm: String,
+    val emuMode: EmuMode = EmuMode.NORMAL
 )
 
 class JsonManager(private val context: Context) {

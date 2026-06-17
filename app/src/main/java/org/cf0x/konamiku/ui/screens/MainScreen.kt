@@ -150,7 +150,7 @@ fun MainScreen(dataStore: AppDataStore) {
     LaunchedEffect(emuMode, activeCardId) {
         if (activeCardId != null) {
             val card = cards.find { it.id == activeCardId } ?: return@LaunchedEffect
-            LiveUpdateManager.postActive(context, card.name, emuMode)
+            LiveUpdateManager.postActive(context, card.name, card.emuMode)
         }
     }
 
@@ -163,17 +163,18 @@ fun MainScreen(dataStore: AppDataStore) {
                 notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
 
+            val mode   = card.emuMode
             val realIdm   = card.idm.uppercase()
-            val activeIdm = when (emuMode) {
+            val activeIdm = when (mode) {
                 EmuMode.NORMAL           -> realIdm
                 EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
             }
-            android.util.Log.i("KonamikU", "Activating card: ${card.name} [IDm: $activeIdm] (mode: $emuMode)")
+            android.util.Log.i("KonamikU", "Activating card: ${card.name} [IDm: $activeIdm] (mode: $mode)")
             val systemCode = "88B4"
             val activity = context as? ComponentActivity
             if (activity == null) {
                 dataStore.saveActiveCardId(card.id)
-                LiveUpdateManager.postActive(context, card.name, emuMode)
+                LiveUpdateManager.postActive(context, card.name, mode)
                 return@launch
             }
             runCatching {
@@ -201,7 +202,7 @@ fun MainScreen(dataStore: AppDataStore) {
                 }
             }
             dataStore.saveActiveCardId(card.id)
-            LiveUpdateManager.postActive(context, card.name, emuMode)
+            LiveUpdateManager.postActive(context, card.name, mode)
         }
     }
 
@@ -216,12 +217,15 @@ fun MainScreen(dataStore: AppDataStore) {
         }
     }
 
-    // Auto-activate from QS tile / external intent
+    // Auto-activate from shortcut / external intent
     val activity = context as? ComponentActivity
-    val autoActivateId = remember { activity?.intent?.getStringExtra(EmuCard.EXTRA_AUTO_ACTIVATE) }
-    LaunchedEffect(autoActivateId, cards, isLoading) {
-        if (autoActivateId != null && !isLoading) {
-            val card = cards.find { it.id == autoActivateId } ?: return@LaunchedEffect
+    var lastIntentId by remember { mutableStateOf<String?>(null) }
+    val currentIntentId = activity?.intent?.getStringExtra(EmuCard.EXTRA_AUTO_ACTIVATE)
+    LaunchedEffect(currentIntentId, cards, isLoading) {
+        if (currentIntentId != null && currentIntentId != lastIntentId && !isLoading) {
+            lastIntentId = currentIntentId
+            val card = cards.find { it.id == currentIntentId } ?: return@LaunchedEffect
+            @Suppress("UNNECESSARY_SAFE_CALL")
             activity?.intent?.removeExtra(EmuCard.EXTRA_AUTO_ACTIVATE)
             activateCard(card)
         }
@@ -306,13 +310,15 @@ fun MainScreen(dataStore: AppDataStore) {
                                                 ).show()
                                                 return@launch
                                             }
-                                            val next = when (emuMode) {
+                                            val next = when (card.emuMode) {
                                                 EmuMode.NORMAL -> EmuMode.COMPAT
                                                 EmuMode.COMPAT -> EmuMode.NATIVE
                                                 EmuMode.NATIVE -> EmuMode.NORMAL
                                             }
-                                            dataStore.saveEmuMode(next)
-                                            if (isActive) activateCard(card)
+                                            val updated = card.copy(emuMode = next)
+                                            cards = cards.map { if (it.id == card.id) updated else it }
+                                            withContext(Dispatchers.IO) { jsonManager.saveCards(cards) }
+                                            if (isActive) activateCard(updated)
                                         }
                                     },
                                     onDeleteConfirmed = {
@@ -335,7 +341,10 @@ fun MainScreen(dataStore: AppDataStore) {
                         onConfirm = { name, idm ->
                             val newCard = NfcCard(UUID.randomUUID().toString(), name, idm)
                             cards += newCard
-                            scope.launch(Dispatchers.IO) { jsonManager.saveCards(cards) }
+                            scope.launch(Dispatchers.IO) {
+                                jsonManager.saveCards(cards)
+                            }
+                            // Add dynamic shortcut for long-press menu
                             showDialog = false
                         }
                     )

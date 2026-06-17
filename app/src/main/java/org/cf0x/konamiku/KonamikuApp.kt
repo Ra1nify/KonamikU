@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.NfcFCardEmulation
+import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -30,12 +31,27 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
             dataStore.saveActiveCardId(null)
         }
 
-        val tag = runCatching {
-            runBlocking { dataStore.appLocale.first().tag }
-        }.getOrDefault(AppLocale.EN_US.tag)
+        // Sync with system per-app language (API 33+). If the user changed it via
+        // system Settings → Apps → Language, our DataStore should follow.
+        val systemTag = if (Build.VERSION.SDK_INT >= 33) {
+            runCatching {
+                val lm = getSystemService(android.app.LocaleManager::class.java) ?: return@runCatching ""
+                lm.applicationLocales.toLanguageTags() ?: ""
+            }.getOrDefault("")
+        } else ""
+
+        val effectiveTag = if (systemTag.isNotBlank()) {
+            val matched = AppLocale.entries.firstOrNull { systemTag.startsWith(it.tag) && it.tag.isNotBlank() }
+            if (matched != null) runBlocking { dataStore.saveAppLocale(matched) }
+            systemTag
+        } else {
+            runCatching {
+                runBlocking { dataStore.appLocale.first().tag }
+            }.getOrDefault(AppLocale.EN_US.tag)
+        }
 
         AppCompatDelegate.setApplicationLocales(
-            LocaleListCompat.forLanguageTags(tag)
+            LocaleListCompat.forLanguageTags(effectiveTag)
         )
 
         XposedServiceHelper.registerListener(this)

@@ -177,7 +177,13 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Group 5: Language ---
         SettingGroup {
-            LanguageItem(dataStore, appLocale)
+            val systemLangLocked = if (Build.VERSION.SDK_INT >= 33) {
+                runCatching {
+                    val lm = context.getSystemService(android.app.LocaleManager::class.java) ?: return@runCatching false
+                    !lm.applicationLocales.isEmpty
+                }.getOrDefault(false)
+            } else false
+            LanguageItem(dataStore, appLocale, systemLocked = systemLangLocked)
         }
 
         // --- Group 6: System ---
@@ -390,7 +396,7 @@ private fun PaletteStyleItem(current: PaletteStyle, onSelect: (PaletteStyle) -> 
 }
 
 @Composable
-private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
+private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLocked: Boolean) {
     val scope   = rememberCoroutineScope()
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
@@ -399,22 +405,57 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
         stringResource(it.labelRes) to it 
     }
 
+    if (systemLocked && expanded) expanded = false
+
+    val contentAlpha = if (systemLocked) 0.38f else 1f
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (!systemLocked) Modifier.clickable { expanded = !expanded } else Modifier),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             Icon(
                 imageVector = Icons.Outlined.Language,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
                 modifier = Modifier.size(20.dp)
             )
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.setting_language), style = MaterialTheme.typography.bodyLarge)
-                if (!expanded) Text(options.first { it.second == appLocale }.first, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                Text(
+                    stringResource(R.string.setting_language),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
+                )
+                if (systemLocked) {
+                    Text(
+                        stringResource(R.string.setting_language_system_managed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                    )
+                } else if (!expanded) {
+                    Text(
+                        options.firstOrNull { it.second == appLocale }?.first ?: stringResource(R.string.setting_language_en),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
-            Icon(imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                modifier = Modifier.size(20.dp)
+            )
         }
 
-        AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+        AnimatedVisibility(
+            visible = expanded && !systemLocked,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 options.forEach { (label, value) ->
                     Row(Modifier.fillMaxWidth().clickable { pending = value }.padding(vertical = 12.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -430,10 +471,14 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
                         if (pending == appLocale) return@Button
                         runBlocking { dataStore.saveAppLocale(pending) }
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(pending.tag))
-                        // Activity must recreate to pick up new locale resources.
+                        // Force a full activity restart so the new locale takes effect
                         (context as? Activity)?.let { act ->
-                            if (Build.VERSION.SDK_INT >= 33) act.recreate()
-                            else { act.finish(); act.startActivity(act.intent) }
+                            act.finishAffinity()
+                            act.startActivity(
+                                Intent(act, act::class.java).addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                )
+                            )
                         }
                     }) { Text(stringResource(R.string.card_add_confirm)) }
                 }

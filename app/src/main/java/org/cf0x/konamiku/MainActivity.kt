@@ -1,6 +1,5 @@
 package org.cf0x.konamiku
 
-import android.content.Context
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
@@ -17,7 +16,6 @@ import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
-import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.data.ColorSource
 import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.layout.MainLayout
@@ -28,16 +26,6 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var dataStore: AppDataStore
     private var nfcAdapter: NfcAdapter? = null
-
-    override fun attachBaseContext(newBase: Context) {
-        val tag = runCatching {
-            runBlocking { AppDataStore(newBase).appLocale.first().tag }
-        }.getOrDefault(AppLocale.EN_US.tag)
-        val config = newBase.resources.configuration
-        config.setLocale(java.util.Locale.forLanguageTag(tag))
-        val ctx = newBase.createConfigurationContext(config)
-        super.attachBaseContext(ctx)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

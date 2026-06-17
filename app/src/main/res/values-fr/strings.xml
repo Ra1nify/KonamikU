@@ -75,6 +75,7 @@
     <string name="setting_nfc_default_desc">Gérer l\'application qui gère les paiements NFC standard.</string>
     <string name="status_xposed_needs_restart">Module actif — redémarrez le processus NFC pour appliquer.</string>
 
+    <string name="setting_language_system_managed">Géré par les paramètres système</string>
     <string name="setting_language">Langue de l\'appli</string>
     <string name="setting_language_system">Par défaut du système</string>
     <string name="setting_language_zh">简体中文</string>

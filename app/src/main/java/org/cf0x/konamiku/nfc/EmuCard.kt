@@ -16,6 +16,7 @@ class EmuCard : HostNfcFService() {
 
     companion object {
         const val EXTRA_AUTO_ACTIVATE = "org.cf0x.konamiku.EXTRA_AUTO_ACTIVATE"
+        const val EXTRA_AUTO_MODE     = "org.cf0x.konamiku.EXTRA_AUTO_MODE"
     }
 
     private var felicaCard: FelicaCard? = null

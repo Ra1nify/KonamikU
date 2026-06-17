@@ -95,6 +95,8 @@
         <meta-data android:name="xposedmodule" android:value="true" />
         <meta-data android:name="xposedminversion" android:value="101" />
 
+        <!-- QS tile disabled -->
+        <!--
         <service
             android:name=".system.KonamikuTileService"
             android:icon="@drawable/ic_nfc"
@@ -105,6 +107,7 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+        -->
 
     </application>
 
