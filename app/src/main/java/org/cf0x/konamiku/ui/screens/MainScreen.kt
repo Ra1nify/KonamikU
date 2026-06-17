@@ -293,7 +293,7 @@ fun MainScreen(dataStore: AppDataStore) {
                                     card              = card,
                                     isExpanded        = isExpanded,
                                     isActive          = isActive,
-                                    emuMode           = emuMode,
+                                    emuMode           = card.emuMode,
                                     onExpandClick     = {
                                         expandedId = if (isExpanded) null else card.id
                                     },
