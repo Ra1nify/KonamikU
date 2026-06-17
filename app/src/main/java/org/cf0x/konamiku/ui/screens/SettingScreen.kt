@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
+import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
@@ -47,6 +48,7 @@ fun SettingScreen(dataStore: AppDataStore) {
     val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
     val devModeForce by dataStore.devModeForceEmu.collectAsState(initial = dataStore.devModeForceEmuSync)
     val isExpressive by dataStore.themeExpressive.collectAsState(initial = true)
+    val paletteStyle by dataStore.paletteStyle.collectAsState(initial = PaletteStyle.TonalSpot)
 
     var previewColor by remember(savedColor) { mutableStateOf(savedColor) }
     var showPicker   by rememberSaveable { mutableStateOf(false) }
@@ -107,7 +109,12 @@ fun SettingScreen(dataStore: AppDataStore) {
 
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                // Style Toggle moved into this group
+                // --- Palette Style selector (decoupled from expressive shapes) ---
+                PaletteStyleItem(paletteStyle) { scope.launch { dataStore.savePaletteStyle(it) } }
+
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                // --- Expressive shapes toggle (now only controls corners + typography) ---
                 ExpressiveToggleItem(isExpressive) { scope.launch { dataStore.saveThemeExpressive(it) } }
             }
         }
@@ -169,6 +176,71 @@ private fun ExpressiveToggleItem(enabled: Boolean, onToggle: (Boolean) -> Unit) 
             Text(stringResource(R.string.setting_theme_expressive_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Switch(checked = enabled, onCheckedChange = onToggle)
+    }
+}
+
+@Composable
+private fun PaletteStyleItem(current: PaletteStyle, onSelect: (PaletteStyle) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val options = listOf(
+        PaletteStyle.TonalSpot  to stringResource(R.string.setting_palette_style_tonalspot),
+        PaletteStyle.Neutral    to stringResource(R.string.setting_palette_style_neutral),
+        PaletteStyle.Vibrant    to stringResource(R.string.setting_palette_style_vibrant),
+        PaletteStyle.Expressive to stringResource(R.string.setting_palette_style_expressive),
+        PaletteStyle.Monochrome to stringResource(R.string.setting_palette_style_monochrome),
+        PaletteStyle.Fidelity   to stringResource(R.string.setting_palette_style_fidelity),
+        PaletteStyle.Rainbow    to stringResource(R.string.setting_palette_style_rainbow),
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            Modifier.fillMaxWidth().clickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.setting_palette_style), style = MaterialTheme.typography.bodyLarge)
+                if (!expanded) {
+                    Text(
+                        options.firstOrNull { it.first == current }?.second ?: current.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(modifier = Modifier.padding(top = 8.dp)) {
+                options.forEach { (style, label) ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = false; onSelect(style) }
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        RadioButton(
+                            selected = current == style,
+                            onClick = { expanded = false; onSelect(style) }
+                        )
+                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
     }
 }
 

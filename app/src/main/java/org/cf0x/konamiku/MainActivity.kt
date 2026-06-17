@@ -15,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
@@ -56,12 +57,14 @@ class MainActivity : ComponentActivity() {
             val colorSource     by dataStore.colorSource.collectAsState(initial = ColorSource.MONET)
             val presetColor     by dataStore.presetColor.collectAsState(initial = Color(0xFF6750A4))
             val themeExpressive by dataStore.themeExpressive.collectAsState(initial = true)
+            val paletteStyle    by dataStore.paletteStyle.collectAsState(initial = PaletteStyle.TonalSpot)
 
             KonamikuTheme(
                 themeMode    = themeMode,
                 colorSource  = colorSource,
                 seedColor    = presetColor,
                 isExpressive = themeExpressive,
+                paletteStyle = paletteStyle,
             ) {
                 MainLayout(dataStore = dataStore)
             }

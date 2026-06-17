@@ -43,6 +43,7 @@ fun KonamikuTheme(
     colorSource: ColorSource = ColorSource.PRESET,
     seedColor: Color         = Color(0xFF6750A4),
     isExpressive: Boolean    = true,
+    paletteStyle: PaletteStyle = PaletteStyle.TonalSpot,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -66,12 +67,12 @@ fun KonamikuTheme(
 
     CompositionLocalProvider(LocalExpressiveMode provides isExpressive) {
         DynamicMaterialTheme(
-            seedColor  = effectiveSeed,
-            isDark     = isDark,
-            animate    = true,
-            style      = if (isExpressive) PaletteStyle.Expressive else PaletteStyle.TonalSpot,
-            typography = dynamicTypography,
-            shapes     = if (isExpressive) ExpressiveShapes else StandardShapes
+            seedColor   = effectiveSeed,
+            isDark      = isDark,
+            animate     = true,
+            style       = paletteStyle,
+            typography  = dynamicTypography,
+            shapes      = if (isExpressive) ExpressiveShapes else StandardShapes
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.surface,

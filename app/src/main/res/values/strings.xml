@@ -66,7 +66,15 @@
     <string name="setting_theme_light">Light</string>
     <string name="setting_theme_dark">Dark</string>
     <string name="setting_theme_expressive">Material You Expressive</string>
-    <string name="setting_theme_expressive_desc">Enable more fluid M3 designs with larger corners and higher contrast.</string>
+    <string name="setting_theme_expressive_desc">Enable larger rounded corners and bolder typography.</string>
+    <string name="setting_palette_style">Color Palette Style</string>
+    <string name="setting_palette_style_tonalspot">Tonal Spot</string>
+    <string name="setting_palette_style_neutral">Neutral</string>
+    <string name="setting_palette_style_vibrant">Vibrant</string>
+    <string name="setting_palette_style_expressive">Expressive</string>
+    <string name="setting_palette_style_monochrome">Monochrome</string>
+    <string name="setting_palette_style_fidelity">Fidelity</string>
+    <string name="setting_palette_style_rainbow">Rainbow</string>
     <string name="setting_nfc_default">Default Payment App</string>
     <string name="setting_nfc_default_desc">Manage which app handles standard NFC payments.</string>
     <string name="status_xposed_needs_restart">Module active — restart NFC process to apply.</string>

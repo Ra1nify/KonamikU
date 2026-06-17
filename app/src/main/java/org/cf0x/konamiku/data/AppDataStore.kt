@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -34,6 +35,7 @@ class AppDataStore(private val context: Context) {
         val APP_LOCALE         = stringPreferencesKey("app_locale")
         val DEV_FORCE_EMU      = booleanPreferencesKey("dev_mode_force_emu")
         val THEME_EXPRESSIVE   = booleanPreferencesKey("theme_expressive")
+        val PALETTE_STYLE      = stringPreferencesKey("palette_style")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -66,6 +68,11 @@ class AppDataStore(private val context: Context) {
     val devModeForceEmu: Flow<Boolean> = context.dataStore.data.map { it[Keys.DEV_FORCE_EMU] ?: false }
     val themeExpressive: Flow<Boolean> = context.dataStore.data.map { it[Keys.THEME_EXPRESSIVE] ?: true }
 
+    val paletteStyle: Flow<PaletteStyle> = context.dataStore.data.map { p ->
+        runCatching { PaletteStyle.valueOf(p[Keys.PALETTE_STYLE] ?: "") }
+            .getOrDefault(PaletteStyle.TonalSpot)
+    }
+
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
     suspend fun saveColorSource(s: ColorSource) = context.dataStore.edit { it[Keys.COLOR_SOURCE] = s.name }
@@ -85,4 +92,6 @@ class AppDataStore(private val context: Context) {
     }
 
     suspend fun saveThemeExpressive(v: Boolean) = context.dataStore.edit { it[Keys.THEME_EXPRESSIVE] = v }
+
+    suspend fun savePaletteStyle(s: PaletteStyle) = context.dataStore.edit { it[Keys.PALETTE_STYLE] = s.name }
 }
