@@ -28,7 +28,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -77,9 +76,11 @@ fun MainLayout(
             navLocked = false
         }
         navController.navigate(screen.route) {
-            // Remove popUpTo(findStartDestination().id) to allow direct exit from any page
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
             launchSingleTop = true
-            restoreState    = false // Fresh start to prevent overlapping stale state
+            restoreState    = false
         }
     }
 
