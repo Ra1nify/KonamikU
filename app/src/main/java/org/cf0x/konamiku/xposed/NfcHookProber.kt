@@ -16,13 +16,14 @@ object NfcHookProber {
         val emulation = runCatching { NfcFCardEmulation.getInstance(adapter) }.getOrNull()
             ?: return false
         val component = ComponentName(context, EmuCard::class.java)
-        
-        // We use registerSystemCodeForService because it internally calls isValidSystemCode.
-        // If our hook is active, it returns true even for codes that would normally be rejected.
-        // "88B4" is a valid code for our app, so we might want to test an "invalid" one if we wanted
-        // to be 100% sure, but register followed by unregister is what we've been using.
+
+        // Use a system code that Android would always reject without our hook.
+        // "88B4" can succeed on stock Android (it's a normal valid code), giving a
+        // false positive on non-hooked devices. "FFFF" is guaranteed to be rejected
+        // by isValidSystemCode on stock ROMs, so it only succeeds when our hook
+        // makes isValidSystemCode always return true.
         return runCatching {
-            val ok = emulation.registerSystemCodeForService(component, "88B4")
+            val ok = emulation.registerSystemCodeForService(component, "FFFF")
             if (ok) emulation.unregisterSystemCodeForService(component)
             ok
         }.getOrDefault(false)

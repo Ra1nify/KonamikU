@@ -1,6 +1,7 @@
 package org.cf0x.konamiku.ui.viewmodels
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.Context
 import android.nfc.NfcAdapter
 import androidx.annotation.StringRes
@@ -102,11 +103,15 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
             val result = NfcRestart.restart(context)
             if (result is NfcRestart.Result.Restarted || result is NfcRestart.Result.Killed || result is NfcRestart.Result.WasDead) {
-                NfcRestart.clearNfcFCache()
                 viewModelScope.launch {
                     delay(2000)
                     reprobeHook()
                     refreshNfc()
+                    // Force the QS tile to call onStartListening() and re-render
+                    android.service.quicksettings.TileService.requestListeningState(
+                        context,
+                        ComponentName(context, org.cf0x.konamiku.system.KonamikuTileService::class.java)
+                    )
                 }
             }
 

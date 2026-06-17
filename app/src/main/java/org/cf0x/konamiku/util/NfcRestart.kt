@@ -39,19 +39,25 @@ object NfcRestart {
             Runtime.getRuntime()
                 .exec(arrayOf("su", "-c", "pkill -f com.android.nfc"))
                 .waitFor()
-            
+
             // Hard toggle NFC state to force full re-initialization and module loading
             Runtime.getRuntime()
                 .exec(arrayOf("su", "-c", "svc nfc disable"))
                 .waitFor()
-            
+
             delay(500)
-            
+
             Runtime.getRuntime()
                 .exec(arrayOf("su", "-c", "svc nfc enable"))
                 .waitFor()
         }
-        
+
+        // Clear stale binder cache NOW so the wait loop below gets a fresh
+        // adapter instance reflecting the actual NFC state. Doing this after
+        // restart() returns (as the caller used to do) is too late — the loop
+        // would have already timed out using the dead binder.
+        clearNfcFCache()
+
         // Wait for service to be ready
         var retry = 0
         while (retry < 15) {
@@ -83,7 +89,7 @@ object NfcRestart {
                 .exec(arrayOf("su", "-c", "svc nfc enable"))
                 .waitFor()
         }
-        
+
         // Wait for service to be ready (adapter enabled)
         var retry = 0
         while (retry < 10) {
@@ -92,7 +98,7 @@ object NfcRestart {
             delay(500)
             retry++
         }
-        
+
         delay(1000)
         getPid()
     }
@@ -118,7 +124,7 @@ object NfcRestart {
                 nfcAField.isAccessible = true
                 (nfcAField.get(null) as? MutableMap<*, *>)?.clear()
             }
-            
+
             // 3. NfcAdapter cache and singleton
             val adapterCls = Class.forName("android.nfc.NfcAdapter")
             runCatching {
@@ -126,13 +132,13 @@ object NfcRestart {
                 sServiceCacheField.isAccessible = true
                 (sServiceCacheField.get(null) as? MutableMap<*, *>)?.clear()
             }
-            
+
             runCatching {
                 val sAdapterField = adapterCls.getDeclaredField("sAdapter")
                 sAdapterField.isAccessible = true
                 sAdapterField.set(null, null)
             }
-            
+
             android.util.Log.i("KonamikU", "NFC binder caches cleared and adapter singleton reset")
         }.onFailure {
             android.util.Log.e("KonamikU", "Failed to clear NFC cache: ${it.message}")
