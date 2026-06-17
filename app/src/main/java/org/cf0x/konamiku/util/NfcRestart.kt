@@ -80,30 +80,6 @@ object NfcRestart {
     }
 
     /**
-     * Tries to bring up com.android.nfc via "svc nfc enable".
-     * Returns the new PID if successful, null otherwise.
-     */
-    suspend fun tryBringUp(context: android.content.Context): Int? = withContext(Dispatchers.IO) {
-        runCatching {
-            Runtime.getRuntime()
-                .exec(arrayOf("su", "-c", "svc nfc enable"))
-                .waitFor()
-        }
-
-        // Wait for service to be ready (adapter enabled)
-        var retry = 0
-        while (retry < 10) {
-            val adapter = runCatching { NfcAdapter.getDefaultAdapter(context) }.getOrNull()
-            if (adapter?.isEnabled == true) break
-            delay(500)
-            retry++
-        }
-
-        delay(1000)
-        getPid()
-    }
-
-    /**
      * Clears the static cache in NfcFCardEmulation, CardEmulation, and NfcAdapter via reflection.
      * This forces the app to re-obtain the service binder and prevents DeadObjectException.
      */

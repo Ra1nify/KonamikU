@@ -28,6 +28,7 @@ class ScanReceiver : BroadcastReceiver() {
                 val emuMode     = dataStore.emuMode.first()
                 val card        = jsonManager.loadCards().find { it.id == activeId }
                     ?: return@launch
+
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,

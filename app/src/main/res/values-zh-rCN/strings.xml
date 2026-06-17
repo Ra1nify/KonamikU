@@ -25,10 +25,9 @@
     <string name="card_action_activate">激活</string>
     <string name="card_action_stop">停止</string>
     <string name="card_delete_title">删除卡片</string>
-    <string name="card_delete_desc">确认删除 \"%1$s\"？此操作无法撤销。</string>
+    <string name="card_delete_desc">确认删除 "%1$s"？此操作无法撤销。</string>
     <string name="card_badge_on">运行中</string>
 
-    <string name="toast_card_activated">%1$s 已激活 · %2$s</string>
     <string name="toast_card_scanned">%1$s 已被扫描！</string>
     <string name="mode_normal">全局</string>
     <string name="mode_compat">兼容</string>
@@ -36,9 +35,6 @@
 
     <string name="notif_channel_name">卡片模拟</string>
     <string name="notif_channel_desc">KonamikU NFC 卡片模拟状态</string>
-    <string name="notif_progress_normal">全局</string>
-    <string name="notif_progress_compat">兼容</string>
-    <string name="notif_progress_native">原生</string>
     <string name="notif_progress_simulated">已模拟</string>
     <string name="notif_action_stop">停止</string>
     <string name="notif_action_switch_mode">切换模式</string>
@@ -84,7 +80,6 @@
     <string name="setting_language_system">跟随系统</string>
     <string name="setting_language_zh">简体中文</string>
     <string name="setting_language_en">English</string>
-    <string name="setting_language_change">更改</string>
 
     <string name="status_root">Root 状态</string>
     <string name="status_root_unknown_provider">来源未知</string>
@@ -97,39 +92,15 @@
     <string name="toast_nfc_killed">NFC 服务已终止，正在尝试拉起…</string>
     <string name="toast_nfc_restart_failed">NFC 服务重启失败</string>
     <string name="toast_nfc_restarted">NFC 服务重启成功</string>
-    <string name="toast_nfc_start_success">NFC 服务已拉起</string>
-    <string name="toast_nfc_start_fail">NFC 服务拉起失败</string>
-    <string name="toast_nfc_waiting_bindable">正在等待 NFC 服务就绪…</string>
     <string name="toast_xposed_refreshing">正在刷新模块状态…</string>
     <string name="toast_mode_locked">模块未加载 · 仅 Native 模式可用</string>
     <string name="setting_dev_force_emu">强制解锁所有模式</string>
     <string name="setting_dev_force_emu_desc">绕过模块环境检查（请谨慎使用）。</string>
 
     <string name="tools_id_converter_title">ID 转换器</string>
-    <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
-    <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
-    <string name="tools_section_idm_to_kid">IDm → Konami ID</string>
-    <string name="tools_section_kid_to_idm">Konami ID → IDm</string>
-    <string name="tools_section_idm_to_ac">IDm → Access Code</string>
-    <string name="tools_section_ac_to_idm">Access Code → IDm</string>
     <string name="tools_label_idm">IDm (16位十六进制)</string>
     <string name="tools_label_kid">Konami ID (16位)</string>
     <string name="tools_label_ac">Access Code (20位数字)</string>
-    <string name="tools_label_idm_result">IDm</string>
-    <string name="tools_label_kid_result">Konami ID</string>
-    <string name="tools_label_ac_result">Access Code</string>
-    <string name="tools_label_idm_positive">IDm (取正)</string>
-    <string name="tools_convert">转换</string>
-    <string name="tools_copy">复制</string>
-    <string name="tools_copied">已复制</string>
-    <string name="tools_char_count">%1$d / %2$d</string>
-    <string name="tools_validation_need_length">需要 %2$d 位，当前 %1$d 位</string>
-    <string name="tools_validation_hex_invalid">包含无效十六进制字符</string>
-    <string name="tools_validation_idm_prefix">IDm 须以 E004 或 0 开头</string>
-    <string name="tools_validation_kid_invalid">包含无效字符</string>
-    <string name="tools_validation_max_16">最多16位</string>
-    <string name="tools_validation_max_20">最多20位数字</string>
-    <string name="tools_validation_digits_only">只能包含数字</string>
     <string name="tools_warn_ambiguous">存在两个可能的结果；已显示取正结果。</string>
     <string name="tools_err_idm_empty">IDm 不能为空</string>
     <string name="tools_err_idm_length">IDm 须为16位十六进制字符</string>

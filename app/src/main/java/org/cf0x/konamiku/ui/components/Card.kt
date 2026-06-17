@@ -48,7 +48,6 @@ fun NfcCardItem(
     
     val primary = MaterialTheme.colorScheme.primary
     
-    // Fixed Color Logic: Containers follow theme luminosity
     val containerColor = if (isActive && isExpressive) 
         MaterialTheme.colorScheme.tertiaryContainer 
     else if (isActive)
@@ -94,7 +93,7 @@ fun NfcCardItem(
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape    = MaterialTheme.shapes.large,
-                    // Fixed Color Logic: Use Container for background to avoid inversion
+                    // Container color avoids theme inversion
                     color    = if (isActive)
                         MaterialTheme.colorScheme.primaryContainer
                     else
@@ -104,7 +103,6 @@ fun NfcCardItem(
                         Icon(
                             imageVector        = if (isActive) Icons.Filled.Nfc else Icons.Outlined.Nfc,
                             contentDescription = null,
-                            // Use onContainer/Primary for the icon
                             tint               = if (isActive)
                                 MaterialTheme.colorScheme.primary
                             else

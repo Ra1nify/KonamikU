@@ -51,6 +51,4 @@ object AimeAccessCodeConverter {
 
     fun formatAccessCode(raw: String): String =
         raw.filter { it.isDigit() }.padStart(20, '0').chunked(4).joinToString("-")
-
-    fun normalizeAccessCode(input: String): String = input.filter { it.isDigit() }
 }

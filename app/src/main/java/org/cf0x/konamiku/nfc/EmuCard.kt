@@ -121,4 +121,3 @@ class EmuCard : HostNfcFService() {
         if (::wakeLock.isInitialized && wakeLock.isHeld) wakeLock.release()
     }
 }
-

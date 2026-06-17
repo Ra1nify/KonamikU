@@ -66,11 +66,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun refreshRoot() {
-        viewModelScope.launch {
-            _status.update { it?.copy(root = StatusDetector.detectRoot()) }
-        }
-    }
 
     fun onNfcLongPress() {
         viewModelScope.launch(Dispatchers.IO) {

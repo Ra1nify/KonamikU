@@ -27,7 +27,6 @@
     <string name="card_delete_desc">Delete "%1$s"? This cannot be undone.</string>
     <string name="card_badge_on">ON</string>
 
-    <string name="toast_card_activated">%1$s activated · %2$s</string>
     <string name="toast_card_scanned">%1$s scanned!</string>
     <string name="mode_normal">Global</string>
     <string name="mode_compat">Compat</string>
@@ -35,9 +34,6 @@
 
     <string name="notif_channel_name">Card Emulation</string>
     <string name="notif_channel_desc">KonamikU NFC card emulation status</string>
-    <string name="notif_progress_normal">Global</string>
-    <string name="notif_progress_compat">Compat</string>
-    <string name="notif_progress_native">Native</string>
     <string name="notif_progress_simulated">Simulated</string>
     <string name="notif_action_stop">Stop</string>
     <string name="notif_action_switch_mode">Switch Mode</string>
@@ -83,7 +79,6 @@
     <string name="setting_language_system">System Default</string>
     <string name="setting_language_zh">简体中文</string>
     <string name="setting_language_en">English</string>
-    <string name="setting_language_change">Change</string>
 
     <string name="status_root">Root Status</string>
     <string name="status_root_unknown_provider">Unknown provider</string>
@@ -96,39 +91,15 @@
     <string name="toast_nfc_killed">NFC service terminated, restarting…</string>
     <string name="toast_nfc_restart_failed">Failed to restart NFC service</string>
     <string name="toast_nfc_restarted">NFC service restarted successfully</string>
-    <string name="toast_nfc_start_success">NFC service started</string>
-    <string name="toast_nfc_start_fail">Failed to start NFC service</string>
-    <string name="toast_nfc_waiting_bindable">Waiting for NFC service to be ready…</string>
     <string name="toast_xposed_refreshing">Refreshing module status…</string>
     <string name="toast_mode_locked">Module inactive · Native mode only</string>
     <string name="setting_dev_force_emu">Force Unlock All Modes</string>
     <string name="setting_dev_force_emu_desc">Bypass module checks (Use with caution).</string>
 
     <string name="tools_id_converter_title">ID Converter</string>
-    <string name="tools_konami_panel_title">IDm  ↔  Konami ID</string>
-    <string name="tools_aime_panel_title">IDm  ↔  Access Code</string>
-    <string name="tools_section_idm_to_kid">IDm → Konami ID</string>
-    <string name="tools_section_kid_to_idm">Konami ID → IDm</string>
-    <string name="tools_section_idm_to_ac">IDm → Access Code</string>
-    <string name="tools_section_ac_to_idm">Access Code → IDm</string>
     <string name="tools_label_idm">IDm (16 hex chars)</string>
     <string name="tools_label_kid">Konami ID (16 chars)</string>
     <string name="tools_label_ac">Access Code (20 digits)</string>
-    <string name="tools_label_idm_result">IDm</string>
-    <string name="tools_label_kid_result">Konami ID</string>
-    <string name="tools_label_ac_result">Access Code</string>
-    <string name="tools_label_idm_positive">IDm (positive)</string>
-    <string name="tools_convert">Convert</string>
-    <string name="tools_copy">Copy</string>
-    <string name="tools_copied">Copied</string>
-    <string name="tools_char_count">%1$d / %2$d</string>
-    <string name="tools_validation_need_length">Need %2$d chars, currently %1$d</string>
-    <string name="tools_validation_hex_invalid">Contains invalid hex characters</string>
-    <string name="tools_validation_idm_prefix">IDm must start with E004 or 0</string>
-    <string name="tools_validation_kid_invalid">Contains invalid characters</string>
-    <string name="tools_validation_max_16">Maximum 16 characters</string>
-    <string name="tools_validation_max_20">Maximum 20 digits</string>
-    <string name="tools_validation_digits_only">Digits only</string>
     <string name="tools_warn_ambiguous">Two results possible; showing positive.</string>
     <string name="tools_err_idm_empty">IDm cannot be empty</string>
     <string name="tools_err_idm_length">IDm must be 16 hex chars</string>
