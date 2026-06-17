@@ -356,14 +356,7 @@ private fun AddCardDialog(
         val activity = context as? Activity
 
         if (!isScanning) {
-            return@DisposableEffect onDispose {
-                activity?.let {
-                    nfcAdapter?.disableReaderMode(it)
-                    if (it is org.cf0x.konamiku.MainActivity) {
-                        it.enableDefaultReaderMode()
-                    }
-                }
-            }
+            return@DisposableEffect onDispose { activity?.let { nfcAdapter?.disableReaderMode(it) } }
         }
 
         val act = activity ?: return@DisposableEffect onDispose {}
@@ -392,7 +385,6 @@ private fun AddCardDialog(
 
         onDispose {
             nfcAdapter?.disableReaderMode(act)
-            (act as? org.cf0x.konamiku.MainActivity)?.enableDefaultReaderMode()
         }
     }
 
@@ -519,3 +511,4 @@ private fun AddCardDialog(
         }
     )
 }
+

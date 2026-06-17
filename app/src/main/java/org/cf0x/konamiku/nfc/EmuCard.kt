@@ -26,6 +26,7 @@ class EmuCard : HostNfcFService() {
             "KonamikU::EmuCard",
         ).also { it.acquire(10 * 60 * 1000L) }
 
+        val ctx: android.content.Context = this
         runBlocking(Dispatchers.IO) {
             val dataStore   = AppDataStore(applicationContext)
             val jsonManager = JsonManager(applicationContext)
@@ -40,7 +41,7 @@ class EmuCard : HostNfcFService() {
                 EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
             }
             android.util.Log.i("KonamikU", "EmuCard active: IDm=$activeIdm, real=$realIdm, mode=$emuMode")
-            felicaCard = FelicaCard(activeIdm = activeIdm, realIdm = realIdm, emuMode = emuMode)
+            felicaCard = FelicaCard(ctx, activeIdm = activeIdm, realIdm = realIdm, emuMode = emuMode)
         }
     }
 
@@ -120,3 +121,4 @@ class EmuCard : HostNfcFService() {
         if (::wakeLock.isInitialized && wakeLock.isHeld) wakeLock.release()
     }
 }
+

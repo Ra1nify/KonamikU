@@ -94,23 +94,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun enableDefaultReaderMode() {
-        nfcAdapter?.enableReaderMode(
-            this,
-            { tag ->
-                val idm = tag.id.joinToString("") { byte -> "%02X".format(byte) }
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(this@MainActivity, "IDm:$idm", Toast.LENGTH_SHORT).show()
-                }
-            },
-            NfcAdapter.FLAG_READER_NFC_F or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
-            null
-        )
-    }
-
     override fun onResume() {
         super.onResume()
-        enableDefaultReaderMode()
+        // HCE card emulation requires the NFC chip in idle/passive mode.
+        // Reader mode would force the chip into active polling, preventing
+        // the emulated card from responding to external readers.
     }
 
     override fun onPause() {
