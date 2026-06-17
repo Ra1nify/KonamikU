@@ -154,6 +154,7 @@ fun MainScreen(dataStore: AppDataStore) {
         }
     }
 
+    // Auto-activate from QS tile / external intent
     fun activateCard(card: NfcCard) {
         scope.launch {
             if (Build.VERSION.SDK_INT >= 33 &&
@@ -212,6 +213,17 @@ fun MainScreen(dataStore: AppDataStore) {
             }
             dataStore.saveActiveCardId(null)
             LiveUpdateManager.cancel(context)
+        }
+    }
+
+    // Auto-activate from QS tile / external intent
+    val activity = context as? ComponentActivity
+    val autoActivateId = remember { activity?.intent?.getStringExtra(EmuCard.EXTRA_AUTO_ACTIVATE) }
+    LaunchedEffect(autoActivateId, cards, isLoading) {
+        if (autoActivateId != null && !isLoading) {
+            val card = cards.find { it.id == autoActivateId } ?: return@LaunchedEffect
+            activity?.intent?.removeExtra(EmuCard.EXTRA_AUTO_ACTIVATE)
+            activateCard(card)
         }
     }
 

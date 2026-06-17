@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.cf0x.konamiku.R
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -15,8 +16,14 @@ enum class NavigationMode { AUTO, BOTTOM, RAIL }
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ColorSource { MONET, PRESET, CUSTOM }
 enum class EmuMode { NORMAL, COMPAT, NATIVE }
-enum class AppLocale(val tag: String) {
-    SYSTEM(""), ZH_CN("zh-CN"), EN_US("en-US")
+enum class AppLocale(val tag: String, val labelRes: Int) {
+    SYSTEM("", R.string.setting_language_system),
+    ZH_CN("zh-CN", R.string.setting_language_zh),
+    ZH_TW("zh-TW", R.string.setting_language_zh_tw),
+    JA("ja", R.string.setting_language_ja),
+    KO("ko", R.string.setting_language_ko),
+    FR("fr", R.string.setting_language_fr),
+    EN_US("en-US", R.string.setting_language_en);
 }
 
 class AppDataStore(private val context: Context) {
@@ -62,7 +69,18 @@ class AppDataStore(private val context: Context) {
 
     val appLocale: Flow<AppLocale> = context.dataStore.data.map { p ->
         val tag = p[Keys.APP_LOCALE] ?: ""
-        AppLocale.entries.find { it.tag == tag } ?: AppLocale.SYSTEM
+        AppLocale.entries.find { it.tag == tag } ?: detectSystemLocale()
+    }
+
+    private fun detectSystemLocale(): AppLocale {
+        val locale = java.util.Locale.getDefault()
+        return when (locale.language) {
+            "zh" -> if (locale.country in listOf("TW", "HK", "MO")) AppLocale.ZH_TW else AppLocale.ZH_CN
+            "ja" -> AppLocale.JA
+            "ko" -> AppLocale.KO
+            "fr" -> AppLocale.FR
+            else -> AppLocale.EN_US
+        }
     }
 
     val devModeForceEmu: Flow<Boolean> = context.dataStore.data.map { it[Keys.DEV_FORCE_EMU] ?: false }

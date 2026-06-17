@@ -14,6 +14,10 @@ import org.cf0x.konamiku.notification.ScanReceiver
 
 class EmuCard : HostNfcFService() {
 
+    companion object {
+        const val EXTRA_AUTO_ACTIVATE = "org.cf0x.konamiku.EXTRA_AUTO_ACTIVATE"
+    }
+
     private var felicaCard: FelicaCard? = null
     private lateinit var wakeLock: PowerManager.WakeLock
 

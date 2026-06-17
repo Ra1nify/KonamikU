@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 import org.cf0x.konamiku.MainActivity
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.EmuMode
+import org.cf0x.konamiku.notification.NotificationActionReceiver
 import java.lang.reflect.Method
 
 object LiveUpdateManager {
@@ -89,10 +91,10 @@ object LiveUpdateManager {
         lastNotifyKey = notifyKey
 
         val tapIntent = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val stopIntent = PendingIntent.getBroadcast(context, 1, Intent(ACTION_TOGGLE_ACTIVATE).setPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val modeIntent = PendingIntent.getBroadcast(context, 2, Intent(ACTION_TOGGLE_MODE).setPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val nextIntent = PendingIntent.getBroadcast(context, 4, Intent(ACTION_NEXT_CARD).setPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val delIntent  = PendingIntent.getBroadcast(context, 3, Intent(ACTION_DISMISSED).setPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val stopIntent = PendingIntent.getBroadcast(context, 1, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_TOGGLE_ACTIVATE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val modeIntent = PendingIntent.getBroadcast(context, 2, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_TOGGLE_MODE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val nextIntent = PendingIntent.getBroadcast(context, 4, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_NEXT_CARD), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val delIntent  = PendingIntent.getBroadcast(context, 3, Intent().setClass(context, NotificationActionReceiver::class.java).setAction(ACTION_DISMISSED), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         val builder = Notification.Builder(context, channelId)
             .setSmallIcon(Icon.createWithResource(context, R.drawable.ic_nfc))

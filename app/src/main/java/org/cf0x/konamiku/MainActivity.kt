@@ -30,17 +30,13 @@ class MainActivity : ComponentActivity() {
     private var nfcAdapter: NfcAdapter? = null
 
     override fun attachBaseContext(newBase: Context) {
-        val locale = runCatching {
-            runBlocking { AppDataStore(newBase).appLocale.first() }
-        }.getOrDefault(AppLocale.SYSTEM)
-        if (locale == AppLocale.SYSTEM) {
-            super.attachBaseContext(newBase)
-        } else {
-            val config = newBase.resources.configuration
-            config.setLocale(java.util.Locale.forLanguageTag(locale.tag))
-            val ctx = newBase.createConfigurationContext(config)
-            super.attachBaseContext(ctx)
-        }
+        val tag = runCatching {
+            runBlocking { AppDataStore(newBase).appLocale.first().tag }
+        }.getOrDefault(AppLocale.EN_US.tag)
+        val config = newBase.resources.configuration
+        config.setLocale(java.util.Locale.forLanguageTag(tag))
+        val ctx = newBase.createConfigurationContext(config)
+        super.attachBaseContext(ctx)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

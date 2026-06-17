@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KonamikU</string>
+    <string name="mod_desc">NEX aka.NfcExtended</string>
+    <string name="nav_cards">Cartes</string>
+    <string name="nav_tools">Outils</string>
+    <string name="nav_settings">Paramètres</string>
+
+    <string name="card_add_title">Ajouter une carte</string>
+    <string name="card_add_name_label">Nom de la carte</string>
+    <string name="card_add_name_placeholder">ex. Ma Suica</string>
+    <string name="card_add_idm_label">IDm (16 caractères hex)</string>
+    <string name="card_add_idm_placeholder">012E456789ABCDEF</string>
+    <string name="card_add_idm_scanning">Scan…</string>
+    <string name="card_add_idm_scanning_hint">Tenez la carte près du capteur NFC</string>
+    <string name="card_add_err_invalid_hex">Caractères hexadécimaux invalides</string>
+    <string name="card_add_scanning">Scan</string>
+    <string name="card_add_confirm">Confirmer</string>
+    <string name="card_add_cancel">Annuler</string>
+
+    <string name="cards_empty_title">Aucune carte</string>
+    <string name="cards_empty_hint">Appuyez sur + pour ajouter une carte</string>
+    <string name="card_action_delete">Supprimer</string>
+    <string name="card_action_activate">Activer</string>
+    <string name="card_action_stop">Arrêter</string>
+    <string name="card_delete_title">Supprimer la carte</string>
+    <string name="card_delete_desc">Supprimer "%1$s" ? Cette action est irréversible.</string>
+    <string name="card_badge_on">ACTIF</string>
+
+    <string name="toast_card_scanned">%1$s scannée !</string>
+    <string name="mode_normal">Global</string>
+    <string name="mode_compat">Compat</string>
+    <string name="mode_native">Natf</string>
+
+    <string name="notif_channel_name">Émulation de carte</string>
+    <string name="notif_channel_desc">Statut d\'émulation NFC KonamikU</string>
+    <string name="notif_progress_simulated">Simulé</string>
+    <string name="notif_action_stop">Arrêter</string>
+    <string name="notif_action_switch_mode">Changer de mode</string>
+    <string name="notif_action_next_card">Carte suivante</string>
+
+    <string name="status_nfc_rf">Radio NFC</string>
+    <string name="status_lsposed">LSPosed</string>
+    <string name="status_pmmtool">Outil PMm</string>
+    <string name="status_hcef">HCE-F</string>
+    <string name="status_available">Disponible</string>
+    <string name="status_unavailable">Indisponible</string>
+    <string name="status_injected">Injecté</string>
+    <string name="status_not_injected">Non injecté</string>
+    <string name="status_rf_on">Activé</string>
+    <string name="status_rf_off">Désactivé</string>
+
+    <string name="setting_nav_layout">Disposition de navigation</string>
+    <string name="setting_nav_auto">Auto</string>
+    <string name="setting_nav_bottom">Bas</string>
+    <string name="setting_nav_rail">Latéral</string>
+    <string name="setting_color_source">Couleur du thème</string>
+    <string name="setting_color_system">Accent système</string>
+    <string name="setting_color_custom">Personnalisé</string>
+    <string name="setting_theme_mode">Préférence mode sombre</string>
+    <string name="setting_theme_system">Suivre le système</string>
+    <string name="setting_theme_light">Clair</string>
+    <string name="setting_theme_dark">Sombre</string>
+    <string name="setting_theme_expressive">Material You Expressif</string>
+    <string name="setting_theme_expressive_desc">Active les grands coins arrondis et la typographie en gras.</string>
+    <string name="setting_palette_style">Style de palette</string>
+    <string name="setting_palette_style_tonalspot">Tonal Spot</string>
+    <string name="setting_palette_style_neutral">Neutral</string>
+    <string name="setting_palette_style_vibrant">Vibrant</string>
+    <string name="setting_palette_style_expressive">Expressive</string>
+    <string name="setting_palette_style_monochrome">Monochrome</string>
+    <string name="setting_palette_style_fidelity">Fidelity</string>
+    <string name="setting_palette_style_rainbow">Rainbow</string>
+    <string name="setting_nfc_default">Appli de paiement par défaut</string>
+    <string name="setting_nfc_default_desc">Gérer l\'application qui gère les paiements NFC standard.</string>
+    <string name="status_xposed_needs_restart">Module actif — redémarrez le processus NFC pour appliquer.</string>
+
+    <string name="setting_language">Langue de l\'appli</string>
+    <string name="setting_language_system">Par défaut du système</string>
+    <string name="setting_language_zh">简体中文</string>
+    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_ja">日本語</string>
+    <string name="setting_language_ko">한국어</string>
+    <string name="setting_language_fr">Français</string>
+    <string name="setting_language_en">English</string>
+
+    <string name="status_root">Statut Root</string>
+    <string name="status_root_unknown_provider">Fournisseur inconnu</string>
+    <string name="toast_nfc_already_on">NFC déjà activé</string>
+    <string name="toast_nfc_enabling">Tentative d\'activation NFC…</string>
+    <string name="toast_nfc_enable_success">NFC activé</string>
+    <string name="toast_nfc_enable_fail">Échec d\'activation NFC</string>
+    <string name="toast_root_no_permission">Pas de permission Root</string>
+    <string name="toast_nfc_was_dead">Service NFC hors ligne, redémarrage…</string>
+    <string name="toast_nfc_killed">Service NFC terminé, redémarrage…</string>
+    <string name="toast_nfc_restart_failed">Échec du redémarrage du service NFC</string>
+    <string name="toast_nfc_restarted">Service NFC redémarré avec succès</string>
+    <string name="toast_xposed_refreshing">Actualisation du statut du module…</string>
+    <string name="toast_mode_locked">Module inactif · Mode Natf uniquement</string>
+    <string name="setting_dev_force_emu">Forcer tous les modes</string>
+    <string name="setting_dev_force_emu_desc">Ignorer les vérifications du module (à utiliser avec prudence).</string>
+
+    <string name="tools_id_converter_title">Convertisseur d\'ID</string>
+    <string name="tools_label_idm">IDm (16 hex)</string>
+    <string name="tools_label_kid">Konami ID (16 car.)</string>
+    <string name="tools_label_ac">Code d\'accès (20 chiffres)</string>
+    <string name="tools_warn_ambiguous">Deux résultats possibles ; affichage du positif.</string>
+    <string name="tools_err_idm_empty">L\'IDm ne peut pas être vide</string>
+    <string name="tools_err_idm_length">L\'IDm doit comporter 16 caractères hex</string>
+    <string name="tools_err_idm_hex">Caractères hexadécimaux invalides</string>
+    <string name="tools_err_idm_prefix">Doit commencer par E004 ou 0</string>
+    <string name="tools_err_ac_empty">Le code d\'accès ne peut pas être vide</string>
+    <string name="tools_err_ac_length">Le code d\'accès doit comporter 20 chiffres</string>
+    <string name="tools_err_kid_length">Doit comporter exactement 16 caractères</string>
+    <string name="tools_err_kid_chars">Caractères invalides trouvés</string>
+    <string name="tools_err_generic">Échec de la conversion</string>
+    <string name="tile_label">KonamikU</string>
+</resources>

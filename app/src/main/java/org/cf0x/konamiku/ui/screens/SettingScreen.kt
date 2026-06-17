@@ -13,7 +13,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Colorize
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.RoundedCorner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -21,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -88,8 +97,8 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Group 2: Navigation ---
         SettingGroup {
+            SettingHeader(icon = Icons.Outlined.Dashboard, title = stringResource(R.string.setting_nav_layout))
             SegmentSwitch(
-                label         = stringResource(R.string.setting_nav_layout),
                 options       = listOf(stringResource(R.string.setting_nav_auto), stringResource(R.string.setting_nav_bottom), stringResource(R.string.setting_nav_rail)),
                 selectedIndex = navMode.ordinal,
                 onSelect      = { scope.launch { dataStore.saveNavigationMode(NavigationMode.entries[it]) }; navMode = NavigationMode.entries[it] }
@@ -99,11 +108,11 @@ fun SettingScreen(dataStore: AppDataStore) {
         // --- Group 3: Theme Color & Style ---
         SettingGroup {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                SettingHeader(icon = Icons.Outlined.Palette, title = stringResource(R.string.setting_color_source))
                 val colorOptions = if (supportsMonet) listOf(stringResource(R.string.setting_color_system), stringResource(R.string.setting_color_custom)) else listOf(stringResource(R.string.setting_color_custom))
                 val selectedIndex = if (supportsMonet && colorSource == ColorSource.MONET) 0 else 1
 
                 SegmentSwitch(
-                    label         = stringResource(R.string.setting_color_source),
                     options       = colorOptions,
                     selectedIndex = selectedIndex,
                     onSelect      = { index ->
@@ -158,8 +167,8 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Group 4: Dark Mode ---
         SettingGroup {
+            SettingHeader(icon = Icons.Filled.DarkMode, title = stringResource(R.string.setting_theme_mode))
             SegmentSwitch(
-                label         = stringResource(R.string.setting_theme_mode),
                 options       = listOf(stringResource(R.string.setting_theme_system), stringResource(R.string.setting_theme_light), stringResource(R.string.setting_theme_dark)),
                 selectedIndex = themeMode.ordinal,
                 onSelect      = { scope.launch { dataStore.saveThemeMode(ThemeMode.entries[it]) }; themeMode = ThemeMode.entries[it] }
@@ -202,6 +211,27 @@ private fun SettingGroup(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
+private fun SettingHeader(icon: ImageVector, title: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.secondary
+        )
+    }
+}
+
+@Composable
 private fun AboutItem(context: android.content.Context) {
     val versionName = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -222,35 +252,47 @@ private fun AboutItem(context: android.content.Context) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.primaryContainer
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    painter = painterResource(R.mipmap.ic_launcher_round),
-                    contentDescription = null,
-                    modifier = Modifier.padding(6.dp)
-                )
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Icon(
+                        painter = painterResource(R.mipmap.ic_launcher_round),
+                        contentDescription = null,
+                        modifier = Modifier.padding(6.dp)
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = versionName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "C-F0x@Github",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = versionName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "C-F0x@Github",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -260,8 +302,14 @@ private fun ExpressiveToggleItem(enabled: Boolean, onToggle: (Boolean) -> Unit) 
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        Icon(
+            imageVector = Icons.Outlined.RoundedCorner,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_theme_expressive), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_theme_expressive_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -288,8 +336,14 @@ private fun PaletteStyleItem(current: PaletteStyle, onSelect: (PaletteStyle) -> 
         Row(
             Modifier.fillMaxWidth().clickable { expanded = !expanded },
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            Icon(
+                imageVector = Icons.Outlined.Colorize,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.setting_palette_style), style = MaterialTheme.typography.bodyLarge)
                 if (!expanded) {
@@ -341,10 +395,18 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     var pending  by remember(appLocale) { mutableStateOf(appLocale) }
-    val options  = listOf(stringResource(R.string.setting_language_system) to AppLocale.SYSTEM, stringResource(R.string.setting_language_zh) to AppLocale.ZH_CN, stringResource(R.string.setting_language_en) to AppLocale.EN_US)
+    val options  = AppLocale.entries.filter { it != AppLocale.SYSTEM }.map { 
+        stringResource(it.labelRes) to it 
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(
+                imageVector = Icons.Outlined.Language,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.setting_language), style = MaterialTheme.typography.bodyLarge)
                 if (!expanded) Text(options.first { it.second == appLocale }.first, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -367,7 +429,7 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
                         expanded = false
                         if (pending == appLocale) return@Button
                         runBlocking { dataStore.saveAppLocale(pending) }
-                        AppCompatDelegate.setApplicationLocales(if (pending == AppLocale.SYSTEM) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(pending.tag))
+                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(pending.tag))
                         // Activity must recreate to pick up new locale resources.
                         (context as? Activity)?.let { act ->
                             if (Build.VERSION.SDK_INT >= 33) act.recreate()
@@ -382,7 +444,13 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
 
 @Composable
 private fun NfcSettingsItem(context: android.content.Context) {
-    Row(Modifier.fillMaxWidth().clickable { runCatching { context.startActivity(Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth().clickable { runCatching { context.startActivity(Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Icon(
+            imageVector = Icons.Outlined.AccountBalanceWallet,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_nfc_default), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_nfc_default_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -393,7 +461,13 @@ private fun NfcSettingsItem(context: android.content.Context) {
 
 @Composable
 private fun DevModeItem(devMode: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Icon(
+            imageVector = Icons.Filled.Build,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.setting_dev_force_emu), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(R.string.setting_dev_force_emu_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KonamikU</string>
+    <string name="mod_desc">NEX aka.NfcExtended</string>
+    <string name="nav_cards">카드</string>
+    <string name="nav_tools">도구</string>
+    <string name="nav_settings">설정</string>
+
+    <string name="card_add_title">새 카드 추가</string>
+    <string name="card_add_name_label">카드 이름</string>
+    <string name="card_add_name_placeholder">예: 내 Suica</string>
+    <string name="card_add_idm_label">IDm (16자리 16진수)</string>
+    <string name="card_add_idm_placeholder">012E456789ABCDEF</string>
+    <string name="card_add_idm_scanning">스캔 중…</string>
+    <string name="card_add_idm_scanning_hint">카드를 NFC 센서에 가까이 대십시오</string>
+    <string name="card_add_err_invalid_hex">잘못된 16진수 문자</string>
+    <string name="card_add_scanning">스캔 중</string>
+    <string name="card_add_confirm">확인</string>
+    <string name="card_add_cancel">취소</string>
+
+    <string name="cards_empty_title">카드가 없습니다</string>
+    <string name="cards_empty_hint">+를 눌러 카드 추가</string>
+    <string name="card_action_delete">삭제</string>
+    <string name="card_action_activate">활성화</string>
+    <string name="card_action_stop">중지</string>
+    <string name="card_delete_title">카드 삭제</string>
+    <string name="card_delete_desc">"%1$s"을(를) 삭제할까요? 이 작업은 취소할 수 없습니다.</string>
+    <string name="card_badge_on">ON</string>
+
+    <string name="toast_card_scanned">%1$s 스캔됨!</string>
+    <string name="mode_normal">글로벌</string>
+    <string name="mode_compat">호환</string>
+    <string name="mode_native">네이티브</string>
+
+    <string name="notif_channel_name">카드 에뮬레이션</string>
+    <string name="notif_channel_desc">KonamikU NFC 카드 에뮬레이션 상태</string>
+    <string name="notif_progress_simulated">시뮬레이션됨</string>
+    <string name="notif_action_stop">중지</string>
+    <string name="notif_action_switch_mode">모드 전환</string>
+    <string name="notif_action_next_card">다음 카드</string>
+
+    <string name="status_nfc_rf">NFC 무선</string>
+    <string name="status_lsposed">LSPosed</string>
+    <string name="status_pmmtool">PMm 도구</string>
+    <string name="status_hcef">HCE-F</string>
+    <string name="status_available">사용 가능</string>
+    <string name="status_unavailable">사용 불가</string>
+    <string name="status_injected">주입됨</string>
+    <string name="status_not_injected">주입되지 않음</string>
+    <string name="status_rf_on">활성화됨</string>
+    <string name="status_rf_off">비활성화됨</string>
+
+    <string name="setting_nav_layout">탐색 레이아웃</string>
+    <string name="setting_nav_auto">자동</string>
+    <string name="setting_nav_bottom">하단</string>
+    <string name="setting_nav_rail">사이드</string>
+    <string name="setting_color_source">테마 색상</string>
+    <string name="setting_color_system">시스템 악센트</string>
+    <string name="setting_color_custom">사용자 지정</string>
+    <string name="setting_theme_mode">다크 모드 설정</string>
+    <string name="setting_theme_system">시스템 따르기</string>
+    <string name="setting_theme_light">라이트</string>
+    <string name="setting_theme_dark">다크</string>
+    <string name="setting_theme_expressive">Material You 익스프레시브</string>
+    <string name="setting_theme_expressive_desc">큰 모서리와 굵은 글꼴을 활성화합니다.</string>
+    <string name="setting_palette_style">컬러 팔레트 스타일</string>
+    <string name="setting_palette_style_tonalspot">Tonal Spot</string>
+    <string name="setting_palette_style_neutral">Neutral</string>
+    <string name="setting_palette_style_vibrant">Vibrant</string>
+    <string name="setting_palette_style_expressive">Expressive</string>
+    <string name="setting_palette_style_monochrome">Monochrome</string>
+    <string name="setting_palette_style_fidelity">Fidelity</string>
+    <string name="setting_palette_style_rainbow">Rainbow</string>
+    <string name="setting_nfc_default">기본 결제 앱</string>
+    <string name="setting_nfc_default_desc">표준 NFC 결제를 처리할 앱을 관리합니다.</string>
+    <string name="status_xposed_needs_restart">모듈 활성화 — NFC 프로세스를 재시작하세요.</string>
+
+    <string name="setting_language">앱 언어</string>
+    <string name="setting_language_system">시스템 기본값</string>
+    <string name="setting_language_zh">简体中文</string>
+    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_ja">日本語</string>
+    <string name="setting_language_ko">한국어</string>
+    <string name="setting_language_fr">Français</string>
+    <string name="setting_language_en">English</string>
+
+    <string name="status_root">Root 상태</string>
+    <string name="status_root_unknown_provider">알 수 없는 제공자</string>
+    <string name="toast_nfc_already_on">NFC가 이미 활성화되어 있습니다</string>
+    <string name="toast_nfc_enabling">NFC를 활성화하는 중…</string>
+    <string name="toast_nfc_enable_success">NFC가 활성화되었습니다</string>
+    <string name="toast_nfc_enable_fail">NFC 활성화 실패</string>
+    <string name="toast_root_no_permission">Root 권한이 없습니다</string>
+    <string name="toast_nfc_was_dead">NFC 서비스가 실행되지 않았습니다. 재시작 중…</string>
+    <string name="toast_nfc_killed">NFC 서비스가 종료되었습니다. 재시작 중…</string>
+    <string name="toast_nfc_restart_failed">NFC 서비스 재시작 실패</string>
+    <string name="toast_nfc_restarted">NFC 서비스가 재시작되었습니다</string>
+    <string name="toast_xposed_refreshing">모듈 상태를 새로고치는 중…</string>
+    <string name="toast_mode_locked">모듈이 로드되지 않음 · Native 모드만 가능</string>
+    <string name="setting_dev_force_emu">모든 모드 강제 해제</string>
+    <string name="setting_dev_force_emu_desc">모듈 검사를 우회합니다 (주의해서 사용하세요).</string>
+
+    <string name="tools_id_converter_title">ID 변환기</string>
+    <string name="tools_label_idm">IDm (16자리 16진수)</string>
+    <string name="tools_label_kid">Konami ID (16자리)</string>
+    <string name="tools_label_ac">액세스 코드 (20자리)</string>
+    <string name="tools_warn_ambiguous">두 결과 가능; 양성 결과를 표시합니다.</string>
+    <string name="tools_err_idm_empty">IDm이 비어 있습니다</string>
+    <string name="tools_err_idm_length">IDm은 16자리 16진수여야 합니다</string>
+    <string name="tools_err_idm_hex">잘못된 16진수 문자</string>
+    <string name="tools_err_idm_prefix">E004 또는 0으로 시작해야 합니다</string>
+    <string name="tools_err_ac_empty">액세스 코드가 비어 있습니다</string>
+    <string name="tools_err_ac_length">액세스 코드는 20자리여야 합니다</string>
+    <string name="tools_err_kid_length">정확히 16자리여야 합니다</string>
+    <string name="tools_err_kid_chars">잘못된 문자를 찾았습니다</string>
+    <string name="tools_err_generic">변환 실패</string>
+    <string name="tile_label">KonamikU</string>
+</resources>

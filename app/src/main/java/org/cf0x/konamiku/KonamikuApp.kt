@@ -30,15 +30,13 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
             dataStore.saveActiveCardId(null)
         }
 
-        val locale = runCatching {
-            runBlocking { dataStore.appLocale.first() }
-        }.getOrDefault(AppLocale.SYSTEM)
+        val tag = runCatching {
+            runBlocking { dataStore.appLocale.first().tag }
+        }.getOrDefault(AppLocale.EN_US.tag)
 
-        if (locale != AppLocale.SYSTEM) {
-            AppCompatDelegate.setApplicationLocales(
-                LocaleListCompat.forLanguageTags(locale.tag)
-            )
-        }
+        AppCompatDelegate.setApplicationLocales(
+            LocaleListCompat.forLanguageTags(tag)
+        )
 
         XposedServiceHelper.registerListener(this)
     }

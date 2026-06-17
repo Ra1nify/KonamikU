@@ -17,19 +17,21 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SegmentSwitch(
-    label: String,
+    label: String = "",
     options: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text  = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(start = 4.dp)
-        )
+        if (label.isNotEmpty()) {
+            Text(
+                text  = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
 
         Row(
             modifier = Modifier
@@ -43,7 +45,6 @@ fun SegmentSwitch(
             options.forEachIndexed { index, option ->
                 val isSelected = index == selectedIndex
                 
-                // Color Correction: Use primaryContainer for background to stay "light" in light mode
                 val targetColor = if (isSelected) 
                     MaterialTheme.colorScheme.primaryContainer 
                 else 

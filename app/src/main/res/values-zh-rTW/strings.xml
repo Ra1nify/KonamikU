@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KonamikU</string>
+    <string name="mod_desc">NEX aka.NfcExtended</string>
+    <string name="nav_cards">卡片</string>
+    <string name="nav_tools">工具</string>
+    <string name="nav_settings">設定</string>
+
+    <string name="card_add_title">新增卡片</string>
+    <string name="card_add_name_label">卡片名稱</string>
+    <string name="card_add_name_placeholder">例如：我的 Suica</string>
+    <string name="card_add_idm_label">IDm（16位十六進位）</string>
+    <string name="card_add_idm_placeholder">012E456789ABCDEF</string>
+    <string name="card_add_idm_scanning">掃描中…</string>
+    <string name="card_add_idm_scanning_hint">請將卡片靠近 NFC 感應區</string>
+    <string name="card_add_err_invalid_hex">包含無效的十六進位字元</string>
+    <string name="card_add_scanning">掃描中</string>
+    <string name="card_add_confirm">確認</string>
+    <string name="card_add_cancel">取消</string>
+
+    <string name="cards_empty_title">還沒有卡片</string>
+    <string name="cards_empty_hint">點擊 + 新增卡片</string>
+    <string name="card_action_delete">刪除</string>
+    <string name="card_action_activate">啟用</string>
+    <string name="card_action_stop">停止</string>
+    <string name="card_delete_title">刪除卡片</string>
+    <string name="card_delete_desc">確認刪除 "%1$s"？此操作無法復原。</string>
+    <string name="card_badge_on">執行中</string>
+
+    <string name="toast_card_scanned">%1$s 已掃描！</string>
+    <string name="mode_normal">全域</string>
+    <string name="mode_compat">相容</string>
+    <string name="mode_native">原生</string>
+
+    <string name="notif_channel_name">卡片模擬</string>
+    <string name="notif_channel_desc">KonamikU NFC 卡片模擬狀態</string>
+    <string name="notif_progress_simulated">已模擬</string>
+    <string name="notif_action_stop">停止</string>
+    <string name="notif_action_switch_mode">切換模式</string>
+    <string name="notif_action_next_card">下一張卡</string>
+
+    <string name="status_nfc_rf">NFC 射頻</string>
+    <string name="status_lsposed">LSPosed</string>
+    <string name="status_pmmtool">PMm 工具</string>
+    <string name="status_hcef">HCE-F</string>
+    <string name="status_available">可用</string>
+    <string name="status_unavailable">不可用</string>
+    <string name="status_injected">已注入</string>
+    <string name="status_not_injected">未注入</string>
+    <string name="status_rf_on">已開啟</string>
+    <string name="status_rf_off">已關閉</string>
+
+    <string name="setting_nav_layout">導覽配置</string>
+    <string name="setting_nav_auto">自動</string>
+    <string name="setting_nav_bottom">底欄</string>
+    <string name="setting_nav_rail">側欄</string>
+    <string name="setting_color_source">主題色</string>
+    <string name="setting_color_system">系統取色</string>
+    <string name="setting_color_custom">自訂</string>
+    <string name="setting_theme_mode">深色模式偏好</string>
+    <string name="setting_theme_system">跟隨系統</string>
+    <string name="setting_theme_light">淺色</string>
+    <string name="setting_theme_dark">深色</string>
+    <string name="setting_theme_expressive">Material You 靈動設計</string>
+    <string name="setting_theme_expressive_desc">啟用大圓角與粗體字型設計。</string>
+    <string name="setting_palette_style">調色盤風格</string>
+    <string name="setting_palette_style_tonalspot">Tonal Spot</string>
+    <string name="setting_palette_style_neutral">Neutral</string>
+    <string name="setting_palette_style_vibrant">Vibrant</string>
+    <string name="setting_palette_style_expressive">Expressive</string>
+    <string name="setting_palette_style_monochrome">Monochrome</string>
+    <string name="setting_palette_style_fidelity">Fidelity</string>
+    <string name="setting_palette_style_rainbow">Rainbow</string>
+    <string name="setting_nfc_default">預設付款應用程式</string>
+    <string name="setting_nfc_default_desc">管理系統預設 NFC 付款應用程式。</string>
+    <string name="status_xposed_needs_restart">模組已啟用 — 請重新啟動 NFC 程序以生效。</string>
+
+    <string name="setting_language">介面語言</string>
+    <string name="setting_language_system">系統預設</string>
+    <string name="setting_language_zh">简体中文</string>
+    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_ja">日本語</string>
+    <string name="setting_language_ko">한국어</string>
+    <string name="setting_language_fr">Français</string>
+    <string name="setting_language_en">English</string>
+
+    <string name="status_root">Root 狀態</string>
+    <string name="status_root_unknown_provider">來源未知</string>
+    <string name="toast_nfc_already_on">NFC 已開啟</string>
+    <string name="toast_nfc_enabling">正在嘗試開啟 NFC…</string>
+    <string name="toast_nfc_enable_success">NFC 開啟成功</string>
+    <string name="toast_nfc_enable_fail">NFC 開啟失敗</string>
+    <string name="toast_root_no_permission">無 Root 權限</string>
+    <string name="toast_nfc_was_dead">NFC 服務未執行，正在嘗試啟動…</string>
+    <string name="toast_nfc_killed">NFC 服務已終止，正在嘗試啟動…</string>
+    <string name="toast_nfc_restart_failed">NFC 服務重啟失敗</string>
+    <string name="toast_nfc_restarted">NFC 服務重啟成功</string>
+    <string name="toast_xposed_refreshing">正在重新整理模組狀態…</string>
+    <string name="toast_mode_locked">模組未載入 · 僅 Native 模式可用</string>
+    <string name="setting_dev_force_emu">強制解鎖所有模式</string>
+    <string name="setting_dev_force_emu_desc">繞過模組環境檢查（請謹慎使用）。</string>
+
+    <string name="tools_id_converter_title">ID 轉換器</string>
+    <string name="tools_label_idm">IDm（16位十六進位）</string>
+    <string name="tools_label_kid">Konami ID（16位）</string>
+    <string name="tools_label_ac">Access Code（20位數字）</string>
+    <string name="tools_warn_ambiguous">可能存在兩個結果；已顯示取正結果。</string>
+    <string name="tools_err_idm_empty">IDm 不能為空</string>
+    <string name="tools_err_idm_length">IDm 須為16位十六進位字元</string>
+    <string name="tools_err_idm_hex">包含無效的十六進位字元</string>
+    <string name="tools_err_idm_prefix">須以 E004 或 0 開頭</string>
+    <string name="tools_err_ac_empty">Access Code 不能為空</string>
+    <string name="tools_err_ac_length">Access Code 須為20位數字</string>
+    <string name="tools_err_kid_length">須正好為16位</string>
+    <string name="tools_err_kid_chars">發現無效字元</string>
+    <string name="tools_err_generic">轉換失敗</string>
+    <string name="tile_label">KonamikU</string>
+</resources>
