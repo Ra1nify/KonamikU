@@ -15,6 +15,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
@@ -42,6 +44,7 @@ import org.cf0x.konamiku.navigation.Screen
 import org.cf0x.konamiku.navigation.navDestinations
 import org.cf0x.konamiku.ui.screens.MainScreen
 import org.cf0x.konamiku.ui.screens.SettingScreen
+import org.cf0x.konamiku.ui.screens.SetupScreen
 import org.cf0x.konamiku.ui.screens.ToolsScreen
 
 @SuppressLint("ConfigurationScreenWidthHeight")
@@ -63,6 +66,26 @@ fun MainLayout(
 
     val navBackStackEntry  by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+
+    // 等待 DataStore 返回真实值后再做导航判断（防止 initial = -1L 导致误跳）
+    var setupVersionReady by remember { mutableStateOf(false) }
+    var setupVersion by remember { mutableStateOf(-1L) }
+
+    LaunchedEffect(Unit) {
+        setupVersion = dataStore.setupVersion.first()
+        setupVersionReady = true
+    }
+
+    // 数据就绪前不渲染任何内容（避免闪烁）
+    if (!setupVersionReady) return
+
+    val isOobe = currentDestination?.route == Screen.SetupNew.route || setupVersion == -1L
+
+    // OOBE 模式：全屏渲染，不套底栏/侧栏
+    if (isOobe) {
+        SetupScreen(dataStore = dataStore)
+        return
+    }
 
     var navLocked by rememberSaveable { mutableStateOf(false) }
 
@@ -89,6 +112,20 @@ fun MainLayout(
         Screen.Tools.route    to R.string.nav_tools,
         Screen.Settings.route to R.string.nav_settings
     )
+
+    // OOBE 模式下全屏显示，不套主界面 Scaffold
+    if (isOobe) {
+        NavHost(
+            navController    = navController,
+            startDestination = Screen.Main.route,
+            enterTransition  = { fadeIn(tween(300)) },
+            exitTransition   = { fadeOut(tween(250)) }
+        ) {
+            composable(Screen.Main.route)     { }
+            composable(Screen.SetupNew.route) { SetupScreen(dataStore = dataStore) }
+        }
+        return
+    }
 
     Scaffold(
         bottomBar = {

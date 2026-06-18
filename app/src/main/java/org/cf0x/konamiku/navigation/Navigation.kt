@@ -29,6 +29,13 @@ sealed class Screen(
         selectedIcon   = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
     )
+
+    object SetupNew : Screen(
+        route          = "setup_new",
+        label          = "",
+        selectedIcon   = Icons.Filled.Settings,
+        unselectedIcon = Icons.Outlined.Settings
+    )
 }
 
 val navDestinations = listOf(Screen.Main, Screen.Tools, Screen.Settings)

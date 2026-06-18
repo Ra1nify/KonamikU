@@ -24,6 +24,16 @@ enum class AppLocale(val tag: String, val labelRes: Int) {
     KO("ko", R.string.setting_language_ko),
     FR("fr", R.string.setting_language_fr),
     EN_US("en-US", R.string.setting_language_en);
+
+    fun toLocale(): java.util.Locale = when (this) {
+        SYSTEM -> java.util.Locale.getDefault()
+        ZH_CN  -> java.util.Locale.CHINA
+        ZH_TW  -> java.util.Locale.TAIWAN
+        JA     -> java.util.Locale.JAPAN
+        KO     -> java.util.Locale.KOREA
+        FR     -> java.util.Locale.FRANCE
+        EN_US  -> java.util.Locale.US
+    }
 }
 
 class AppDataStore(private val context: Context) {
@@ -43,6 +53,7 @@ class AppDataStore(private val context: Context) {
         val DEV_FORCE_EMU      = booleanPreferencesKey("dev_mode_force_emu")
         val THEME_EXPRESSIVE   = booleanPreferencesKey("theme_expressive")
         val PALETTE_STYLE      = stringPreferencesKey("palette_style")
+        val SETUP_VERSION      = longPreferencesKey("setup_version")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -91,6 +102,8 @@ class AppDataStore(private val context: Context) {
             .getOrDefault(PaletteStyle.TonalSpot)
     }
 
+    val setupVersion: Flow<Long> = context.dataStore.data.map { it[Keys.SETUP_VERSION] ?: -1L }
+
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
     suspend fun saveColorSource(s: ColorSource) = context.dataStore.edit { it[Keys.COLOR_SOURCE] = s.name }
@@ -112,4 +125,5 @@ class AppDataStore(private val context: Context) {
     suspend fun saveThemeExpressive(v: Boolean) = context.dataStore.edit { it[Keys.THEME_EXPRESSIVE] = v }
 
     suspend fun savePaletteStyle(s: PaletteStyle) = context.dataStore.edit { it[Keys.PALETTE_STYLE] = s.name }
+    suspend fun saveSetupVersion(v: Long) = context.dataStore.edit { it[Keys.SETUP_VERSION] = v }
 }

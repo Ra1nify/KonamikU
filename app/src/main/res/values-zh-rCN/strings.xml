@@ -114,4 +114,20 @@
     <string name="tools_err_kid_length">须正好为16位</string>
     <string name="tools_err_kid_chars">发现无效字符</string>
     <string name="tools_err_generic">转换失败</string>
+    <string name="greeting">你好</string>
+
+    <string name="oobe_welcome_title">欢迎使用 KonamikU</string>
+    <string name="oobe_welcome_subtitle">NFC 卡片模拟工具</string>
+    <string name="oobe_language_title">选择界面语言</string>
+    <string name="oobe_language_system_hint">当前语言由系统设置管理。\n您可以在 系统设置 → 应用 → KonamikU → 语言 中更改。</string>
+    <string name="oobe_features_title">功能介绍</string>
+    <string name="oobe_features_placeholder">功能介绍即将上线…</string>
+    <string name="oobe_features_hello">Hello World!</string>
+    <string name="oobe_finish_title">已准备就绪！</string>
+    <string name="oobe_finish_subtitle">开始使用吧</string>
+    <string name="setting_oobe_rerun">重新运行设置向导</string>
+    <string name="setting_oobe_rerun_desc">再次执行初始化设置流程</string>
+    <string name="setting_oobe_rerun_confirm">确定要重新运行设置向导吗？</string>
+    <string name="oobe_next">下一步</string>
+    <string name="oobe_previous">上一步</string>
 </resources>

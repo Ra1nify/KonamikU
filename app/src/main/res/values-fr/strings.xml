@@ -113,4 +113,20 @@
     <string name="tools_err_kid_length">Doit comporter exactement 16 caractères</string>
     <string name="tools_err_kid_chars">Caractères invalides trouvés</string>
     <string name="tools_err_generic">Échec de la conversion</string>
+    <string name="greeting">Bonjour</string>
+
+    <string name="oobe_welcome_title">Bienvenue sur KonamikU</string>
+    <string name="oobe_welcome_subtitle">Outil d\'émulation NFC</string>
+    <string name="oobe_language_title">Choisissez votre langue</string>
+    <string name="oobe_language_system_hint">La langue est gérée par les paramètres système.\nVous pouvez la modifier dans Paramètres système → Applications → KonamikU → Langue.</string>
+    <string name="oobe_features_title">Fonctionnalités</string>
+    <string name="oobe_features_placeholder">Présentation des fonctionnalités à venir…</string>
+    <string name="oobe_features_hello">Hello World!</string>
+    <string name="oobe_finish_title">Tout est prêt !</string>
+    <string name="oobe_finish_subtitle">C\'est parti</string>
+    <string name="setting_oobe_rerun">Relancer l\'assistant de configuration</string>
+    <string name="setting_oobe_rerun_desc">Refaire la configuration initiale</string>
+    <string name="setting_oobe_rerun_confirm">Êtes-vous sûr de vouloir relancer l\'assistant de configuration ?</string>
+    <string name="oobe_next">Suivant</string>
+    <string name="oobe_previous">Précédent</string>
 </resources>

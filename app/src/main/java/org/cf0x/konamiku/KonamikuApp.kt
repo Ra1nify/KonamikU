@@ -6,8 +6,6 @@ import android.nfc.NfcAdapter
 import android.nfc.cardemulation.NfcFCardEmulation
 import android.os.Build
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 import kotlinx.coroutines.flow.first
@@ -15,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.nfc.EmuCard
+import org.cf0x.konamiku.util.applyLocale
 import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
@@ -50,9 +49,7 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
             }.getOrDefault(AppLocale.EN_US.tag)
         }
 
-        AppCompatDelegate.setApplicationLocales(
-            LocaleListCompat.forLanguageTags(effectiveTag)
-        )
+        applyLocale(effectiveTag)
 
         XposedServiceHelper.registerListener(this)
     }

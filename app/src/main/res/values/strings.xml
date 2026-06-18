@@ -116,4 +116,23 @@
     <string name="tools_err_kid_chars">Invalid characters found</string>
     <string name="tools_err_generic">Conversion failed</string>
     <string name="tile_label" translatable="false">KonamikU</string>
+    <string name="greeting">Hello</string>
+
+    <string name="oobe_welcome_title">Welcome to KonamikU</string>
+    <string name="oobe_welcome_subtitle">NFC Card Emulation Tool</string>
+    <string name="oobe_language_title">Choose Your Language</string>
+    <string name="oobe_language_system_hint">Language is managed by system settings.\nYou can change it in System Settings → Apps → KonamikU → Language.</string>
+    <string name="oobe_features_title">Features</string>
+    <string name="oobe_features_placeholder">Feature introduction coming soon…</string>
+    <string name="oobe_features_hello">Hello World!</string>
+    <string name="oobe_finish_title">All Set!</string>
+    <string name="oobe_finish_subtitle">Let\'s get started</string>
+    <string name="oobe_next">Next</string>
+    <string name="oobe_previous">Previous</string>
+    <string name="oobe_start">Start</string>
+    <string name="oobe_skip">Skip</string>
+    <string name="setting_oobe_rerun">Re-run Setup Wizard</string>
+    <string name="setting_oobe_rerun_desc">Go through the initial setup again</string>
+    <string name="setting_oobe_rerun_confirm">Are you sure you want to re-run the setup wizard?</string>
+    <string name="oobe_page_indicator">%1$d / %2$d</string>
 </resources>

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,7 +33,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.os.LocaleListCompat
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -48,6 +46,7 @@ import org.cf0x.konamiku.data.NavigationMode
 import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
+import org.cf0x.konamiku.util.applyLocale
 
 @Composable
 fun SettingScreen(dataStore: AppDataStore) {
@@ -61,17 +60,33 @@ fun SettingScreen(dataStore: AppDataStore) {
     var themeMode    by remember { mutableStateOf(ThemeMode.SYSTEM) }
     var colorSource  by remember { mutableStateOf(if (supportsMonet) ColorSource.MONET else ColorSource.PRESET) }
     var savedColor   by remember { mutableStateOf(Color(0xFF6750A4)) }
-    var appLocale    by remember { mutableStateOf(AppLocale.SYSTEM) }
+    val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
     var devModeForce by remember { mutableStateOf(dataStore.devModeForceEmuSync) }
     var isExpressive by remember { mutableStateOf(true) }
     var paletteStyle by remember { mutableStateOf(PaletteStyle.TonalSpot) }
+
+    // 系统语言接管检测（修复版：只在我们未设置时才算锁定）
+    val systemLangLocked by produceState(initialValue = false) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            value = runCatching {
+                val lm = context.getSystemService(android.app.LocaleManager::class.java)
+                    ?: return@runCatching false
+                val sysTags = lm.applicationLocales.toLanguageTags()
+                if (sysTags.isBlank()) {
+                    false
+                } else {
+                    val saved = dataStore.appLocale.first()
+                    saved == AppLocale.SYSTEM || saved.tag != sysTags
+                }
+            }.getOrDefault(false)
+        }
+    }
 
     LaunchedEffect(Unit) {
         navMode      = dataStore.navigationMode.first()
         themeMode    = dataStore.themeMode.first()
         colorSource  = dataStore.colorSource.first()
         savedColor   = dataStore.presetColor.first()
-        appLocale    = dataStore.appLocale.first()
         devModeForce = dataStore.devModeForceEmu.first()
         isExpressive = dataStore.themeExpressive.first()
         paletteStyle = dataStore.paletteStyle.first()
@@ -177,21 +192,20 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Group 5: Language ---
         SettingGroup {
-            val systemLangLocked = if (Build.VERSION.SDK_INT >= 33) {
-                runCatching {
-                    val lm = context.getSystemService(android.app.LocaleManager::class.java) ?: return@runCatching false
-                    !lm.applicationLocales.isEmpty
-                }.getOrDefault(false)
-            } else false
             LanguageItem(dataStore, appLocale, systemLocked = systemLangLocked)
         }
 
-        // --- Group 6: System ---
+        // --- Group 6: OOBE ---
+        SettingGroup {
+            OobeRerunItem(dataStore)
+        }
+
+        // --- Group 7: System ---
         SettingGroup {
             NfcSettingsItem(context)
         }
 
-        // --- Group 7: Developer ---
+        // --- Group 8: Developer ---
         SettingGroup {
             DevModeItem(devMode = devModeForce, onToggle = { v -> devModeForce = v; scope.launch { dataStore.saveDevModeForceEmu(v) } })
         }
@@ -420,7 +434,7 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLo
             Icon(
                 imageVector = Icons.Outlined.Language,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha),
                 modifier = Modifier.size(20.dp)
             )
             Column(Modifier.weight(1f)) {
@@ -446,7 +460,7 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLo
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -470,16 +484,7 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLo
                         expanded = false
                         if (pending == appLocale) return@Button
                         runBlocking { dataStore.saveAppLocale(pending) }
-                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(pending.tag))
-                        // Force a full activity restart so the new locale takes effect
-                        (context as? Activity)?.let { act ->
-                            act.finishAffinity()
-                            act.startActivity(
-                                Intent(act, act::class.java).addFlags(
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                )
-                            )
-                        }
+                        context.applyLocale(pending.tag)
                     }) { Text(stringResource(R.string.card_add_confirm)) }
                 }
             }
@@ -501,6 +506,74 @@ private fun NfcSettingsItem(context: android.content.Context) {
             Text(stringResource(R.string.setting_nfc_default_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun OobeRerunItem(dataStore: AppDataStore) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.mipmap.ic_launcher_round),
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = { Text(stringResource(R.string.app_name)) },
+            text = { Text(stringResource(R.string.setting_oobe_rerun_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    scope.launch {
+                        dataStore.saveSetupVersion(-1L)
+                        (context as? Activity)?.let { act ->
+                            act.finishAffinity()
+                            act.startActivity(
+                                Intent(act, act::class.java).addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                )
+                            )
+                        }
+                    }
+                }) {
+                    Text(stringResource(R.string.card_add_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text(stringResource(R.string.card_add_cancel))
+                }
+            }
+        )
+    }
+
+    Row(
+        Modifier.fillMaxWidth().clickable { showDialog = true },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Dashboard,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.setting_oobe_rerun), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.setting_oobe_rerun_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

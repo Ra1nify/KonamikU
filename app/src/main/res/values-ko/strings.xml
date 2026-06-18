@@ -113,4 +113,20 @@
     <string name="tools_err_kid_length">정확히 16자리여야 합니다</string>
     <string name="tools_err_kid_chars">잘못된 문자를 찾았습니다</string>
     <string name="tools_err_generic">변환 실패</string>
+    <string name="greeting">안녕하세요</string>
+
+    <string name="oobe_welcome_title">KonamikU에 오신 것을 환영합니다</string>
+    <string name="oobe_welcome_subtitle">NFC 카드 에뮬레이션 도구</string>
+    <string name="oobe_language_title">언어 선택</string>
+    <string name="oobe_language_system_hint">언어가 시스템 설정에서 관리되고 있습니다.\n시스템 설정 → 앱 → KonamikU → 언어 에서 변경할 수 있습니다.</string>
+    <string name="oobe_features_title">기능 소개</string>
+    <string name="oobe_features_placeholder">기능 소개 준비 중…</string>
+    <string name="oobe_features_hello">Hello World!</string>
+    <string name="oobe_finish_title">준비 완료!</string>
+    <string name="oobe_finish_subtitle">시작해볼까요</string>
+    <string name="setting_oobe_rerun">설정 마법사 다시 실행</string>
+    <string name="setting_oobe_rerun_desc">초기 설정을 다시 진행합니다</string>
+    <string name="setting_oobe_rerun_confirm">설정 마법사를 다시 실행하시겠습니까?</string>
+    <string name="oobe_next">다음</string>
+    <string name="oobe_previous">이전</string>
 </resources>
