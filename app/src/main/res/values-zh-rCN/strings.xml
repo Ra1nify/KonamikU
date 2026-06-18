@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">KonamikU</string>
-    <string name="mod_desc">NEX aka.NfcExtended</string>
 
     <string name="nav_cards">卡片</string>
     <string name="nav_tools">工具</string>
@@ -116,5 +114,4 @@
     <string name="tools_err_kid_length">须正好为16位</string>
     <string name="tools_err_kid_chars">发现无效字符</string>
     <string name="tools_err_generic">转换失败</string>
-    <string name="tile_label">KonamikU</string>
 </resources>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">KonamikU</string>
-    <string name="mod_desc">NEX aka.NfcExtended</string>
+    <string name="app_name" translatable="false">KonamikU</string>
+    <string name="mod_desc" translatable="false">Extend NFC Capabilities</string>
     <string name="nav_cards">Cards</string>
     <string name="nav_tools">Tools</string>
     <string name="nav_settings">Settings</string>
@@ -115,5 +115,5 @@
     <string name="tools_err_kid_length">Must be exactly 16 chars</string>
     <string name="tools_err_kid_chars">Invalid characters found</string>
     <string name="tools_err_generic">Conversion failed</string>
-    <string name="tile_label">KonamikU</string>
+    <string name="tile_label" translatable="false">KonamikU</string>
 </resources>
