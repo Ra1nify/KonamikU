@@ -22,7 +22,7 @@ class FelicaCard(
     val realIdmBytes: ByteArray = realIdm.uppercase()
         .chunked(2).map { it.toInt(16).toByte() }.toByteArray()
 
-    // ── Block template ────────────────────────────────────────────────
+    // --- Block template ---
 
     /** All blocks from felica_template.json, keyed by block number (0x00–0x92). */
     private val blocks: Map<Int, ByteArray>
@@ -54,7 +54,7 @@ class FelicaCard(
         blocks = rawMap
     }
 
-    // ── Public API ────────────────────────────────────────────────────
+    // --- Public API ---
 
     /** Returns 16 bytes for the block, or all-zeroes if unknown. */
     fun readBlock(blockNumber: Int): ByteArray =

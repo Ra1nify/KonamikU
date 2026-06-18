@@ -97,7 +97,7 @@ fun SettingScreen(dataStore: AppDataStore) {
     var isExpressive by remember { mutableStateOf(true) }
     var paletteStyle by remember { mutableStateOf(PaletteStyle.TonalSpot) }
 
-    // 系统语言接管检测（修复版：只在我们未设置时才算锁定）
+    // Detect system-managed locale (locked only if app locale is not set)
     val systemLangLocked by produceState(initialValue = false) {
         if (Build.VERSION.SDK_INT >= 33) {
             value = runCatching {
@@ -202,12 +202,12 @@ fun SettingScreen(dataStore: AppDataStore) {
 
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                // --- Palette Style selector (decoupled from expressive shapes) ---
+    // --- Palette Style selector (decoupled from expressive shapes) ---
                 PaletteStyleItem(paletteStyle) { paletteStyle = it; scope.launch { dataStore.savePaletteStyle(it) } }
 
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                // --- Expressive shapes toggle (now only controls corners + typography) ---
+    // --- Expressive shapes toggle (now only controls corners + typography) ---
                 ExpressiveToggleItem(isExpressive) { isExpressive = it; scope.launch { dataStore.saveThemeExpressive(it) } }
             }
         }

@@ -60,7 +60,7 @@ fun SetupScreen(dataStore: AppDataStore) {
     val scope       = rememberCoroutineScope()
     val pagerState  = rememberPagerState(pageCount = { 4 })
 
-    // ── 读取所有语言的 greeting ──
+    // --- Load greetings for all locales ---
     val allGreetings = remember {
         AppLocale.entries.filter { it != AppLocale.SYSTEM }.map { locale ->
             val config = Configuration(context.resources.configuration).apply {
@@ -70,7 +70,7 @@ fun SetupScreen(dataStore: AppDataStore) {
         }
     }
 
-    // ── 系统语言接管检测（修复版：只在我们未设置时才算锁定） ──
+    // --- Detect system-managed locale (locked if per-app locale is set and mismatches saved) ---
     val systemLangLocked by produceState(initialValue = false) {
         if (Build.VERSION.SDK_INT >= 33) {
             value = runCatching {
@@ -78,42 +78,42 @@ fun SetupScreen(dataStore: AppDataStore) {
                     ?: return@runCatching false
                 val sysTags = lm.applicationLocales.toLanguageTags()
                 if (sysTags.isBlank()) {
-                    false // 系统没有设置 per-app 语言
+                    false // System per-app locale not set
                 } else {
                     val saved = dataStore.appLocale.first()
-                    // 系统设置了 per-app 语言，且和我们保存的不一致 → 系统管理
+                    // System per-app locale set and mismatches saved -> system managed
                     saved == AppLocale.SYSTEM || saved.tag != sysTags
                 }
             }.getOrDefault(false)
         }
     }
 
-    // ── 用户选择的语言（null = 沿用当前） ──
+    // --- User selected locale (null = follow current) ---
     var pendingLocale by remember { mutableStateOf<AppLocale?>(null) }
     val effectiveLocale = pendingLocale
 
-    // 第 4 页自动过渡
+    // Auto-transition for page 4
     var startFinish by remember { mutableStateOf(false) }
 
-    // 当翻到第 4 页时自动触发过渡动画
+    // Trigger transition when reaching page 4
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage == 3) {
             startFinish = true
         }
     }
 
-    // 过渡动画结束后自动导航
+    // Auto-navigate after transition
     LaunchedEffect(startFinish) {
         if (startFinish) {
             delay(1400)
-            // 持久化语言选择
+            // Persist locale selection
             if (pendingLocale != null && !systemLangLocked) {
                 dataStore.saveAppLocale(pendingLocale!!)
                 context.applyLocale(pendingLocale!!.tag)
             }
-            // 标记 OOBE 已完成
+            // Mark OOBE as finished
             dataStore.saveSetupVersion(BuildConfig.VERSION_CODE.toLong())
-            // 重启 Activity 进入主界面
+            // Restart Activity to enter main screen
             (context as? Activity)?.let { act ->
                 act.finishAffinity()
                 act.startActivity(
@@ -126,7 +126,7 @@ fun SetupScreen(dataStore: AppDataStore) {
         }
     }
 
-    // ── 底部按钮栏（第 1-3 页显示，第 4 页隐藏） ──
+    // --- Bottom bar (visible for pages 1-3, hidden for page 4) ---
     val showBottomBar = pagerState.currentPage < 3
 
     Scaffold(
@@ -141,7 +141,7 @@ fun SetupScreen(dataStore: AppDataStore) {
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 16.dp)
                     ) {
-                        // ← 上一步（首页隐藏，始终靠左）
+                        // Previous (hidden on first page, left-aligned)
                         if (pagerState.currentPage > 0) {
                             TextButton(
                                 modifier = Modifier.align(Alignment.CenterStart),
@@ -155,7 +155,7 @@ fun SetupScreen(dataStore: AppDataStore) {
                             }
                         }
 
-                        // 圆点指示器（始终居中）
+                        // Page indicator (centered)
                         Row(
                             modifier = Modifier.align(Alignment.Center),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -176,7 +176,7 @@ fun SetupScreen(dataStore: AppDataStore) {
                             }
                         }
 
-                        // 下一步（始终靠右）
+                        // Next (right-aligned)
                         TextButton(
                             modifier = Modifier.align(Alignment.CenterEnd),
                             onClick = {
@@ -226,13 +226,13 @@ fun SetupScreen(dataStore: AppDataStore) {
     }
 }
 
-// ────── 页面 1：欢迎 ──────
+// --- Page 1: Welcome ---
 
 @Composable
 private fun WelcomePage(greetings: List<Pair<AppLocale, String>>) {
     val greetingsTexts = remember { greetings.map { it.second } }
 
-    // 轮换问候语
+    // Rotate greetings
     var currentIndex by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -248,7 +248,7 @@ private fun WelcomePage(greetings: List<Pair<AppLocale, String>>) {
     ) {
         Spacer(Modifier.weight(1f))
 
-        // ── App 图标 ──
+        // --- App Icon ---
         Surface(
             modifier = Modifier.size(100.dp),
             shape = MaterialTheme.shapes.extraLarge,
@@ -264,7 +264,7 @@ private fun WelcomePage(greetings: List<Pair<AppLocale, String>>) {
 
         Spacer(Modifier.height(12.dp))
 
-        // ── 名称：KonamikU ──
+        // --- App Name ---
         Text(
             text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.headlineMedium,
@@ -274,7 +274,7 @@ private fun WelcomePage(greetings: List<Pair<AppLocale, String>>) {
 
         Spacer(Modifier.height(64.dp))
 
-        // ── 轮换问候语（Crossfade，固定宽度防跳动） ──
+        // --- Rotating Greetings (Crossfade) ---
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -299,7 +299,7 @@ private fun WelcomePage(greetings: List<Pair<AppLocale, String>>) {
     }
 }
 
-// ────── 页面 2：语言选择 ──────
+// --- Page 2: Language Selection ---
 
 @Composable
 private fun LanguagePage(
@@ -384,16 +384,16 @@ private fun LanguagePage(
 }
 
 
-// ────── 页面 3：状态检测 ──────
+// --- Page 3: Status Check ---
 
 @Composable
 private fun StatusPage(effectiveLocale: AppLocale?) {
     val context = LocalContext.current
 
-    // 硬件状态：同步获取，首帧即显示
+    // Hardware status: synchronous fetch
     val hardware = remember { StatusDetector.detectHardware(context) }
 
-    // 深层状态：异步获取，带超时/轮询
+    // Deep status: asynchronous fetch with timeout/polling
     var rootStatus by remember { mutableStateOf<StatusDetector.RootStatus?>(null) }
     var xposedActive by remember { mutableStateOf(false) }
     var xposedNeedsRestart by remember { mutableStateOf(false) }
@@ -401,12 +401,12 @@ private fun StatusPage(effectiveLocale: AppLocale?) {
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        // Root 检测（3 秒超时兜底）
+        // Root detection (3s timeout)
         rootStatus = kotlinx.coroutines.withTimeoutOrNull(3_000) {
             StatusDetector.detectRoot()
         } ?: StatusDetector.RootStatus(available = false)
 
-        // Xposed 检测（5 次重试，每次 1.5 秒间隔）
+        // Xposed detection (5 retries, 1.5s interval)
         var hooked = false
         repeat(5) {
             hooked = NfcHookProber.probe(context)
@@ -434,7 +434,7 @@ private fun StatusPage(effectiveLocale: AppLocale?) {
 
         Spacer(Modifier.height(32.dp))
 
-        // NFC 硬件
+        // NFC Hardware
         StatusCheckRow(
             icon = "📡",
             label = localizedString(effectiveLocale, R.string.status_nfc_rf),

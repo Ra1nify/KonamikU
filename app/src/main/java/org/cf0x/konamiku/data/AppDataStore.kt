@@ -54,6 +54,9 @@ class AppDataStore(private val context: Context) {
         val THEME_EXPRESSIVE   = booleanPreferencesKey("theme_expressive")
         val PALETTE_STYLE      = stringPreferencesKey("palette_style")
         val SETUP_VERSION      = longPreferencesKey("setup_version")
+        val UPDATE_GITHUB_BASE = stringPreferencesKey("update_github_base")
+        val UPDATE_MIRROR_BASE = stringPreferencesKey("update_mirror_base")
+        val UPDATE_LAST_CHECK  = longPreferencesKey("update_last_check")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -104,6 +107,10 @@ class AppDataStore(private val context: Context) {
 
     val setupVersion: Flow<Long> = context.dataStore.data.map { it[Keys.SETUP_VERSION] ?: -1L }
 
+    val updateGithubBase: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_GITHUB_BASE] ?: "" }
+    val updateMirrorBase: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_MIRROR_BASE] ?: "" }
+    val updateLastCheck: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_LAST_CHECK] ?: 0L }
+
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
     suspend fun saveColorSource(s: ColorSource) = context.dataStore.edit { it[Keys.COLOR_SOURCE] = s.name }
@@ -126,4 +133,7 @@ class AppDataStore(private val context: Context) {
 
     suspend fun savePaletteStyle(s: PaletteStyle) = context.dataStore.edit { it[Keys.PALETTE_STYLE] = s.name }
     suspend fun saveSetupVersion(v: Long) = context.dataStore.edit { it[Keys.SETUP_VERSION] = v }
+    suspend fun saveUpdateGithubBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_GITHUB_BASE] = v }
+    suspend fun saveUpdateMirrorBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_MIRROR_BASE] = v }
+    suspend fun saveUpdateLastCheck(v: Long) = context.dataStore.edit { it[Keys.UPDATE_LAST_CHECK] = v }
 }

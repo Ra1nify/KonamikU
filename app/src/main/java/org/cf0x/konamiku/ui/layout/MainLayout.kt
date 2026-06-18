@@ -67,7 +67,8 @@ fun MainLayout(
     val navBackStackEntry  by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // 等待 DataStore 返回真实值后再做导航判断（防止 initial = -1L 导致误跳）
+    // Wait for DataStore to return the actual value before making navigation decisions
+    // (prevents mis-navigation caused by initial = -1L)
     var setupVersionReady by remember { mutableStateOf(false) }
     var setupVersion by remember { mutableStateOf(-1L) }
 
@@ -76,12 +77,12 @@ fun MainLayout(
         setupVersionReady = true
     }
 
-    // 数据就绪前不渲染任何内容（避免闪烁）
+    // Don't render anything before data is ready to avoid flicker
     if (!setupVersionReady) return
 
     val isOobe = currentDestination?.route == Screen.SetupNew.route || setupVersion == -1L
 
-    // OOBE 模式：全屏渲染，不套底栏/侧栏
+    // OOBE mode: fullscreen render without bottom/rail bars
     if (isOobe) {
         SetupScreen(dataStore = dataStore)
         return
@@ -113,7 +114,7 @@ fun MainLayout(
         Screen.Settings.route to R.string.nav_settings
     )
 
-    // OOBE 模式下全屏显示，不套主界面 Scaffold
+    // Fullscreen in OOBE mode without the main Scaffold
     if (isOobe) {
         NavHost(
             navController    = navController,

@@ -100,7 +100,7 @@ object StatusDetector {
                 ourComponent, CardEmulation.CATEGORY_PAYMENT
             ) ?: false
         }.getOrDefault(false)
-        // 不反射 getDefaultServiceForCategory（隐藏 API，Android 14+ 受限）
+        // Do not use reflection for getDefaultServiceForCategory (Hidden API, restricted on Android 14+)
         val defaultLabel = if (defaultIsUs) "KonamikU" else "None"
         return NfcStatus(rfEnabled, hcefSupported, hcefRuntimeOk, defaultIsUs, defaultLabel)
     }

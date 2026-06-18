@@ -1,0 +1,121 @@
+#  KonamikU — auto-generate update.json + changelog on release
+#  Trigger: new Release published
+#  Steps:
+#    1. Read version.properties + date to compute versionCode/Name
+#    2. Find previous tag, extract commit list via git log
+#    3. Write updates/update.json (latest version pointer)
+#    4. Write updates/changelog-<version>.json (release notes)
+#    5. Commit & push to main
+name: Update Changelog
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve versions
+        id: versions
+        run: |
+          # Read major/minor from version.properties
+          MAJOR=$(grep 'ver_Major' version.properties | cut -d= -f2 | tr -d ' ')
+          MINOR=$(grep 'ver_Minor' version.properties | cut -d= -f2 | tr -d ' ')
+
+          # Build date-based tag parts
+          DATE_TAG=$(date -u +%y%m)
+          DATE_DOT=$(date -u +%y.%m)
+
+          VERSION_CODE="${DATE_TAG}${MAJOR}${MINOR}"
+          VERSION_NAME="${DATE_DOT}.${MAJOR}.${MINOR}"
+
+          # Get current release tag
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+
+          echo "version_code=$VERSION_CODE"   >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME"   >> "$GITHUB_OUTPUT"
+          echo "current_tag=$CURRENT_TAG"     >> "$GITHUB_OUTPUT"
+
+      - name: Find previous tag
+        id: prev_tag
+        run: |
+          PREV=$(git tag --sort=-creatordate | sed -n '2p')
+          echo "prev_tag=${PREV:-}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog JSON
+        id: changelog
+        run: |
+          PREV="${{ steps.prev_tag.outputs.prev_tag }}"
+          CURRENT="${{ steps.versions.outputs.current_tag }}"
+
+          if [ -z "$PREV" ]; then
+            # First release: grab all commits
+            LOG_RANGE="HEAD"
+          else
+            LOG_RANGE="${PREV}..${CURRENT}"
+          fi
+
+          # Build safe JSON from git log with jq
+          COMMITS_JSON=$(git log "$LOG_RANGE" --oneline --pretty=format:'%H|%s|%b' 2>/dev/null | \
+            while IFS='|' read -r hash title body; do
+              # Escape body: first line, strip special chars
+              SAFE_BODY=$(echo "$body" | head -1 | tr -d '\n\r\t' | sed 's/"/\\"/g')
+              echo "{\"hash\":\"$hash\",\"title\":$(echo "$title" | jq -Rs '.'),\"body\":$(echo "$SAFE_BODY" | jq -Rs '.')}"
+            done | jq -s '.')
+
+          echo "commits=$COMMITS_JSON" >> "$GITHUB_OUTPUT"
+
+      - name: Write update.json
+        run: |
+          mkdir -p updates
+
+          VERSION_CODE="${{ steps.versions.outputs.version_code }}"
+          VERSION_NAME="${{ steps.versions.outputs.version_name }}"
+          TAG="${{ steps.versions.outputs.current_tag }}"
+
+          cat > updates/update.json <<EOF
+          {
+            "version_code": ${VERSION_CODE},
+            "version_name": "${VERSION_NAME}",
+            "download_url": "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/app-release.apk",
+            "changelog_url": "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/updates/changelog-${VERSION_NAME}.json"
+          }
+          EOF
+          echo "Generated updates/update.json"
+
+      - name: Write changelog JSON
+        run: |
+          VERSION_NAME="${{ steps.versions.outputs.version_name }}"
+          COMMITS='${{ steps.changelog.outputs.commits }}'
+
+          cat > "updates/changelog-${VERSION_NAME}.json" <<EOF
+          {
+            "version_name": "${VERSION_NAME}",
+            "date": "$(date -u +%Y-%m-%d)",
+            "commits": ${COMMITS:-[]}
+          }
+          EOF
+          echo "Generated updates/changelog-${VERSION_NAME}.json"
+
+      - name: Commit & push update files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add updates/
+          # Skip if no new files changed
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(updates): auto-generate update info for ${{ steps.versions.outputs.current_tag }}"
+            git push
+          else
+            echo "No changes, skipping commit"
+          fi

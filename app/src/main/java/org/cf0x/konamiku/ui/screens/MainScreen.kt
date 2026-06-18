@@ -120,8 +120,10 @@ fun MainScreen(dataStore: AppDataStore) {
     val nfcAdapter       = remember { NfcAdapter.getDefaultAdapter(context) }
     val serviceComponent = remember { ComponentName(context, EmuCard::class.java) }
 
-    /** Always obtain a fresh NfcFCardEmulation instance.
-     *  The cached instance becomes a dead binder after NFC process restarts (HyperOS). */
+    /** 
+     * Always obtain a fresh NfcFCardEmulation instance.
+     * The cached instance becomes a dead binder after NFC process restarts (HyperOS). 
+     */
     fun freshEmulation() = nfcAdapter?.let {
         runCatching { NfcFCardEmulation.getInstance(it) }.getOrNull()
     }

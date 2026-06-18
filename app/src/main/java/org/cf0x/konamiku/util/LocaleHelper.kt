@@ -6,9 +6,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 
 /**
- * 应用 App 语言设置。
- * - API 33+：直接使用 LocaleManager（不会触发 Activity 重建）
- * - 以下：回退到 AppCompatDelegate（可能重建 Activity）
+ * Apply App locale settings.
+ * - API 33+: Use LocaleManager (no Activity reconstruction)
+ * - Below: Fallback to AppCompatDelegate (may reconstruct Activity)
  */
 fun Context.applyLocale(tag: String) {
     if (tag.isBlank()) return
