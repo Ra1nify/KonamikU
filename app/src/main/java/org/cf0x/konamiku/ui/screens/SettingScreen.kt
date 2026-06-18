@@ -33,8 +33,11 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RoundedCorner
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
@@ -42,6 +45,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -69,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
@@ -78,6 +83,8 @@ import org.cf0x.konamiku.data.NavigationMode
 import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
+import org.cf0x.konamiku.system.UpdateChecker
+import org.cf0x.konamiku.data.UpdateInterval
 import org.cf0x.konamiku.util.applyLocale
 
 @Composable
@@ -239,6 +246,11 @@ fun SettingScreen(dataStore: AppDataStore) {
                 devMode = devModeForce,
                 onDevModeToggle = { v -> devModeForce = v; scope.launch { dataStore.saveDevModeForceEmu(v) } }
             )
+        }
+
+        // --- Group 8: Update ---
+        SettingGroup {
+            UpdateSection(dataStore = dataStore, context = context, scope = scope)
         }
 
         Spacer(Modifier.height(32.dp))
@@ -599,6 +611,373 @@ private fun DebugSection(
     }
 }
 
+// ────── Update section ──────
+
+@Composable
+private fun UpdateSection(
+    dataStore: AppDataStore,
+    context: android.content.Context,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    // State
+    var showResultDialog by remember { mutableStateOf(false) }
+    var resultMsg by remember { mutableStateOf("") }
+    var resultUrl by remember { mutableStateOf("") }
+    var resultChangelog by remember { mutableStateOf<List<String>>(emptyList()) }
+    var checking by remember { mutableStateOf(false) }
+
+    val customBase by dataStore.updateCustomBase.collectAsState(initial = "")
+    val interval by dataStore.updateInterval.collectAsState(initial = UpdateInterval.OFF)
+
+    // Interval selector state
+    var intervalExpanded by remember { mutableStateOf(false) }
+
+    // URL editor state
+    var urlExpanded by remember { mutableStateOf(false) }
+
+    // Interval labels
+    val intervalOptions = listOf(
+        UpdateInterval.OFF    to stringResource(R.string.setting_update_interval_off),
+        UpdateInterval.MIN_30 to stringResource(R.string.setting_update_interval_30min),
+        UpdateInterval.HOUR_1 to stringResource(R.string.setting_update_interval_1h),
+        UpdateInterval.HOUR_2 to stringResource(R.string.setting_update_interval_2h),
+        UpdateInterval.HOUR_6 to stringResource(R.string.setting_update_interval_6h),
+        UpdateInterval.HOUR_12 to stringResource(R.string.setting_update_interval_12h),
+        UpdateInterval.HOUR_24 to stringResource(R.string.setting_update_interval_24h),
+        UpdateInterval.DAY_3  to stringResource(R.string.setting_update_interval_3d),
+        UpdateInterval.DAY_7  to stringResource(R.string.setting_update_interval_7d),
+    )
+
+    // Result dialog
+    if (showResultDialog) {
+        AlertDialog(
+            onDismissRequest = { showResultDialog = false },
+            title = {
+                if (resultUrl.isNotBlank()) Text(stringResource(R.string.setting_update_new_title))
+                else Text(stringResource(R.string.app_name))
+            },
+            text = {
+                if (resultUrl.isNotBlank()) {
+                    Column {
+                        Text(stringResource(R.string.setting_update_new_msg, resultMsg))
+                        if (resultChangelog.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.height(8.dp))
+                            resultChangelog.forEach { line ->
+                                Text("• $line", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                } else {
+                    Text(stringResource(R.string.setting_update_no_update))
+                }
+            },
+            confirmButton = {
+                if (resultUrl.isNotBlank()) {
+                    TextButton(onClick = {
+                        showResultDialog = false
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(resultUrl))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                        }
+                    }) { Text(stringResource(R.string.setting_update_download)) }
+                } else {
+                    TextButton(onClick = { showResultDialog = false }) {
+                        Text(stringResource(R.string.card_add_confirm))
+                    }
+                }
+            },
+            dismissButton = {
+                if (resultUrl.isNotBlank()) {
+                    TextButton(onClick = { showResultDialog = false }) {
+                        Text(stringResource(R.string.setting_update_later))
+                    }
+                }
+            }
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // ── 1. Check Now ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !checking) {
+                    checking = true
+                    scope.launch {
+                        val gh = "https://github.com/C-F0x/KonamikU/blob/main/updates/update.json"
+                        val mirror = "https://ghproxy.com/"
+                        val state = UpdateChecker.check(
+                            githubUrl = gh,
+                            mirrorPrefix = mirror,
+                            customUrl = customBase
+                        )
+                        // Manual check: always show dialog
+                        if (state.error != null) {
+                            resultMsg = state.error
+                            resultUrl = ""
+                            resultChangelog = emptyList()
+                        } else if (state.hasUpdate) {
+                            resultMsg = state.latestVersion
+                            resultUrl = state.downloadUrl
+                            resultChangelog = state.changelog?.commits?.map { it.title } ?: emptyList()
+                        } else {
+                            resultMsg = ""
+                            resultUrl = ""
+                            resultChangelog = emptyList()
+                        }
+                        showResultDialog = true
+                        checking = false
+                        dataStore.saveUpdateLastCheck(System.currentTimeMillis())
+                    }
+                },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.SystemUpdate,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.setting_update_check_now), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    if (checking) "..." else stringResource(R.string.setting_update_check_now_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+        // ── 2. Check Interval ──
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { intervalExpanded = !intervalExpanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.setting_update_interval), style = MaterialTheme.typography.bodyLarge)
+                    if (!intervalExpanded) {
+                        Text(
+                            intervalOptions.firstOrNull { it.first == interval }?.second
+                                ?: stringResource(R.string.setting_update_interval_off),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = if (intervalExpanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = intervalExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    intervalOptions.forEach { (value, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    intervalExpanded = false
+                                    scope.launch { dataStore.saveUpdateInterval(value) }
+                                }
+                                .padding(vertical = 10.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            RadioButton(
+                                selected = interval == value,
+                                onClick = {
+                                    intervalExpanded = false
+                                    scope.launch { dataStore.saveUpdateInterval(value) }
+                                }
+                            )
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+        // ── 3. Update URLs ──
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { urlExpanded = !urlExpanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Link,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.setting_update_urls), style = MaterialTheme.typography.bodyLarge)
+                    if (!urlExpanded) {
+                        val modeLabel = when {
+                            customBase.isNotBlank()  -> stringResource(R.string.setting_update_urls_custom)
+                            else                     -> "GitHub"
+                        }
+                        Text(modeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+                Icon(
+                    imageVector = if (urlExpanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = urlExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    // Mode selector: GitHub / GH-Proxy / Custom
+                    val modeOptions = listOf(
+                        "GitHub"  to 0,
+                        "GH-Proxy" to 1,
+                        stringResource(R.string.setting_update_urls_custom) to 2
+                    )
+                    val currentMode = when {
+                        customBase.isNotBlank()  -> 2
+                        else                     -> 0
+                    }
+                    var selectedMode by remember { mutableStateOf(currentMode) }
+
+                    // Per-mode latency results
+                    var latencyGitHub  by remember { mutableStateOf(-1L) }
+                    var latencyProxy   by remember { mutableStateOf(-1L) }
+                    var latencyCustom  by remember { mutableStateOf(-1L) }
+                    var testingLatency by remember { mutableStateOf(false) }
+                    var cooldown       by remember { mutableStateOf(0) }
+
+                    LaunchedEffect(cooldown) { if (cooldown > 0) { delay(1000); cooldown-- } }
+
+                    // Build URLs once
+                    val gitHubUrl = "https://github.com/C-F0x/KonamikU/blob/main/updates/update.json"
+                    val mirrorPrefix = "https://ghproxy.com/"
+                    val proxiedUrl = "${mirrorPrefix.trimEnd('/')}/${gitHubUrl.trimStart('/')}"
+
+                    // Custom URL text field
+                    var editCustom by remember(customBase) { mutableStateOf(customBase) }
+
+                    // Render each mode row
+                    listOf(
+                        Triple("GitHub", 0, latencyGitHub),
+                        Triple("GH-Proxy", 1, latencyProxy),
+                        Triple(stringResource(R.string.setting_update_urls_custom), 2, latencyCustom)
+                    ).forEach { (label, idx, latMs) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedMode = idx }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = selectedMode == idx, onClick = { selectedMode = idx })
+                            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+
+                            // Latency value on the right
+                            if (testingLatency || latMs >= 0) {
+                                Text(
+                                    text = when {
+                                        testingLatency -> "…"
+                                        latMs > 5000   -> "timeout"
+                                        latMs < 0      -> ""
+                                        else           -> "${latMs}ms"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = when {
+                                        testingLatency  -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        latMs > 5000    -> MaterialTheme.colorScheme.error
+                                        latMs > 200     -> MaterialTheme.colorScheme.tertiary
+                                        else            -> MaterialTheme.colorScheme.primary
+                                    }
+                                )
+                            }
+                        }
+
+                        // Custom text field below the Custom row
+                        if (idx == 2 && selectedMode == 2) {
+                            OutlinedTextField(
+                                value = editCustom,
+                                onValueChange = { editCustom = it },
+                                label = { Text(label) },
+                                placeholder = { Text("https://example.com/update.json") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 4.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Check Latency (tests all modes)
+                        TextButton(
+                            onClick = {
+                                testingLatency = true; cooldown = 5
+                                scope.launch {
+                                    latencyGitHub = UpdateChecker.measureLatency(gitHubUrl)
+                                    latencyProxy  = UpdateChecker.measureLatency(proxiedUrl)
+                                    latencyCustom = if (customBase.isNotBlank()) UpdateChecker.measureLatency(customBase) else -1
+                                    testingLatency = false
+                                }
+                            },
+                            enabled = !testingLatency && cooldown == 0
+                        ) { Text(stringResource(R.string.setting_update_latency)) }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { urlExpanded = false }) { Text(stringResource(R.string.card_add_cancel)) }
+                            Button(onClick = {
+                                urlExpanded = false
+                                scope.launch {
+                                    dataStore.saveUpdateCustomBase(if (selectedMode == 2) editCustom else "")
+                                }
+                            }) { Text(stringResource(R.string.card_add_confirm)) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun OobeRerunItem(dataStore: AppDataStore) {
     val context = LocalContext.current
@@ -663,6 +1042,33 @@ private fun OobeRerunItem(dataStore: AppDataStore) {
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun LatencyRow(label: String, ms: Long) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = when {
+                ms < 0   -> ""
+                ms > 5000 -> "timeout"
+                else     -> "${ms}ms"
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = when {
+                ms < 0    -> MaterialTheme.colorScheme.onSurfaceVariant
+                ms > 5000 -> MaterialTheme.colorScheme.error
+                ms > 200  -> MaterialTheme.colorScheme.tertiary
+                else      -> MaterialTheme.colorScheme.primary
+            }
         )
     }
 }

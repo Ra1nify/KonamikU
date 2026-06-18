@@ -7,3 +7,4 @@ build
 captures
 local.properties
 app/release
+version.properties

@@ -16,6 +16,17 @@ enum class NavigationMode { AUTO, BOTTOM, RAIL }
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ColorSource { MONET, PRESET, CUSTOM }
 enum class EmuMode { NORMAL, COMPAT, NATIVE }
+enum class UpdateInterval(val millis: Long) {
+    OFF(0),
+    MIN_30(30 * 60 * 1000L),
+    HOUR_1(60 * 60 * 1000L),
+    HOUR_2(2 * 60 * 60 * 1000L),
+    HOUR_6(6 * 60 * 60 * 1000L),
+    HOUR_12(12 * 60 * 60 * 1000L),
+    HOUR_24(24 * 60 * 60 * 1000L),
+    DAY_3(3 * 24 * 60 * 60 * 1000L),
+    DAY_7(7 * 24 * 60 * 60 * 1000L);
+}
 enum class AppLocale(val tag: String, val labelRes: Int) {
     SYSTEM("", R.string.setting_language_system),
     ZH_CN("zh-CN", R.string.setting_language_zh),
@@ -56,7 +67,9 @@ class AppDataStore(private val context: Context) {
         val SETUP_VERSION      = longPreferencesKey("setup_version")
         val UPDATE_GITHUB_BASE = stringPreferencesKey("update_github_base")
         val UPDATE_MIRROR_BASE = stringPreferencesKey("update_mirror_base")
+        val UPDATE_CUSTOM_BASE = stringPreferencesKey("update_custom_base")
         val UPDATE_LAST_CHECK  = longPreferencesKey("update_last_check")
+        val UPDATE_INTERVAL    = stringPreferencesKey("update_interval")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -109,7 +122,12 @@ class AppDataStore(private val context: Context) {
 
     val updateGithubBase: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_GITHUB_BASE] ?: "" }
     val updateMirrorBase: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_MIRROR_BASE] ?: "" }
+    val updateCustomBase: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_CUSTOM_BASE] ?: "" }
     val updateLastCheck: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_LAST_CHECK] ?: 0L }
+    val updateInterval: Flow<UpdateInterval> = context.dataStore.data.map { p ->
+        runCatching { UpdateInterval.valueOf(p[Keys.UPDATE_INTERVAL] ?: "") }
+            .getOrDefault(UpdateInterval.OFF)
+    }
 
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
@@ -135,5 +153,7 @@ class AppDataStore(private val context: Context) {
     suspend fun saveSetupVersion(v: Long) = context.dataStore.edit { it[Keys.SETUP_VERSION] = v }
     suspend fun saveUpdateGithubBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_GITHUB_BASE] = v }
     suspend fun saveUpdateMirrorBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_MIRROR_BASE] = v }
+    suspend fun saveUpdateCustomBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_CUSTOM_BASE] = v }
     suspend fun saveUpdateLastCheck(v: Long) = context.dataStore.edit { it[Keys.UPDATE_LAST_CHECK] = v }
+    suspend fun saveUpdateInterval(v: UpdateInterval) = context.dataStore.edit { it[Keys.UPDATE_INTERVAL] = v.name }
 }

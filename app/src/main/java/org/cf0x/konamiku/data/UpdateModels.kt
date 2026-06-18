@@ -9,7 +9,8 @@ data class UpdateInfo(
     val version_code: Long,
     val version_name: String,
     val download_url: String,
-    val changelog_url: String
+    val changelog_url: String,
+    val latest_changelog: String = ""
 )
 
 /** A single commit entry inside changelog-*.json */
