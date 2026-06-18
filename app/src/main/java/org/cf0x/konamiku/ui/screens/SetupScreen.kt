@@ -34,12 +34,10 @@ import org.cf0x.konamiku.BuildConfig
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
+import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.util.applyLocale
+import org.cf0x.konamiku.xposed.NfcHookProber
 
-/**
- * 读取指定 Locale 下的字符串资源。
- * 如果 locale == null 则使用系统当前 locale。
- */
 @Composable
 private fun localizedString(locale: AppLocale?, resId: Int): String {
     val context = LocalContext.current
@@ -220,7 +218,7 @@ fun SetupScreen(dataStore: AppDataStore) {
                         onSelect     = { pendingLocale = it },
                         effectiveLocale = effectiveLocale
                     )
-                    2 -> FeaturesPage(effectiveLocale)
+                    2 -> StatusPage(effectiveLocale)
                     3 -> FinishPage(visible = startFinish, effectiveLocale = effectiveLocale)
                 }
             }
@@ -385,50 +383,152 @@ private fun LanguagePage(
     }
 }
 
-// ────── 页面 3：功能介绍（占位） ──────
+
+// ────── 页面 3：状态检测 ──────
 
 @Composable
-private fun FeaturesPage(effectiveLocale: AppLocale?) {
+private fun StatusPage(effectiveLocale: AppLocale?) {
+    val context = LocalContext.current
+
+    // 硬件状态：同步获取，首帧即显示
+    val hardware = remember { StatusDetector.detectHardware(context) }
+
+    // 深层状态：异步获取，带超时/轮询
+    var rootStatus by remember { mutableStateOf<StatusDetector.RootStatus?>(null) }
+    var xposedActive by remember { mutableStateOf(false) }
+    var xposedNeedsRestart by remember { mutableStateOf(false) }
+    var xposedProvider by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        // Root 检测（3 秒超时兜底）
+        rootStatus = kotlinx.coroutines.withTimeoutOrNull(3_000) {
+            StatusDetector.detectRoot()
+        } ?: StatusDetector.RootStatus(available = false)
+
+        // Xposed 检测（5 次重试，每次 1.5 秒间隔）
+        var hooked = false
+        repeat(5) {
+            hooked = NfcHookProber.probe(context)
+            if (hooked) return@repeat
+            delay(1500)
+        }
+        xposedActive = hooked
+        xposedProvider = if (hooked) {
+            "${org.cf0x.konamiku.xposed.XposedState.frameworkName} ${org.cf0x.konamiku.xposed.XposedState.frameworkVersion}".trim()
+        } else ""
+
+        loading = false
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = localizedString(effectiveLocale, R.string.oobe_features_title),
+            text = localizedString(effectiveLocale, R.string.oobe_status_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
 
-        Text(
-            text = localizedString(effectiveLocale, R.string.oobe_features_placeholder),
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        // NFC 硬件
+        StatusCheckRow(
+            icon = "📡",
+            label = localizedString(effectiveLocale, R.string.status_nfc_rf),
+            ok = hardware.hasNfc && hardware.nfcEnabled,
+            detail = if (hardware.hasNfc)
+                localizedString(effectiveLocale, if (hardware.nfcEnabled) R.string.status_rf_on else R.string.status_rf_off)
+            else
+                localizedString(effectiveLocale, R.string.status_unavailable)
         )
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // Hello World 占位
-        Surface(
-            modifier = Modifier.size(200.dp),
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.secondaryContainer
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = localizedString(effectiveLocale, R.string.oobe_features_hello),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+        // HCE-F
+        StatusCheckRow(
+            icon = "💳",
+            label = localizedString(effectiveLocale, R.string.status_hcef),
+            ok = hardware.hcefSupported,
+            detail = localizedString(effectiveLocale,
+                if (hardware.hcefSupported) R.string.status_available else R.string.status_unavailable
+            )
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // Root
+        StatusCheckRow(
+            icon = "🛡️",
+            label = localizedString(effectiveLocale, R.string.status_root),
+            ok = rootStatus?.available == true,
+            detail = if (!loading && rootStatus != null)
+                (rootStatus?.available == true).let { ok ->
+                    if (ok) rootStatus?.provider?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: ""
+                    else localizedString(effectiveLocale, R.string.status_unavailable)
+                }
+            else
+                localizedString(effectiveLocale, R.string.status_unavailable)
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // Xposed
+        StatusCheckRow(
+            icon = "🔌",
+            label = localizedString(effectiveLocale, R.string.status_lsposed),
+            ok = xposedActive,
+            detail = if (!loading) {
+                if (xposedActive) xposedProvider.ifBlank {
+                    localizedString(effectiveLocale, R.string.status_available)
+                } else if (xposedNeedsRestart) {
+                    localizedString(effectiveLocale, R.string.status_xposed_needs_restart)
+                } else {
+                    localizedString(effectiveLocale, R.string.status_unavailable)
+                }
+            } else {
+                "…"
             }
-        }
+        )
     }
 }
 
-// ────── 页面 4：过渡页面 ──────
+@Composable
+private fun StatusCheckRow(icon: String, label: String, ok: Boolean, detail: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(text = icon, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = if (ok) "✓" else "✗",
+                color = if (ok) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 @Composable
 private fun FinishPage(visible: Boolean, effectiveLocale: AppLocale?) {

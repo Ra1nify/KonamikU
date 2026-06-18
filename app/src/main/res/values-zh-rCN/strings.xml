@@ -125,9 +125,11 @@
     <string name="oobe_features_hello">Hello World!</string>
     <string name="oobe_finish_title">已准备就绪！</string>
     <string name="oobe_finish_subtitle">开始使用吧</string>
+    <string name="oobe_status_title">正在检测设备状态</string>
     <string name="setting_oobe_rerun">重新运行设置向导</string>
     <string name="setting_oobe_rerun_desc">再次执行初始化设置流程</string>
     <string name="setting_oobe_rerun_confirm">确定要重新运行设置向导吗？</string>
+    <string name="setting_debug">调试功能</string>
     <string name="oobe_next">下一步</string>
     <string name="oobe_previous">上一步</string>
 </resources>

@@ -5,9 +5,23 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,9 +35,28 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RoundedCorner
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,7 +70,6 @@ import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.cf0x.konamiku.BuildConfig
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
@@ -195,21 +227,20 @@ fun SettingScreen(dataStore: AppDataStore) {
             LanguageItem(dataStore, appLocale, systemLocked = systemLangLocked)
         }
 
-        // --- Group 6: OOBE ---
-        SettingGroup {
-            OobeRerunItem(dataStore)
-        }
-
-        // --- Group 7: System ---
+        // --- Group 6: System ---
         SettingGroup {
             NfcSettingsItem(context)
         }
 
-        // --- Group 8: Developer ---
+        // --- Group 7: Debug ---
         SettingGroup {
-            DevModeItem(devMode = devModeForce, onToggle = { v -> devModeForce = v; scope.launch { dataStore.saveDevModeForceEmu(v) } })
+            DebugSection(
+                dataStore = dataStore,
+                devMode = devModeForce,
+                onDevModeToggle = { v -> devModeForce = v; scope.launch { dataStore.saveDevModeForceEmu(v) } }
+            )
         }
-        
+
         Spacer(Modifier.height(32.dp))
     }
 }
@@ -506,6 +537,65 @@ private fun NfcSettingsItem(context: android.content.Context) {
             Text(stringResource(R.string.setting_nfc_default_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun DebugSection(
+    dataStore: AppDataStore,
+    devMode: Boolean,
+    onDevModeToggle: (Boolean) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Build,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.setting_debug), style = MaterialTheme.typography.bodyLarge)
+                if (!expanded) {
+                    Text(
+                        "${stringResource(R.string.setting_oobe_rerun)} · ${stringResource(R.string.setting_dev_force_emu)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(modifier = Modifier.padding(top = 8.dp)) {
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OobeRerunItem(dataStore)
+                Spacer(Modifier.height(8.dp))
+                DevModeItem(devMode = devMode, onToggle = onDevModeToggle)
+            }
+        }
     }
 }
 

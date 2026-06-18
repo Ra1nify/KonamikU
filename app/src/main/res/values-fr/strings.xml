@@ -124,9 +124,11 @@
     <string name="oobe_features_hello">Hello World!</string>
     <string name="oobe_finish_title">Tout est prêt !</string>
     <string name="oobe_finish_subtitle">C\'est parti</string>
+    <string name="oobe_status_title">Vérification de l\'appareil</string>
     <string name="setting_oobe_rerun">Relancer l\'assistant de configuration</string>
     <string name="setting_oobe_rerun_desc">Refaire la configuration initiale</string>
     <string name="setting_oobe_rerun_confirm">Êtes-vous sûr de vouloir relancer l\'assistant de configuration ?</string>
+    <string name="setting_debug">Débogage</string>
     <string name="oobe_next">Suivant</string>
     <string name="oobe_previous">Précédent</string>
 </resources>

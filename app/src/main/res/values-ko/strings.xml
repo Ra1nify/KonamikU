@@ -124,9 +124,11 @@
     <string name="oobe_features_hello">Hello World!</string>
     <string name="oobe_finish_title">준비 완료!</string>
     <string name="oobe_finish_subtitle">시작해볼까요</string>
+    <string name="oobe_status_title">기기 상태 확인 중</string>
     <string name="setting_oobe_rerun">설정 마법사 다시 실행</string>
     <string name="setting_oobe_rerun_desc">초기 설정을 다시 진행합니다</string>
     <string name="setting_oobe_rerun_confirm">설정 마법사를 다시 실행하시겠습니까?</string>
+    <string name="setting_debug">디버그</string>
     <string name="oobe_next">다음</string>
     <string name="oobe_previous">이전</string>
 </resources>

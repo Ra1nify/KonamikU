@@ -5,16 +5,34 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.CardEmulation
+import android.nfc.cardemulation.NfcFCardEmulation
 import android.os.SystemClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import org.cf0x.konamiku.nfc.EmuCard
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
 object StatusDetector {
+
+    data class HardwareStatus(
+        val hasNfc: Boolean,
+        val hcefSupported: Boolean,
+        val nfcEnabled: Boolean
+    )
+
+    fun detectHardware(context: Context): HardwareStatus {
+        val adapter = NfcAdapter.getDefaultAdapter(context)
+        return HardwareStatus(
+            hasNfc        = adapter != null,
+            hcefSupported = context.packageManager.hasSystemFeature(
+                PackageManager.FEATURE_NFC_HOST_CARD_EMULATION_NFCF
+            ),
+            nfcEnabled    = adapter?.isEnabled ?: false
+        )
+    }
+
     private const val ROOT_CACHE_TTL_MS = 15_000L
     @Volatile
     private var cachedRootStatus: RootStatus? = null
@@ -33,6 +51,7 @@ object StatusDetector {
     data class NfcStatus(
         val rfEnabled: Boolean,
         val hcefSupported: Boolean,
+        val hcefRuntimeOk: Boolean,
         val defaultPaymentIsUs: Boolean,
         val defaultPaymentLabel: String
     )
@@ -64,27 +83,26 @@ object StatusDetector {
     }
 
     fun detectNfc(context: Context): NfcStatus {
-        val adapter      = NfcAdapter.getDefaultAdapter(context)
-        val rfEnabled    = adapter?.isEnabled ?: false
-        val hcefSupported = context.packageManager.hasSystemFeature(
+        val adapter        = NfcAdapter.getDefaultAdapter(context)
+        val rfEnabled      = adapter?.isEnabled ?: false
+        val hcefSupported  = context.packageManager.hasSystemFeature(
             PackageManager.FEATURE_NFC_HOST_CARD_EMULATION_NFCF
         )
-        val cardEmulation = runCatching { CardEmulation.getInstance(adapter) }.getOrNull()
-        val ourComponent  = ComponentName(context, org.cf0x.konamiku.nfc.DummyPaymentService::class.java)
+        val nfcFEmulation  = runCatching {
+            adapter?.let { NfcFCardEmulation.getInstance(it) }
+        }.getOrNull()
+        val hcefRuntimeOk  = nfcFEmulation != null
+
+        val cardEmulation  = runCatching { CardEmulation.getInstance(adapter) }.getOrNull()
+        val ourComponent   = ComponentName(context, org.cf0x.konamiku.nfc.DummyPaymentService::class.java)
         val defaultIsUs = runCatching {
             cardEmulation?.isDefaultServiceForCategory(
                 ourComponent, CardEmulation.CATEGORY_PAYMENT
             ) ?: false
         }.getOrDefault(false)
-        val defaultLabel = if (defaultIsUs) "KonamikU" else {
-            runCatching {
-                val m  = cardEmulation?.javaClass
-                    ?.getMethod("getDefaultServiceForCategory", String::class.java)
-                val cn = m?.invoke(cardEmulation, CardEmulation.CATEGORY_PAYMENT) as? ComponentName
-                cn?.packageName ?: "None"
-            }.getOrDefault("Unknown")
-        }
-        return NfcStatus(rfEnabled, hcefSupported, defaultIsUs, defaultLabel)
+        // 不反射 getDefaultServiceForCategory（隐藏 API，Android 14+ 受限）
+        val defaultLabel = if (defaultIsUs) "KonamikU" else "None"
+        return NfcStatus(rfEnabled, hcefSupported, hcefRuntimeOk, defaultIsUs, defaultLabel)
     }
 
     fun detectXposed(): XposedStatus {
