@@ -125,6 +125,9 @@
     <string name="oobe_features_hello">Hello World!</string>
     <string name="oobe_finish_title">已准备就绪！</string>
     <string name="oobe_finish_subtitle">开始使用吧</string>
+    <string name="oobe_checking">检测中…</string>
+    <string name="oobe_check_failed">检测失败</string>
+    <string name="oobe_next">下一页 ▶</string>
     <string name="oobe_status_title">正在检测设备状态</string>
     <string name="setting_oobe_rerun">重新运行设置向导</string>
     <string name="setting_oobe_rerun_desc">再次执行初始化设置流程</string>
@@ -154,6 +157,8 @@
     <string name="setting_update_interval_24h">24 小时</string>
     <string name="setting_update_interval_3d">3 天</string>
     <string name="setting_update_interval_7d">7 天</string>
-    <string name="oobe_next">下一步</string>
-    <string name="oobe_previous">上一步</string>
+    <string name="oobe_start">开始</string>
+    <string name="oobe_skip">跳过</string>
+    <string name="oobe_page_indicator">%1$d / %2$d</string>
+    <string name="oobe_previous">◀ 上一页</string>
 </resources>

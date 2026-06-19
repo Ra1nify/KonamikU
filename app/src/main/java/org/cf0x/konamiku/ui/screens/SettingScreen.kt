@@ -663,23 +663,21 @@ private fun UpdateSection(
     if (showResultDialog) {
         AlertDialog(
             onDismissRequest = { if (!checking && !loadingPage) showResultDialog = false },
-            title = {
-                Text(
-                    when {
-                        checking            -> stringResource(R.string.app_name)
-                        resultIsError       -> stringResource(R.string.app_name)
-                        resultUrl.isNotBlank() -> stringResource(R.string.setting_update_new_title)
-                        else                -> stringResource(R.string.app_name)
-                    }
-                )
-            },
+            title = { Text(
+                when {
+                    checking            -> stringResource(R.string.oobe_checking)
+                    resultIsError       -> stringResource(R.string.oobe_check_failed)
+                    resultUrl.isNotBlank() -> stringResource(R.string.setting_update_new_title)
+                    else                -> stringResource(R.string.setting_update_no_update)
+                }
+            ) },
             text = {
                 if (checking) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Checking...", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.oobe_checking), style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(16.dp))
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
@@ -701,70 +699,28 @@ private fun UpdateSection(
                                 Spacer(Modifier.height(8.dp))
                                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                                 Spacer(Modifier.height(4.dp))
-                                Text("v${changelog.version_name} · ${changelog.date}",
+                                Text("${changelog.version_name} · ${changelog.date}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(8.dp))
                                 changelog.commits.forEach { commit ->
-                                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                                        val rawTitle = commit.title.trim('\n', ' ', '|')
-                                        val rawBody = commit.body.trim('\n', ' ', '|')
-                                        val title = if (rawTitle.isNotBlank()) rawTitle
-                                                    else rawBody.lineSequence().firstOrNull()?.trim() ?: ""
-                                        val body = if (rawTitle.isNotBlank()) rawBody
-                                                   else rawBody.lineSequence().drop(1).joinToString("\n").trim()
-                                        if (title.isNotBlank()) {
-                                            Text(title, style = MaterialTheme.typography.bodyMedium)
-                                        }
-                                        if (body.isNotBlank()) {
-                                            Text(body, style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                        shape = MaterialTheme.shapes.medium,
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        tonalElevation = 1.dp
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            val rawTitle = commit.title.trim('\n', ' ', '|')
+                                            val rawBody = commit.body.trim('\n', ' ', '|')
+                                            val title = if (rawTitle.isNotBlank()) rawTitle
+                                                        else rawBody.lineSequence().firstOrNull()?.trim() ?: ""
+                                            val body = if (rawTitle.isNotBlank()) rawBody
+                                                       else rawBody.lineSequence().drop(1).joinToString("\n").trim()
+                                            if (title.isNotBlank()) { Text(title, style = MaterialTheme.typography.bodyMedium) }
+                                            if (body.isNotBlank()) { Text(body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                         }
                                     }
-                                }
-                                if (loadingPage) {
-                                    Spacer(Modifier.height(8.dp))
-                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                                }
-                                Spacer(Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TextButton(
-                                        enabled = changelog.previous_changelog != null && !loadingPage,
-                                        onClick = {
-                                            loadingPage = true
-                                            scope.launch {
-                                                val url = changelog.previous_changelog!!
-                                                val finalUrl = if (latestMirrorPrefix.isNotBlank())
-                                                    "${latestMirrorPrefix.trimEnd('/')}/${url.trimStart('/')}" else url
-                                                val prev = UpdateChecker.fetchChangelog(finalUrl)
-                                                if (prev != null) {
-                                                    currentChangelog = prev
-                                                    currentChangelogUrl = url
-                                                }
-                                                loadingPage = false
-                                            }
-                                        }
-                                    ) { Text("◀ Prev") }
-                                    TextButton(
-                                        enabled = changelog.next_changelog != null && !loadingPage,
-                                        onClick = {
-                                            loadingPage = true
-                                            scope.launch {
-                                                val url = changelog.next_changelog!!
-                                                val finalUrl = if (latestMirrorPrefix.isNotBlank())
-                                                    "${latestMirrorPrefix.trimEnd('/')}/${url.trimStart('/')}" else url
-                                                val next = UpdateChecker.fetchChangelog(finalUrl)
-                                                if (next != null) {
-                                                    currentChangelog = next
-                                                    currentChangelogUrl = url
-                                                }
-                                                loadingPage = false
-                                            }
-                                        }
-                                    ) { Text("Next ▶") }
                                 }
                             }
                             if (resultUrl.isBlank() && currentChangelog == null) {
@@ -776,30 +732,66 @@ private fun UpdateSection(
             },
             confirmButton = {
                 if (checking || loadingPage) {
-                    // No button while loading
-                } else if (resultUrl.isNotBlank()) {
-                    TextButton(onClick = {
-                        showResultDialog = false
-                        runCatching {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(resultUrl))
-                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            )
-                        }
-                    }) { Text(stringResource(R.string.setting_update_download)) }
+                    // No buttons while loading
                 } else {
-                    TextButton(onClick = { showResultDialog = false }) {
-                        Text(stringResource(R.string.card_add_confirm))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val changelog = currentChangelog
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(
+                                enabled = changelog?.previous_changelog != null && !loadingPage,
+                                onClick = {
+                                    loadingPage = true
+                                    scope.launch {
+                                        val url = changelog!!.previous_changelog!!
+                                        val finalUrl = if (latestMirrorPrefix.isNotBlank())
+                                            "${latestMirrorPrefix.trimEnd('/')}/${url.trimStart('/')}" else url
+                                        val prev = UpdateChecker.fetchChangelog(finalUrl)
+                                        if (prev != null) { currentChangelog = prev; currentChangelogUrl = url }
+                                        loadingPage = false
+                                    }
+                                }
+                            ) { Text(stringResource(R.string.oobe_previous)) }
+                            TextButton(
+                                enabled = changelog?.next_changelog != null && !loadingPage,
+                                onClick = {
+                                    loadingPage = true
+                                    scope.launch {
+                                        val url = changelog!!.next_changelog!!
+                                        val finalUrl = if (latestMirrorPrefix.isNotBlank())
+                                            "${latestMirrorPrefix.trimEnd('/')}/${url.trimStart('/')}" else url
+                                        val next = UpdateChecker.fetchChangelog(finalUrl)
+                                        if (next != null) { currentChangelog = next; currentChangelogUrl = url }
+                                        loadingPage = false
+                                    }
+                                }
+                            ) { Text(stringResource(R.string.oobe_next)) }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (resultUrl.isNotBlank()) {
+                                TextButton(onClick = {
+                                    showResultDialog = false
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse(resultUrl))
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                    }
+                                }) { Text(stringResource(R.string.setting_update_download)) }
+                            }
+                            if (resultUrl.isNotBlank()) {
+                                TextButton(onClick = { showResultDialog = false }) { Text(stringResource(R.string.setting_update_later)) }
+                            } else {
+                                TextButton(onClick = { showResultDialog = false }) { Text(stringResource(R.string.card_add_confirm)) }
+                            }
+                        }
                     }
                 }
             },
-            dismissButton = {
-                if (!checking && !loadingPage && resultUrl.isNotBlank()) {
-                    TextButton(onClick = { showResultDialog = false }) {
-                        Text(stringResource(R.string.setting_update_later))
-                    }
-                }
-            }
+            dismissButton = {}
         )
     }
 
@@ -812,7 +804,7 @@ private fun UpdateSection(
                     showResultDialog = true
                     checking = true
                     scope.launch {
-                        val gh = "https://raw.githubusercontent.com/C-F0x/KonamikU/main/.updates/update.json"
+                        val gh = "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
                         val mirror = "https://gh-proxy.com/"
                         latestMirrorPrefix = mirror
                         val state = UpdateChecker.check(
@@ -989,7 +981,7 @@ private fun UpdateSection(
                     LaunchedEffect(cooldown) { if (cooldown > 0) { delay(1000); cooldown-- } }
 
                     // Build URLs once
-                    val gitHubUrl = "https://raw.githubusercontent.com/C-F0x/KonamikU/main/.updates/update.json"
+                    val gitHubUrl = "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
                     val mirrorPrefix = "https://gh-proxy.com/"
                     val proxiedUrl = "${mirrorPrefix.trimEnd('/')}/${gitHubUrl.trimStart('/')}"
 

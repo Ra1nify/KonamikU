@@ -1,6 +1,5 @@
-#  KonamikU — generate .updates/update.json + per-tag changelogs (linked list)
-#  Trigger: new Release OR manual workflow_dispatch
-#  Tags sorted by commit date.
+#  KonamikU — generate update.json + per-tag changelogs (linked list)
+#  Branch: info — files live at root, pushed via orphan branch.
 name: Update Changelog
 
 on:
@@ -26,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve versions for current HEAD
+      - name: Resolve versions
         id: versions
         run: |
           TAG_INPUT="${{ github.event.inputs.tag }}"
@@ -34,57 +33,41 @@ jobs:
           elif [ "${GITHUB_REF#refs/tags/}" != "${GITHUB_REF}" ]; then TAG="${GITHUB_REF#refs/tags/}"
           else TAG=$(git tag --sort=-creatordate | head -1); fi
           [ -z "$TAG" ] && TAG="HEAD"
-          echo "version_code=$TAG"     >> "$GITHUB_OUTPUT"
-          echo "version_name=$TAG"     >> "$GITHUB_OUTPUT"
-          echo "current_tag=$TAG"      >> "$GITHUB_OUTPUT"
+          echo "version_code=$TAG" >> "$GITHUB_OUTPUT"
+          echo "current_tag=$TAG"   >> "$GITHUB_OUTPUT"
 
-      - name: Generate per-tag changelogs (linked list)
+      - name: Generate per-tag changelogs
         run: |
-          mkdir -p .updates
+          mkdir -p /tmp/_info
           REPO="${GITHUB_REPOSITORY}"
-          BASE="https://raw.githubusercontent.com/${REPO}/main/.updates"
+          BASE="https://raw.githubusercontent.com/${REPO}/info"
           TAGS=$(git for-each-ref --sort=committerdate refs/tags --format='%(refname:short)')
 
           PREV=""
-          NEXT=""
           for TAG in $TAGS; do
             if [ -z "$PREV" ]; then
-              # First tag
               RANGE="$TAG"
               echo "--- Changelog for $TAG (initial) ---"
             else
               RANGE="${PREV}..${TAG}"
               echo "--- Changelog for $TAG (since $PREV) ---"
-
-              # Update previous tag's file: add next_changelog pointing to this tag
               PREV_NEXT="${BASE}/changelog-${TAG}.json"
-              jq ".next_changelog = \"${PREV_NEXT}\"" ".updates/changelog-${PREV}.json" > ".updates/changelog-${PREV}.tmp" && \
-                mv ".updates/changelog-${PREV}.tmp" ".updates/changelog-${PREV}.json"
+              jq ".next_changelog = \"${PREV_NEXT}\"" "/tmp/_info/changelog-${PREV}.json" > "/tmp/_info/changelog-${PREV}.tmp" && \
+                mv "/tmp/_info/changelog-${PREV}.tmp" "/tmp/_info/changelog-${PREV}.json"
             fi
 
-            # Extract commits
-            git log "$RANGE" --reverse --pretty=format:'%H|||%B' 2>/dev/null > /tmp/raw_commits.txt
+            # NUL-delimited commit extraction
+            git log "$RANGE" --reverse --format='%H%x00%s%x00%b%x00' 2>/dev/null > "/tmp/raw_${TAG}.txt"
+            jq -Rs '
+              [split("\u0000") | .[0:-1] | _nwise(3) | {hash: .[0], title: .[1], body: .[2]}]
+            ' "/tmp/raw_${TAG}.txt" > "/tmp/commits_${TAG}.json"
 
-            # Build JSON array (hash|||full_message)
-            while IFS='|||' read -r hash message; do
-              TITLE=$(echo "$message" | head -1)
-              BODY=$(echo "$message" | tail -n +2)
-              TITLE_JSON=$(echo "$TITLE" | jq -Rs '.')
-              BODY_JSON=$(echo "$BODY" | jq -Rs '.')
-              echo "{\"hash\":$(echo "$hash" | jq -Rs '.'),\"title\":$TITLE_JSON,\"body\":$BODY_JSON}"
-            done < /tmp/raw_commits.txt | jq -s '.' > "/tmp/commits_${TAG}.json"
-
-            COUNT=$(cat "/tmp/commits_${TAG}.json" | jq length)
+            COUNT=$(jq length "/tmp/commits_${TAG}.json")
             echo "  $COUNT commit(s)"
 
-            # Previous changelog URL (empty for first tag)
-            if [ -z "$PREV" ]; then
-              PREV_LINK=""
-            else
-              PREV_LINK="${BASE}/changelog-${PREV}.json"
-            fi
+            PREV_LINK=""
+            [ -n "$PREV" ] && PREV_LINK="${BASE}/changelog-${PREV}.json"
 
-            # Write changelog with previous_changelog
             jq -n \
               --arg vn "$TAG" \
               --arg dt "$(git log -1 --format=%aI "$TAG" | cut -dT -f1)" \
@@ -96,11 +79,10 @@ jobs:
                 previous_changelog: (if $prev == "" then null else $prev end),
                 next_changelog: null,
                 commits: $commits
-              }' > ".updates/changelog-${TAG}.json"
+              }' > "/tmp/_info/changelog-${TAG}.json"
 
             PREV="$TAG"
           done
-
           echo "Done generating per-tag changelogs."
 
       - name: Write update.json
@@ -114,19 +96,26 @@ jobs:
               version_code: (try ($tag | tonumber) catch 0),
               version_name: $tag,
               download_url: "https://github.com/\($repo)/releases/download/\($tag)/app-release.apk",
-              changelog_url: "https://raw.githubusercontent.com/\($repo)/main/.updates/changelog-\($tag).json",
-              latest_changelog: "https://raw.githubusercontent.com/\($repo)/main/.updates/changelog-\($tag).json"
-            }' > .updates/update.json
-          echo "Generated .updates/update.json"
+              changelog_url: "https://raw.githubusercontent.com/\($repo)/info/changelog-\($tag).json",
+              latest_changelog: "https://raw.githubusercontent.com/\($repo)/info/changelog-\($tag).json"
+            }' > /tmp/_info/update.json
+          echo "Generated /tmp/_info/"
 
-      - name: Commit & push update files
+      - name: Push to info branch
         run: |
+          TAG="${{ steps.versions.outputs.current_tag }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .updates/
+
+          git checkout --orphan _info_branch
+          git reset --hard
+          cp -r /tmp/_info/* .
+          rm -f .gitignore
+
+          git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "chore(updates): auto-generate update info for ${{ steps.versions.outputs.current_tag }}"
-            git push
+            git commit -m "chore: auto-generate update info for ${TAG}"
+            git push origin _info_branch:info --force
           else
             echo "No changes, skipping commit"
           fi

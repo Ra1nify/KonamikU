@@ -142,9 +142,9 @@ object UpdateChecker {
     }
 
     /** Fetch and parse a changelog from a full URL (mirror applied externally). */
-    fun fetchChangelog(url: String): Changelog? {
-        return try {
-            val text = fetchString(url) ?: return null
+    suspend fun fetchChangelog(url: String): Changelog? = withContext(Dispatchers.IO) {
+        try {
+            val text = fetchString(url) ?: return@withContext null
             updateJson.decodeFromString<Changelog>(text)
         } catch (_: Exception) { null }
     }
