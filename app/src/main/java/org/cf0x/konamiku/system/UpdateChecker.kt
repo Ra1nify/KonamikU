@@ -42,17 +42,21 @@ object UpdateChecker {
             val info = updateJson.decodeFromString<UpdateInfo>(jsonText)
 
             val currentCode = BuildConfig.VERSION_CODE.toLong()
-            if (info.version_code <= currentCode) {
-                return@withContext UpdateState(hasUpdate = false)
-            }
 
-            // Fetch changelog — use latest_changelog if present, else changelog_url
+            // Always fetch changelog (for display even when up-to-date)
             val clUrl = if (info.latest_changelog.isNotBlank()) info.latest_changelog
                        else info.changelog_url
             val changelogUrl = if (mirrorPrefix.isNotBlank() && customUrl.isBlank()) {
                 "${mirrorPrefix.trimEnd('/')}/${clUrl.trimStart('/')}"
             } else clUrl
             val changelog = fetchChangelog(changelogUrl)
+
+            if (info.version_code <= currentCode) {
+                return@withContext UpdateState(
+                    hasUpdate = false,
+                    changelog = changelog
+                )
+            }
 
             UpdateState(
                 hasUpdate     = true,

@@ -27,6 +27,7 @@ data class Changelog(
     val version_name: String,
     val date: String,
     val previous_changelog: String? = null,
+    val next_changelog: String? = null,
     val commits: List<CommitEntry> = emptyList()
 )
 

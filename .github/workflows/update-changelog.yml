@@ -1,6 +1,6 @@
-#  KonamikU — generate update.json + per-tag incremental changelogs
+#  KonamikU — generate .updates/update.json + per-tag changelogs (linked list)
 #  Trigger: new Release OR manual workflow_dispatch
-#  Walks all tags in order and produces one changelog per consecutive pair.
+#  Tags sorted by commit date.
 name: Update Changelog
 
 on:
@@ -29,76 +29,74 @@ jobs:
       - name: Resolve versions for current HEAD
         id: versions
         run: |
-          # Tag IS the versionCode (pure number, e.g. "250620")
           TAG_INPUT="${{ github.event.inputs.tag }}"
-          if [ -n "$TAG_INPUT" ]; then
-            TAG="$TAG_INPUT"
-          elif [ "${GITHUB_REF#refs/tags/}" != "${GITHUB_REF}" ]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-          else
-            # workflow_dispatch without tag → use latest tag
-            TAG=$(git tag --sort=-creatordate | head -1)
-          fi
-          # Last resort fallback
+          if [ -n "$TAG_INPUT" ]; then TAG="$TAG_INPUT"
+          elif [ "${GITHUB_REF#refs/tags/}" != "${GITHUB_REF}" ]; then TAG="${GITHUB_REF#refs/tags/}"
+          else TAG=$(git tag --sort=-creatordate | head -1); fi
           [ -z "$TAG" ] && TAG="HEAD"
-          VERSION_CODE="${TAG}"
+          echo "version_code=$TAG"     >> "$GITHUB_OUTPUT"
+          echo "version_name=$TAG"     >> "$GITHUB_OUTPUT"
+          echo "current_tag=$TAG"      >> "$GITHUB_OUTPUT"
 
-          # version_name still from properties for human display
-          MAJOR=$(grep 'ver_Major' version.properties | cut -d= -f2 | tr -d ' ')
-          MINOR=$(grep 'ver_Minor' version.properties | cut -d= -f2 | tr -d ' ')
-          DATE_DOT=$(date -u +%y.%m)
-          VERSION_NAME="${DATE_DOT}.${MAJOR}.${MINOR}"
-
-          echo "version_code=$VERSION_CODE"   >> "$GITHUB_OUTPUT"
-          echo "version_name=$VERSION_NAME"   >> "$GITHUB_OUTPUT"
-          echo "current_tag=$TAG"             >> "$GITHUB_OUTPUT"
-
-      - name: Generate per-tag changelogs
+      - name: Generate per-tag changelogs (linked list)
         run: |
-          mkdir -p updates
+          mkdir -p .updates
           REPO="${GITHUB_REPOSITORY}"
-
-          # Get all tags sorted chronologically (oldest first)
-          TAGS=$(git tag --sort=creatordate)
+          BASE="https://raw.githubusercontent.com/${REPO}/main/.updates"
+          TAGS=$(git for-each-ref --sort=committerdate refs/tags --format='%(refname:short)')
 
           PREV=""
+          NEXT=""
           for TAG in $TAGS; do
             if [ -z "$PREV" ]; then
-              # First tag: all commits up to it
+              # First tag
               RANGE="$TAG"
-              PREV_CHANGELOG="null"
               echo "--- Changelog for $TAG (initial) ---"
             else
               RANGE="${PREV}..${TAG}"
-              PREV_CHANGELOG="\"https://raw.githubusercontent.com/${REPO}/main/updates/changelog-${PREV}.json\""
               echo "--- Changelog for $TAG (since $PREV) ---"
+
+              # Update previous tag's file: add next_changelog pointing to this tag
+              PREV_NEXT="${BASE}/changelog-${TAG}.json"
+              jq ".next_changelog = \"${PREV_NEXT}\"" ".updates/changelog-${PREV}.json" > ".updates/changelog-${PREV}.tmp" && \
+                mv ".updates/changelog-${PREV}.tmp" ".updates/changelog-${PREV}.json"
             fi
 
             # Extract commits
-            git log "$RANGE" --reverse --oneline --pretty=format:'%H||%s||%b' 2>/dev/null > /tmp/raw_commits.txt
+            git log "$RANGE" --reverse --pretty=format:'%H|||%B' 2>/dev/null > /tmp/raw_commits.txt
 
-            # Build JSON array
-            while IFS='||' read -r hash title body; do
-              TITLE_JSON=$(echo "$title" | jq -Rs '.')
-              BODY_JSON=$(echo "$body" | head -1 | jq -Rs '.')
+            # Build JSON array (hash|||full_message)
+            while IFS='|||' read -r hash message; do
+              TITLE=$(echo "$message" | head -1)
+              BODY=$(echo "$message" | tail -n +2)
+              TITLE_JSON=$(echo "$TITLE" | jq -Rs '.')
+              BODY_JSON=$(echo "$BODY" | jq -Rs '.')
               echo "{\"hash\":$(echo "$hash" | jq -Rs '.'),\"title\":$TITLE_JSON,\"body\":$BODY_JSON}"
             done < /tmp/raw_commits.txt | jq -s '.' > "/tmp/commits_${TAG}.json"
 
             COUNT=$(cat "/tmp/commits_${TAG}.json" | jq length)
             echo "  $COUNT commit(s)"
 
-            # Write changelog file with previous_changelog link
+            # Previous changelog URL (null for first tag)
+            if [ -z "$PREV" ]; then
+              PREV_LINK="null"
+            else
+              PREV_LINK="\"${BASE}/changelog-${PREV}.json\""
+            fi
+
+            # Write changelog with previous_changelog
             jq -n \
               --arg vn "$TAG" \
               --arg dt "$(git log -1 --format=%aI "$TAG" | cut -dT -f1)" \
-              --arg prev "$(echo "$PREV_CHANGELOG" | jq -r '.' 2>/dev/null || echo "")" \
+              --argjson prev "$(echo "$PREV_LINK" | jq -r '.')" \
               --argjson commits "$(cat "/tmp/commits_${TAG}.json")" \
               '{
                 version_name: $vn,
                 date: $dt,
-                previous_changelog: (if $prev == "" then null else $prev end),
+                previous_changelog: ($prev // null),
+                next_changelog: null,
                 commits: $commits
-              }' > "updates/changelog-${TAG}.json"
+              }' > ".updates/changelog-${TAG}.json"
 
             PREV="$TAG"
           done
@@ -107,25 +105,25 @@ jobs:
 
       - name: Write update.json
         run: |
+          TAG="${{ steps.versions.outputs.current_tag }}"
+          REPO="${GITHUB_REPOSITORY}"
           jq -n \
-            --arg vc "${{ steps.versions.outputs.version_code }}" \
-            --arg vn "${{ steps.versions.outputs.version_name }}" \
-            --arg tag "${{ steps.versions.outputs.current_tag }}" \
-            --arg repo "${GITHUB_REPOSITORY}" \
+            --arg tag "$TAG" \
+            --arg repo "${REPO}" \
             '{
-              version_code: ($vc | tonumber),
-              version_name: $vn,
+              version_code: ($tag | tonumber),
+              version_name: $tag,
               download_url: "https://github.com/\($repo)/releases/download/\($tag)/app-release.apk",
-              changelog_url: "https://raw.githubusercontent.com/\($repo)/main/updates/changelog-\($tag).json",
-              latest_changelog: "https://raw.githubusercontent.com/\($repo)/main/updates/changelog-\($tag).json"
-            }' > updates/update.json
-          echo "Generated updates/update.json"
+              changelog_url: "https://raw.githubusercontent.com/\($repo)/main/.updates/changelog-\($tag).json",
+              latest_changelog: "https://raw.githubusercontent.com/\($repo)/main/.updates/changelog-\($tag).json"
+            }' > .updates/update.json
+          echo "Generated .updates/update.json"
 
       - name: Commit & push update files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add updates/
+          git add .updates/
           if ! git diff --cached --quiet; then
             git commit -m "chore(updates): auto-generate update info for ${{ steps.versions.outputs.current_tag }}"
             git push
