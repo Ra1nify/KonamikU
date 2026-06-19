@@ -1,5 +1,6 @@
 package org.cf0x.konamiku.system
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -16,9 +17,9 @@ import java.net.URL
  *
  * URL rules:
  *   githubUrl — full URL to update.json on github, e.g.
- *       "https://github.com/C-F0x/KonamikU/blob/main/updates/update.json"
+ *       "https://raw.githubusercontent.com/C-F0x/KonamikU/main/updates/update.json"
  *   mirrorPrefix — prepended to githubUrl as proxy, e.g.
- *       "https://ghproxy.com/" → final: "https://ghproxy.com/https://github.com/..."
+ *       "https://gh-proxy.com/" → final: "https://ghproxy.com/https://github.com/..."
  *   customUrl — fully independent URL, no mirror applied
  */
 object UpdateChecker {
@@ -84,8 +85,8 @@ object UpdateChecker {
         }
     }
 
-    /** Measure real download latency (GET + read body). Returns ms, -1 on timeout/failure. */
-    suspend fun measureLatency(url: String): Long = withContext(Dispatchers.IO) {
+    /** Download + measure latency + validate JSON structure. Returns Pair(ms, isValid) or null on timeout. */
+    suspend fun testAndValidate(url: String): Pair<Long, Boolean>? = withContext(Dispatchers.IO) {
         withTimeoutOrNull(TIMEOUT_MS) {
             val start = System.currentTimeMillis()
             try {
@@ -94,12 +95,22 @@ object UpdateChecker {
                 conn.connectTimeout = TIMEOUT_MS.toInt()
                 conn.readTimeout = TIMEOUT_MS.toInt()
                 conn.connect()
-                // Read the full response body to measure real download speed
-                conn.inputStream.bufferedReader().use { it.readText() }
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
                 conn.disconnect()
-            } catch (_: Exception) { }
-            System.currentTimeMillis() - start
-        } ?: -1L
+                Log.i("KonamikU", "testAndValidate OK [$url] -> ${text.take(500)}")
+                val ms = System.currentTimeMillis() - start
+                // Validate JSON by attempting to parse as UpdateInfo
+                val valid = runCatching {
+                    updateJson.decodeFromString<UpdateInfo>(text)
+                    true
+                }.getOrDefault(false)
+                if (!valid) Log.w("KonamikU", "testAndValidate invalid JSON [$url]")
+                Pair(ms, valid)
+            } catch (e: Exception) {
+                Log.w("KonamikU", "testAndValidate failed [$url]: ${e.message}")
+                Pair(System.currentTimeMillis() - start, false)
+            }
+        }
     }
 
     // ── Internal helpers ──
@@ -111,16 +122,23 @@ object UpdateChecker {
         return try {
             conn.connect()
             if (conn.responseCode == 200) {
-                conn.inputStream.bufferedReader().use { it.readText() }
-            } else null
-        } catch (_: Exception) {
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                Log.i("KonamikU", "fetchString OK [$url] -> ${text.take(500)}")
+                text
+            } else {
+                Log.w("KonamikU", "fetchString HTTP ${conn.responseCode} [$url]")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("KonamikU", "fetchString failed [$url]: ${e.message}")
             null
         } finally {
             conn.disconnect()
         }
     }
 
-    private fun fetchChangelog(url: String): Changelog? {
+    /** Fetch and parse a changelog from a full URL (mirror applied externally). */
+    fun fetchChangelog(url: String): Changelog? {
         return try {
             val text = fetchString(url) ?: return null
             updateJson.decodeFromString<Changelog>(text)

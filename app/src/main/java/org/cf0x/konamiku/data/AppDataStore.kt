@@ -70,6 +70,7 @@ class AppDataStore(private val context: Context) {
         val UPDATE_CUSTOM_BASE = stringPreferencesKey("update_custom_base")
         val UPDATE_LAST_CHECK  = longPreferencesKey("update_last_check")
         val UPDATE_INTERVAL    = stringPreferencesKey("update_interval")
+        val UPDATE_MODE        = stringPreferencesKey("update_mode")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -128,6 +129,9 @@ class AppDataStore(private val context: Context) {
         runCatching { UpdateInterval.valueOf(p[Keys.UPDATE_INTERVAL] ?: "") }
             .getOrDefault(UpdateInterval.OFF)
     }
+    val updateMode: Flow<Int> = context.dataStore.data.map { p ->
+        p[Keys.UPDATE_MODE]?.toIntOrNull() ?: 0
+    }
 
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
@@ -156,4 +160,5 @@ class AppDataStore(private val context: Context) {
     suspend fun saveUpdateCustomBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_CUSTOM_BASE] = v }
     suspend fun saveUpdateLastCheck(v: Long) = context.dataStore.edit { it[Keys.UPDATE_LAST_CHECK] = v }
     suspend fun saveUpdateInterval(v: UpdateInterval) = context.dataStore.edit { it[Keys.UPDATE_INTERVAL] = v.name }
+    suspend fun saveUpdateMode(v: Int) = context.dataStore.edit { it[Keys.UPDATE_MODE] = v.toString() }
 }

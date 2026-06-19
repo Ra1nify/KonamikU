@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +45,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -63,6 +65,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -71,9 +74,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.materialkolor.PaletteStyle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
@@ -81,10 +84,10 @@ import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.data.ColorSource
 import org.cf0x.konamiku.data.NavigationMode
 import org.cf0x.konamiku.data.ThemeMode
+import org.cf0x.konamiku.data.UpdateInterval
+import org.cf0x.konamiku.system.UpdateChecker
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
-import org.cf0x.konamiku.system.UpdateChecker
-import org.cf0x.konamiku.data.UpdateInterval
 import org.cf0x.konamiku.util.applyLocale
 
 @Composable
@@ -621,12 +624,14 @@ private fun UpdateSection(
 ) {
     // State
     var showResultDialog by remember { mutableStateOf(false) }
+    var resultTitle by remember { mutableStateOf("") }
     var resultMsg by remember { mutableStateOf("") }
     var resultUrl by remember { mutableStateOf("") }
-    var resultChangelog by remember { mutableStateOf<List<String>>(emptyList()) }
+    var resultIsError by remember { mutableStateOf(false) }
     var checking by remember { mutableStateOf(false) }
 
     val customBase by dataStore.updateCustomBase.collectAsState(initial = "")
+    val updateMode by dataStore.updateMode.collectAsState(initial = 0)
     val interval by dataStore.updateInterval.collectAsState(initial = UpdateInterval.OFF)
 
     // Interval selector state
@@ -648,33 +653,87 @@ private fun UpdateSection(
         UpdateInterval.DAY_7  to stringResource(R.string.setting_update_interval_7d),
     )
 
+    // Changelog paging state
+    var commitLines by remember { mutableStateOf<List<String>>(emptyList()) }
+    var prevChangelogUrl by remember { mutableStateOf<String?>(null) }
+    var loadingMore by remember { mutableStateOf(false) }
+
     // Result dialog
     if (showResultDialog) {
         AlertDialog(
-            onDismissRequest = { showResultDialog = false },
+            onDismissRequest = { if (!checking && !loadingMore) showResultDialog = false },
             title = {
-                if (resultUrl.isNotBlank()) Text(stringResource(R.string.setting_update_new_title))
-                else Text(stringResource(R.string.app_name))
+                Text(
+                    when {
+                        checking            -> stringResource(R.string.app_name)
+                        resultIsError       -> stringResource(R.string.app_name)
+                        resultUrl.isNotBlank() -> stringResource(R.string.setting_update_new_title)
+                        else                -> stringResource(R.string.app_name)
+                    }
+                )
             },
             text = {
-                if (resultUrl.isNotBlank()) {
-                    Column {
-                        Text(stringResource(R.string.setting_update_new_msg, resultMsg))
-                        if (resultChangelog.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                            Spacer(Modifier.height(8.dp))
-                            resultChangelog.forEach { line ->
-                                Text("• $line", style = MaterialTheme.typography.bodySmall)
+                if (checking) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Checking...", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(16.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                } else when {
+                    resultIsError -> Text(resultMsg.ifBlank { "Unknown error" })
+                    resultUrl.isNotBlank() -> {
+                        val maxH = LocalConfiguration.current.screenHeightDp * 0.7f
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = maxH.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(stringResource(R.string.setting_update_new_msg, resultMsg))
+                            if (commitLines.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                                Spacer(Modifier.height(8.dp))
+                                commitLines.forEach { line ->
+                                    Text("• $line", style = MaterialTheme.typography.bodySmall)
+                                }
+                                if (prevChangelogUrl != null && !loadingMore) {
+                                    Spacer(Modifier.height(8.dp))
+                                    TextButton(
+                                        onClick = {
+                                            loadingMore = true
+                                            scope.launch {
+                                                val prev = UpdateChecker.fetchChangelog(prevChangelogUrl!!)
+                                                if (prev != null) {
+                                                    val newLines = prev.commits.map { it.title }
+                                                    commitLines = commitLines + newLines
+                                                    prevChangelogUrl = prev.previous_changelog
+                                                } else {
+                                                    prevChangelogUrl = null
+                                                }
+                                                loadingMore = false
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Load more (v${prevChangelogUrl?.substringAfter("changelog-")?.substringBefore(".json") ?: ""})") }
+                                }
+                                if (loadingMore) {
+                                    Spacer(Modifier.height(8.dp))
+                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                }
                             }
                         }
                     }
-                } else {
-                    Text(stringResource(R.string.setting_update_no_update))
+                    else -> Text(stringResource(R.string.setting_update_no_update))
                 }
             },
             confirmButton = {
-                if (resultUrl.isNotBlank()) {
+                if (checking || loadingMore) {
+                    // No button while loading
+                } else if (resultUrl.isNotBlank()) {
                     TextButton(onClick = {
                         showResultDialog = false
                         runCatching {
@@ -691,7 +750,7 @@ private fun UpdateSection(
                 }
             },
             dismissButton = {
-                if (resultUrl.isNotBlank()) {
+                if (!checking && !loadingMore && resultUrl.isNotBlank()) {
                     TextButton(onClick = { showResultDialog = false }) {
                         Text(stringResource(R.string.setting_update_later))
                     }
@@ -706,30 +765,35 @@ private fun UpdateSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(enabled = !checking) {
+                    showResultDialog = true
                     checking = true
                     scope.launch {
-                        val gh = "https://github.com/C-F0x/KonamikU/blob/main/updates/update.json"
-                        val mirror = "https://ghproxy.com/"
+                        val gh = "https://raw.githubusercontent.com/C-F0x/KonamikU/main/updates/update.json"
+                        val mirror = "https://gh-proxy.com/"
                         val state = UpdateChecker.check(
                             githubUrl = gh,
                             mirrorPrefix = mirror,
                             customUrl = customBase
                         )
-                        // Manual check: always show dialog
                         if (state.error != null) {
+                            resultIsError = true
                             resultMsg = state.error
                             resultUrl = ""
-                            resultChangelog = emptyList()
+                            commitLines = emptyList()
+                            prevChangelogUrl = null
                         } else if (state.hasUpdate) {
+                            resultIsError = false
                             resultMsg = state.latestVersion
                             resultUrl = state.downloadUrl
-                            resultChangelog = state.changelog?.commits?.map { it.title } ?: emptyList()
+                            commitLines = state.changelog?.commits?.map { it.title } ?: emptyList()
+                            prevChangelogUrl = state.changelog?.previous_changelog
                         } else {
+                            resultIsError = false
                             resultMsg = ""
                             resultUrl = ""
-                            resultChangelog = emptyList()
+                            commitLines = emptyList()
+                            prevChangelogUrl = null
                         }
-                        showResultDialog = true
                         checking = false
                         dataStore.saveUpdateLastCheck(System.currentTimeMillis())
                     }
@@ -841,9 +905,10 @@ private fun UpdateSection(
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.setting_update_urls), style = MaterialTheme.typography.bodyLarge)
                     if (!urlExpanded) {
-                        val modeLabel = when {
-                            customBase.isNotBlank()  -> stringResource(R.string.setting_update_urls_custom)
-                            else                     -> "GitHub"
+                        val modeLabel = when (updateMode) {
+                            2 -> stringResource(R.string.setting_update_urls_custom)
+                            1 -> "GH-Proxy"
+                            else -> "GitHub"
                         }
                         Text(modeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                     }
@@ -868,24 +933,24 @@ private fun UpdateSection(
                         "GH-Proxy" to 1,
                         stringResource(R.string.setting_update_urls_custom) to 2
                     )
-                    val currentMode = when {
-                        customBase.isNotBlank()  -> 2
-                        else                     -> 0
-                    }
+                    val currentMode = updateMode.let { if (it in 0..2) it else 0 }
                     var selectedMode by remember { mutableStateOf(currentMode) }
 
                     // Per-mode latency results
                     var latencyGitHub  by remember { mutableStateOf(-1L) }
                     var latencyProxy   by remember { mutableStateOf(-1L) }
                     var latencyCustom  by remember { mutableStateOf(-1L) }
+                    var validGitHub    by remember { mutableStateOf(false) }
+                    var validProxy     by remember { mutableStateOf(false) }
+                    var validCustom    by remember { mutableStateOf(false) }
                     var testingLatency by remember { mutableStateOf(false) }
                     var cooldown       by remember { mutableStateOf(0) }
 
                     LaunchedEffect(cooldown) { if (cooldown > 0) { delay(1000); cooldown-- } }
 
                     // Build URLs once
-                    val gitHubUrl = "https://github.com/C-F0x/KonamikU/blob/main/updates/update.json"
-                    val mirrorPrefix = "https://ghproxy.com/"
+                    val gitHubUrl = "https://raw.githubusercontent.com/C-F0x/KonamikU/main/updates/update.json"
+                    val mirrorPrefix = "https://gh-proxy.com/"
                     val proxiedUrl = "${mirrorPrefix.trimEnd('/')}/${gitHubUrl.trimStart('/')}"
 
                     // Custom URL text field
@@ -893,10 +958,11 @@ private fun UpdateSection(
 
                     // Render each mode row
                     listOf(
-                        Triple("GitHub", 0, latencyGitHub),
-                        Triple("GH-Proxy", 1, latencyProxy),
-                        Triple(stringResource(R.string.setting_update_urls_custom), 2, latencyCustom)
-                    ).forEach { (label, idx, latMs) ->
+                        Triple("GitHub", 0, latencyGitHub) to validGitHub,
+                        Triple("GH-Proxy", 1, latencyProxy) to validProxy,
+                        Triple(stringResource(R.string.setting_update_urls_custom), 2, latencyCustom) to validCustom
+                    ).forEach { (triple, isValid) ->
+                        val (label, idx, latMs) = triple
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -905,23 +971,32 @@ private fun UpdateSection(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(selected = selectedMode == idx, onClick = { selectedMode = idx })
-                            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                                color = if (testingLatency || latMs < 0 || isValid) MaterialTheme.colorScheme.onSurface
+                                        else MaterialTheme.colorScheme.error
+                            )
 
-                            // Latency value on the right
-                            if (testingLatency || latMs >= 0) {
+                            // Latency or invalid flag on the right
+                            if (testingLatency || latMs >= 0 || (latMs <= -1 && isValid)) {
                                 Text(
                                     text = when {
-                                        testingLatency -> "…"
-                                        latMs > 5000   -> "timeout"
-                                        latMs < 0      -> ""
-                                        else           -> "${latMs}ms"
+                                        testingLatency          -> "…"
+                                        latMs >= 0 && isValid   -> "${latMs}ms"
+                                        latMs >= 0 && !isValid  -> "invalid"
+                                        latMs < 0 && isValid    -> ""
+                                        else                    -> "invalid"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = when {
-                                        testingLatency  -> MaterialTheme.colorScheme.onSurfaceVariant
-                                        latMs > 5000    -> MaterialTheme.colorScheme.error
-                                        latMs > 200     -> MaterialTheme.colorScheme.tertiary
-                                        else            -> MaterialTheme.colorScheme.primary
+                                        testingLatency          -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        latMs >= 0 && !isValid  -> MaterialTheme.colorScheme.error
+                                        latMs >= 0 && latMs > 5000 -> MaterialTheme.colorScheme.error
+                                        latMs >= 0 && latMs > 200  -> MaterialTheme.colorScheme.tertiary
+                                        latMs >= 0              -> MaterialTheme.colorScheme.primary
+                                        else                    -> MaterialTheme.colorScheme.error
                                     }
                                 )
                             }
@@ -953,9 +1028,16 @@ private fun UpdateSection(
                             onClick = {
                                 testingLatency = true; cooldown = 5
                                 scope.launch {
-                                    latencyGitHub = UpdateChecker.measureLatency(gitHubUrl)
-                                    latencyProxy  = UpdateChecker.measureLatency(proxiedUrl)
-                                    latencyCustom = if (customBase.isNotBlank()) UpdateChecker.measureLatency(customBase) else -1
+                                    val gh = UpdateChecker.testAndValidate(gitHubUrl)
+                                    val pr = UpdateChecker.testAndValidate(proxiedUrl)
+                                    latencyGitHub = gh?.first ?: -1; validGitHub = gh?.second ?: false
+                                    latencyProxy  = pr?.first ?: -1; validProxy  = pr?.second ?: false
+                                    if (customBase.isNotBlank()) {
+                                        val c = UpdateChecker.testAndValidate(customBase)
+                                        latencyCustom = c?.first ?: -1; validCustom = c?.second ?: false
+                                    } else {
+                                        latencyCustom = -1; validCustom = false
+                                    }
                                     testingLatency = false
                                 }
                             },
@@ -967,6 +1049,7 @@ private fun UpdateSection(
                             Button(onClick = {
                                 urlExpanded = false
                                 scope.launch {
+                                    dataStore.saveUpdateMode(selectedMode)
                                     dataStore.saveUpdateCustomBase(if (selectedMode == 2) editCustom else "")
                                 }
                             }) { Text(stringResource(R.string.card_add_confirm)) }
