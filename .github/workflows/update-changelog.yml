@@ -77,23 +77,23 @@ jobs:
             COUNT=$(cat "/tmp/commits_${TAG}.json" | jq length)
             echo "  $COUNT commit(s)"
 
-            # Previous changelog URL (null for first tag)
+            # Previous changelog URL (empty for first tag)
             if [ -z "$PREV" ]; then
-              PREV_LINK="null"
+              PREV_LINK=""
             else
-              PREV_LINK="\"${BASE}/changelog-${PREV}.json\""
+              PREV_LINK="${BASE}/changelog-${PREV}.json"
             fi
 
             # Write changelog with previous_changelog
             jq -n \
               --arg vn "$TAG" \
               --arg dt "$(git log -1 --format=%aI "$TAG" | cut -dT -f1)" \
-              --argjson prev "$(echo "$PREV_LINK" | jq -r '.')" \
+              --arg prev "$PREV_LINK" \
               --argjson commits "$(cat "/tmp/commits_${TAG}.json")" \
               '{
                 version_name: $vn,
                 date: $dt,
-                previous_changelog: ($prev // null),
+                previous_changelog: (if $prev == "" then null else $prev end),
                 next_changelog: null,
                 commits: $commits
               }' > ".updates/changelog-${TAG}.json"
@@ -111,7 +111,7 @@ jobs:
             --arg tag "$TAG" \
             --arg repo "${REPO}" \
             '{
-              version_code: ($tag | tonumber),
+              version_code: (try ($tag | tonumber) catch 0),
               version_name: $tag,
               download_url: "https://github.com/\($repo)/releases/download/\($tag)/app-release.apk",
               changelog_url: "https://raw.githubusercontent.com/\($repo)/main/.updates/changelog-\($tag).json",
@@ -123,7 +123,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .updates/
+          git add -f .updates/
           if ! git diff --cached --quiet; then
             git commit -m "chore(updates): auto-generate update info for ${{ steps.versions.outputs.current_tag }}"
             git push
