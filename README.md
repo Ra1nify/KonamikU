@@ -21,7 +21,7 @@ i18n: EN / 简体中文 / 繁體中文 / 日本語 / 한국어 / Français
 | Cards | Tools | 
 |-------|-------|
 | Manage your emulated cards | ID converter & utilities |
-|![cards.png](./misc/Cards.png)|![tools.png](./misc/Tools.png)|
+|![cards.png](https://raw.githubusercontent.com/C-F0x/KonamikU/refs/heads/main/misc/Cards.png)|![tools.png](https://raw.githubusercontent.com/C-F0x/KonamikU/refs/heads/main/misc/Tools.png)|
 ---
 
 ## Requirements
