@@ -5,6 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -73,17 +76,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.materialkolor.PaletteStyle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import java.util.UUID
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
+import org.cf0x.konamiku.data.CardListRefreshEvent
 import org.cf0x.konamiku.data.Changelog
 import org.cf0x.konamiku.data.ColorSource
 import org.cf0x.konamiku.data.NavigationMode
 import org.cf0x.konamiku.data.ThemeMode
+import org.cf0x.konamiku.data.JsonManager
+import org.cf0x.konamiku.data.NfcCard
 import org.cf0x.konamiku.data.UpdateInterval
 import org.cf0x.konamiku.system.UpdateChecker
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
@@ -251,7 +262,12 @@ fun SettingScreen(dataStore: AppDataStore) {
             )
         }
 
-        // --- Group 8: Update ---
+        // --- Group 8: Export / Import ---
+        SettingGroup {
+            ExportImportSection(context)
+        }
+
+        // --- Group 9: Update ---
         SettingGroup {
             UpdateSection(dataStore = dataStore, context = context, scope = scope)
         }
@@ -1178,5 +1194,220 @@ private fun DevModeItem(devMode: Boolean, onToggle: (Boolean) -> Unit) {
             Text(stringResource(R.string.setting_dev_force_emu_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Switch(checked = devMode, onCheckedChange = onToggle)
+    }
+}
+
+// ────── Export / Import section ──────
+
+@Composable
+private fun ExportImportSection(context: android.content.Context) {
+    val scope = rememberCoroutineScope()
+    val jsonManager = remember { JsonManager(context) }
+
+    var expanded by remember { mutableStateOf(false) }
+
+    // Toast helper
+    fun toast(msg: String) {
+        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    // --- Export launcher ---
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            try {
+                val cards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
+                if (cards.isEmpty()) {
+                    withContext(Dispatchers.Main) { toast(context.getString(R.string.toast_export_empty)) }
+                    return@launch
+                }
+                val json = Json { prettyPrint = true }
+                val content = json.encodeToString(kotlinx.serialization.builtins.ListSerializer(NfcCard.serializer()), cards)
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        out.write(content.toByteArray(Charsets.UTF_8))
+                    }
+                }
+                withContext(Dispatchers.Main) { toast(context.getString(R.string.toast_export_success, cards.size)) }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { toast(context.getString(R.string.toast_export_fail)) }
+            }
+        }
+    }
+
+    // --- Import launcher ---
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            try {
+                val rawJson = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
+                }
+                if (rawJson.isBlank()) {
+                    withContext(Dispatchers.Main) { toast(context.getString(R.string.toast_import_fail_parse)) }
+                    return@launch
+                }
+                val json = Json { ignoreUnknownKeys = true }
+                val importedCards: List<NfcCard> = json.decodeFromString(
+                    kotlinx.serialization.builtins.ListSerializer(NfcCard.serializer()), rawJson
+                )
+
+                // Validate: IDm must be 16 hex chars
+                val invalidCount = importedCards.count { card ->
+                    !(card.idm.length == 16 && card.idm.all { it.isDigit() || it in 'A'..'F' || it in 'a'..'f' })
+                }
+                val validCards = importedCards.filter { card ->
+                    card.idm.length == 16 && card.idm.all { it.isDigit() || it in 'A'..'F' || it in 'a'..'f' }
+                }
+
+                if (validCards.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        toast(if (invalidCount > 0) context.getString(R.string.toast_import_fail_validation, invalidCount)
+                        else context.getString(R.string.toast_import_fail_parse))
+                    }
+                    return@launch
+                }
+
+                // Load existing cards and merge (skip duplicates by IDm, case-insensitive)
+                val existingCards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
+                val existingIdms = existingCards.map { it.idm.uppercase() }.toSet()
+
+                val newCards = validCards.filter { it.idm.uppercase() !in existingIdms }.map {
+                    it.copy(id = UUID.randomUUID().toString())
+                }
+                val duplicateCount = validCards.size - newCards.size
+
+                if (newCards.isEmpty()) {
+                    val msg = buildString {
+                        if (invalidCount > 0) append(context.getString(R.string.toast_import_fail_validation, invalidCount))
+                        if (duplicateCount > 0) {
+                            if (invalidCount > 0) append("  ")
+                            append(context.getString(R.string.toast_import_duplicate, duplicateCount))
+                        }
+                    }
+                    withContext(Dispatchers.Main) { toast(msg.ifBlank { context.getString(R.string.toast_import_fail_parse) }) }
+                    return@launch
+                }
+
+                val merged = existingCards + newCards
+                withContext(Dispatchers.IO) { jsonManager.saveCards(merged) }
+
+                // Notify MainScreen to refresh
+                CardListRefreshEvent.value = System.currentTimeMillis()
+
+                val msg = buildString {
+                    append(context.getString(R.string.toast_import_success, newCards.size))
+                    if (invalidCount > 0) append("  ").append(context.getString(R.string.toast_import_fail_validation, invalidCount))
+                    if (duplicateCount > 0) append("  ").append(context.getString(R.string.toast_import_duplicate, duplicateCount))
+                }
+                withContext(Dispatchers.Main) { toast(msg) }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { toast(context.getString(R.string.toast_import_fail_parse)) }
+            }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AccountBalanceWallet,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.setting_export_import), style = MaterialTheme.typography.bodyLarge)
+                if (!expanded) {
+                    Text(
+                        "${stringResource(R.string.setting_export)} · ${stringResource(R.string.setting_import)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(modifier = Modifier.padding(top = 8.dp)) {
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                // Export row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { exportLauncher.launch("konamiku_cards.json") },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.setting_export), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.setting_export_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Import row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { importLauncher.launch(arrayOf("application/json")) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.setting_import), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.setting_import_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
     }
 }

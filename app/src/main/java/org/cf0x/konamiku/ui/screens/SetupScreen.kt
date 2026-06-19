@@ -489,7 +489,7 @@ private fun StatusPage(effectiveLocale: AppLocale?) {
                     localizedString(effectiveLocale, R.string.status_unavailable)
                 }
             } else {
-                "…"
+                localizedString(effectiveLocale, R.string.oobe_status_loading)
             }
         )
     }

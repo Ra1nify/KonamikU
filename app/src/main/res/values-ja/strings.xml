@@ -91,14 +91,17 @@
     <string name="toast_nfc_enable_fail">NFCの有効化に失敗しました</string>
     <string name="toast_root_no_permission">Root権限がありません</string>
     <string name="toast_nfc_was_dead">NFCサービスが実行されていません。再起動します…</string>
-    <string name="toast_nfc_killed">NFCサービスが終了しました。再起動します…</string>
-    <string name="toast_nfc_restart_failed">NFCサービスの再起動に失敗しました</string>
-    <string name="toast_nfc_restarted">NFCサービスが正常に再起動されました</string>
+    <string name="toast_nfc_killed">NFCサービスが終了しました。再起動します… (pid:%s)</string>
+    <string name="toast_nfc_restart_failed">NFCサービスの再起動に失敗しました (pid:%s)</string>
+    <string name="toast_nfc_restarted">NFCサービスが再起動されました (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">モジュールステータスを更新中…</string>
     <string name="toast_mode_locked">モジュール未読込 · Nativeモードのみ</string>
     <string name="setting_dev_force_emu">全モードを強制解除</string>
     <string name="setting_dev_force_emu_desc">モジュールチェックをバイパスします（注意して使用）。</string>
 
+    <string name="toast_idm_scanned">IDm: %1$s</string>
+    <string name="toast_nfc_loaded">NFC ロード済み</string>
+    <string name="oobe_status_loading">…</string>
     <string name="tools_id_converter_title">ID変換</string>
     <string name="tools_label_idm">IDm（16桁16進数）</string>
     <string name="tools_label_kid">Konami ID（16桁）</string>
@@ -160,4 +163,16 @@
     <string name="oobe_page_indicator">%1$d / %2$d</string>
     <string name="oobe_next">次へ</string>
     <string name="oobe_previous">前へ</string>
+    <string name="setting_export_import">エクスポート / インポート</string>
+    <string name="setting_export">カードをエクスポート</string>
+    <string name="setting_export_desc">カードをJSONファイルに保存</string>
+    <string name="setting_import">カードをインポート</string>
+    <string name="setting_import_desc">JSONファイルからカードを読み込み</string>
+    <string name="toast_export_success">%d枚のカードをエクスポートしました</string>
+    <string name="toast_export_fail">エクスポートに失敗しました</string>
+    <string name="toast_export_empty">エクスポートするカードがありません</string>
+    <string name="toast_import_success">%d枚のカードをインポートしました</string>
+    <string name="toast_import_fail_parse">無効なJSONファイルです</string>
+    <string name="toast_import_fail_validation">%d枚のカードをスキップ（IDmが無効）</string>
+    <string name="toast_import_duplicate">%d枚のカードをスキップ（重複）</string>
 </resources>

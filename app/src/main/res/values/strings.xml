@@ -93,9 +93,9 @@
     <string name="toast_nfc_enable_fail">Failed to enable NFC</string>
     <string name="toast_root_no_permission">No root permission</string>
     <string name="toast_nfc_was_dead">NFC service not running, restarting…</string>
-    <string name="toast_nfc_killed">NFC service terminated, restarting…</string>
-    <string name="toast_nfc_restart_failed">Failed to restart NFC service</string>
-    <string name="toast_nfc_restarted">NFC service restarted successfully</string>
+    <string name="toast_nfc_killed">NFC service terminated, restarting… (pid:%s)</string>
+    <string name="toast_nfc_restart_failed">Failed to restart NFC service (pid:%s)</string>
+    <string name="toast_nfc_restarted">NFC service restarted (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">Refreshing module status…</string>
     <string name="toast_mode_locked">Module inactive · Native mode only</string>
     <string name="setting_dev_force_emu">Force Unlock All Modes</string>
@@ -116,6 +116,9 @@
     <string name="tools_err_kid_chars">Invalid characters found</string>
     <string name="tools_err_generic">Conversion failed</string>
     <string name="tile_label" translatable="false">KonamikU</string>
+    <string name="toast_idm_scanned">IDm: %1$s</string>
+    <string name="toast_nfc_loaded">NFC Loaded</string>
+    <string name="oobe_status_loading">…</string>
     <string name="greeting">Hello</string>
 
     <string name="oobe_welcome_title">Welcome to KonamikU</string>
@@ -163,4 +166,16 @@
     <string name="setting_update_interval_3d">3 days</string>
     <string name="setting_update_interval_7d">7 days</string>
     <string name="oobe_page_indicator">%1$d / %2$d</string>
+    <string name="setting_export_import">Export / Import</string>
+    <string name="setting_export">Export Cards</string>
+    <string name="setting_export_desc">Save cards to a JSON file</string>
+    <string name="setting_import">Import Cards</string>
+    <string name="setting_import_desc">Load cards from a JSON file</string>
+    <string name="toast_export_success">Exported %d card(s)</string>
+    <string name="toast_export_fail">Export failed</string>
+    <string name="toast_export_empty">No cards to export</string>
+    <string name="toast_import_success">Imported %d card(s)</string>
+    <string name="toast_import_fail_parse">Invalid JSON file</string>
+    <string name="toast_import_fail_validation">%d card(s) skipped (invalid IDm)</string>
+    <string name="toast_import_duplicate">%d card(s) skipped (duplicates)</string>
 </resources>

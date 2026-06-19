@@ -112,9 +112,9 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
             val msg = when (result) {
                 is NfcRestart.Result.WasDead   -> str(R.string.toast_nfc_was_dead)
-                is NfcRestart.Result.KillFailed -> str(R.string.toast_nfc_restart_failed) + " (pid:${result.pid})"
-                is NfcRestart.Result.Killed     -> str(R.string.toast_nfc_killed) + " (pid:${result.oldPid})"
-                is NfcRestart.Result.Restarted  -> str(R.string.toast_nfc_restarted) + " (pid:${result.oldPid}→${result.newPid})"
+                is NfcRestart.Result.KillFailed -> str(R.string.toast_nfc_restart_failed, result.pid)
+                is NfcRestart.Result.Killed     -> str(R.string.toast_nfc_killed, result.oldPid)
+                is NfcRestart.Result.Restarted  -> str(R.string.toast_nfc_restarted, result.oldPid, result.newPid)
             }
             _toastEvent.emit(msg)
 
@@ -172,6 +172,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun str(@StringRes resId: Int): String =
-        getApplication<Application>().getString(resId)
+    private fun str(@StringRes resId: Int, vararg formatArgs: Any): String =
+        getApplication<Application>().getString(resId, *formatArgs)
 }

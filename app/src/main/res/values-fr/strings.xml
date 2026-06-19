@@ -91,14 +91,17 @@
     <string name="toast_nfc_enable_fail">Échec d\'activation NFC</string>
     <string name="toast_root_no_permission">Pas de permission Root</string>
     <string name="toast_nfc_was_dead">Service NFC hors ligne, redémarrage…</string>
-    <string name="toast_nfc_killed">Service NFC terminé, redémarrage…</string>
-    <string name="toast_nfc_restart_failed">Échec du redémarrage du service NFC</string>
-    <string name="toast_nfc_restarted">Service NFC redémarré avec succès</string>
+    <string name="toast_nfc_killed">Service NFC terminé, redémarrage… (pid:%s)</string>
+    <string name="toast_nfc_restart_failed">Échec du redémarrage du service NFC (pid:%s)</string>
+    <string name="toast_nfc_restarted">Service NFC redémarré (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">Actualisation du statut du module…</string>
     <string name="toast_mode_locked">Module inactif · Mode Natf uniquement</string>
     <string name="setting_dev_force_emu">Forcer tous les modes</string>
     <string name="setting_dev_force_emu_desc">Ignorer les vérifications du module (à utiliser avec prudence).</string>
 
+    <string name="toast_idm_scanned">IDm : %1$s</string>
+    <string name="toast_nfc_loaded">NFC chargé</string>
+    <string name="oobe_status_loading">…</string>
     <string name="tools_id_converter_title">Convertisseur d\'ID</string>
     <string name="tools_label_idm">IDm (16 hex)</string>
     <string name="tools_label_kid">Konami ID (16 car.)</string>
@@ -160,4 +163,16 @@
     <string name="oobe_page_indicator">%1$d / %2$d</string>
     <string name="oobe_next">Suivant</string>
     <string name="oobe_previous">Précédent</string>
+    <string name="setting_export_import">Exporter / Importer</string>
+    <string name="setting_export">Exporter les cartes</string>
+    <string name="setting_export_desc">Enregistrer les cartes dans un fichier JSON</string>
+    <string name="setting_import">Importer des cartes</string>
+    <string name="setting_import_desc">Charger des cartes depuis un fichier JSON</string>
+    <string name="toast_export_success">%d carte(s) exportée(s)</string>
+    <string name="toast_export_fail">Échec de l\'exportation</string>
+    <string name="toast_export_empty">Aucune carte à exporter</string>
+    <string name="toast_import_success">%d carte(s) importée(s)</string>
+    <string name="toast_import_fail_parse">Fichier JSON invalide</string>
+    <string name="toast_import_fail_validation">%d carte(s) ignorée(s) (IDm invalide)</string>
+    <string name="toast_import_duplicate">%d carte(s) ignorée(s) (doublons)</string>
 </resources>

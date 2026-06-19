@@ -92,14 +92,17 @@
     <string name="toast_nfc_enable_fail">NFC 开启失败</string>
     <string name="toast_root_no_permission">无 Root 权限</string>
     <string name="toast_nfc_was_dead">NFC 服务未运行，正在尝试拉起…</string>
-    <string name="toast_nfc_killed">NFC 服务已终止，正在尝试拉起…</string>
-    <string name="toast_nfc_restart_failed">NFC 服务重启失败</string>
-    <string name="toast_nfc_restarted">NFC 服务重启成功</string>
+    <string name="toast_nfc_killed">NFC 服务已终止，正在尝试拉起… (pid:%s)</string>
+    <string name="toast_nfc_restart_failed">NFC 服务重启失败 (pid:%s)</string>
+    <string name="toast_nfc_restarted">NFC 服务已重启 (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">正在刷新模块状态…</string>
     <string name="toast_mode_locked">模块未加载 · 仅 Native 模式可用</string>
     <string name="setting_dev_force_emu">强制解锁所有模式</string>
     <string name="setting_dev_force_emu_desc">绕过模块环境检查（请谨慎使用）。</string>
 
+    <string name="toast_idm_scanned">IDm: %1$s</string>
+    <string name="toast_nfc_loaded">NFC 已加载</string>
+    <string name="oobe_status_loading">…</string>
     <string name="tools_id_converter_title">ID 转换器</string>
     <string name="tools_label_idm">IDm (16位十六进制)</string>
     <string name="tools_label_kid">Konami ID (16位)</string>
@@ -161,4 +164,16 @@
     <string name="oobe_skip">跳过</string>
     <string name="oobe_page_indicator">%1$d / %2$d</string>
     <string name="oobe_previous">◀ 上一页</string>
+    <string name="setting_export_import">导出 / 导入</string>
+    <string name="setting_export">导出卡片</string>
+    <string name="setting_export_desc">将卡片保存为 JSON 文件</string>
+    <string name="setting_import">导入卡片</string>
+    <string name="setting_import_desc">从 JSON 文件加载卡片</string>
+    <string name="toast_export_success">已导出 %d 张卡片</string>
+    <string name="toast_export_fail">导出失败</string>
+    <string name="toast_export_empty">没有可导出的卡片</string>
+    <string name="toast_import_success">已导入 %d 张卡片</string>
+    <string name="toast_import_fail_parse">无效的 JSON 文件</string>
+    <string name="toast_import_fail_validation">%d 张卡片跳过（IDm 无效）</string>
+    <string name="toast_import_duplicate">%d 张卡片跳过（重复）</string>
 </resources>

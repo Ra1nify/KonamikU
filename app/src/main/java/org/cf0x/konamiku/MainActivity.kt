@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
 
             tag?.let {
                 val idm = it.id.joinToString("") { byte -> "%02X".format(byte) }
-                Toast.makeText(this, "IDm:$idm", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_idm_scanned, idm), Toast.LENGTH_SHORT).show()
                 setIntent(Intent())
             }
         }

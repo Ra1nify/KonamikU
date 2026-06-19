@@ -76,6 +76,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.CardListRefreshEvent
 import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.NfcCard
@@ -132,6 +133,8 @@ fun MainScreen(dataStore: AppDataStore) {
         ActivityResultContracts.RequestPermission(),
     ) {}
 
+    val refreshVersion by CardListRefreshEvent.collectAsState()
+
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
@@ -143,6 +146,13 @@ fun MainScreen(dataStore: AppDataStore) {
         val loadedCards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
         cards = loadedCards
         isLoading = false
+    }
+
+    // Reload cards when import happens in another screen
+    LaunchedEffect(refreshVersion) {
+        if (refreshVersion > 0L && !isLoading) {
+            cards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
+        }
     }
 
     LaunchedEffect(activeCardId) {
