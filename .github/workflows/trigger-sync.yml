@@ -1,5 +1,5 @@
-# Manual / auto dispatch to Xposed official repo
-name: Trigger Official Repo Sync
+# Sync README + latest release to Xposed official repo
+name: Sync to Xposed Repo
 
 on:
   release:
@@ -12,14 +12,71 @@ on:
   workflow_dispatch:
 
 jobs:
-  trigger:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch sync event
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync README.md
         env:
           GH_TOKEN: ${{ secrets.SYNC_PAT }}
         run: |
-          gh api repos/Xposed-Modules-Repo/org.cf0x.konamiku/dispatches \
-            --field event_type=sync-from-upstream \
-            --field 'client_payload={"source":"konamiku"}'
-          echo "✓ Dispatch sent"
+          SHA=$(gh api repos/Xposed-Modules-Repo/org.cf0x.konamiku/contents/README.md --jq '.sha')
+          CONTENT=$(base64 -w0 README.md)
+
+          gh api repos/Xposed-Modules-Repo/org.cf0x.konamiku/contents/README.md \
+            --method PUT \
+            --field message="docs: sync README from upstream" \
+            --field content="$CONTENT" \
+            --field sha="$SHA"
+          echo "README synced"
+
+      - name: Sync latest release
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT }}
+        run: |
+          TARGET="Xposed-Modules-Repo/org.cf0x.konamiku"
+
+          LATEST=$(gh api repos/C-F0x/konamiku/releases/latest)
+          TAG=$(echo "$LATEST" | jq -r '.tag_name')
+          TITLE=$(echo "$LATEST" | jq -r '.name // .tag_name')
+          BODY=$(echo "$LATEST" | jq -r '.body // ""')
+          DRAFT=$(echo "$LATEST" | jq -r '.draft')
+          PRERELEASE=$(echo "$LATEST" | jq -r '.prerelease')
+          ASSETS=$(echo "$LATEST" | jq -r '.assets[]? | .browser_download_url')
+
+          echo "Latest release: $TAG"
+
+          if [ "$DRAFT" = "true" ]; then
+            echo "Draft, skip"
+            exit 0
+          fi
+
+          # Delete if exists
+          if gh release view "$TAG" -R "$TARGET" &>/dev/null; then
+            echo "Removing existing $TAG..."
+            gh release delete "$TAG" -R "$TARGET" --yes --cleanup-tag
+          fi
+
+          FLAGS=""
+          [ "$PRERELEASE" = "true" ] && FLAGS="--prerelease"
+
+          gh release create "$TAG" -R "$TARGET" \
+            --target main \
+            --title "$TITLE" \
+            --notes "$BODY" \
+            $FLAGS
+          echo "Release $TAG created"
+
+          # Upload assets
+          echo "$ASSETS" | while read -r url; do
+            [ -z "$url" ] && continue
+            fname=$(basename "$url" | sed 's/?.*//')
+            echo "  uploading $fname ..."
+            curl -fsSLO "$url"
+            gh release upload "$TAG" "$fname" -R "$TARGET" --clobber
+            rm -f "$fname"
+          done
+
+          echo "✓ Release $TAG synced"
