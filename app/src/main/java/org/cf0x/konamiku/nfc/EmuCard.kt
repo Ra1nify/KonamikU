@@ -5,11 +5,9 @@ import android.nfc.cardemulation.HostNfcFService
 import android.os.Bundle
 import android.os.PowerManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.loadActiveCard
 import org.cf0x.konamiku.data.EmuMode
-import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.notification.ScanReceiver
 
 class EmuCard : HostNfcFService() {
@@ -33,20 +31,11 @@ class EmuCard : HostNfcFService() {
 
         val ctx: android.content.Context = this
         runBlocking(Dispatchers.IO) {
-            val dataStore   = AppDataStore(applicationContext)
-            val jsonManager = JsonManager(applicationContext)
-            val activeId    = dataStore.activeCardId.first() ?: return@runBlocking
-            val emuMode     = dataStore.emuMode.first()
-            val card        = jsonManager.loadCards().find { it.id == activeId }
-                ?: return@runBlocking
-
-            val realIdm   = card.idm.uppercase()
-            val activeIdm = when (emuMode) {
-                EmuMode.NORMAL           -> realIdm
-                EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
-            }
-            android.util.Log.i("KonamikU", "EmuCard active: IDm=$activeIdm, real=$realIdm, mode=$emuMode")
-            felicaCard = FelicaCard(ctx, activeIdm = activeIdm, realIdm = realIdm, emuMode = emuMode)
+            val active = applicationContext.loadActiveCard() ?: return@runBlocking
+            val realIdm = active.card.idm.uppercase()
+            val activeIdm = resolveActiveIdm(active.card.idm, active.mode)
+            android.util.Log.i("KonamikU", "EmuCard active: IDm=$activeIdm, real=$realIdm, mode=${active.mode}")
+            felicaCard = FelicaCard(ctx, activeIdm = activeIdm, realIdm = realIdm, emuMode = active.mode)
         }
     }
 

@@ -75,7 +75,6 @@ class UpdateCheckWorker(
             return Result.success()
         }
 
-        // Check if enough time has elapsed since last manual check
         val lastCheck = runCatching { dataStore.updateLastCheck.first() }.getOrDefault(0L)
         val elapsed = System.currentTimeMillis() - lastCheck
         if (elapsed < interval.millis * 0.8) {

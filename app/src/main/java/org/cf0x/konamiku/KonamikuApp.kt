@@ -25,13 +25,12 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         super.onCreate()
 
         val dataStore = AppDataStore(this)
-        
-        // Reset state on start
+
         runBlocking {
             dataStore.saveActiveCardId(null)
         }
 
-        // Schedule periodic update checks (if interval ≠ OFF)
+
         runBlocking {
             val interval = dataStore.updateInterval.first()
             UpdateCheckWorker.schedule(this@KonamikuApp, interval)
@@ -65,7 +64,6 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         XposedState.frameworkName    = service.frameworkName    ?: ""
         XposedState.frameworkVersion = service.frameworkVersion ?: ""
 
-        // Restore last known pmm state
         XposedState.pmmActive = getSharedPreferences("KonamikU_xposed", MODE_PRIVATE)
             .getBoolean("pmmtool_active", false)
 

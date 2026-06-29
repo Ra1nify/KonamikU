@@ -7,11 +7,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
 val CardListRefreshEvent = MutableStateFlow(0L)
+
+data class ActiveCard(val card: NfcCard, val mode: EmuMode)
 
 @Serializable
 data class NfcCard(
@@ -20,6 +23,16 @@ data class NfcCard(
     val idm: String,
     val emuMode: EmuMode = EmuMode.NORMAL
 )
+
+/** Loads the currently active card with its mode, or null if none is selected. */
+suspend fun Context.loadActiveCard(): ActiveCard? {
+    val dataStore = AppDataStore(this)
+    val jsonManager = JsonManager(this)
+    val activeId = dataStore.activeCardId.first() ?: return null
+    val mode = dataStore.emuMode.first()
+    val card = jsonManager.loadCards().find { it.id == activeId } ?: return null
+    return ActiveCard(card, mode)
+}
 
 class JsonManager(private val context: Context) {
 

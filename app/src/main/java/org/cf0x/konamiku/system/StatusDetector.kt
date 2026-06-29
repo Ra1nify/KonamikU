@@ -136,8 +136,7 @@ object StatusDetector {
             val dirResult  = dirDeferred.await()
             val procResult = procDeferred.await()
 
-            // Cross-validate: directory check is primary, process is fallback.
-            // If both agree → confident match; if one is UNKNOWN → use the other.
+            // Directory is primary; process is fallback
             val provider = when {
                 dirResult != RootProvider.UNKNOWN && dirResult == procResult -> dirResult
                 dirResult  != RootProvider.UNKNOWN                          -> dirResult

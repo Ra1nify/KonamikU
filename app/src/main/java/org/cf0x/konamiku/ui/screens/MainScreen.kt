@@ -81,7 +81,8 @@ import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.NfcCard
 import org.cf0x.konamiku.nfc.EmuCard
-import org.cf0x.konamiku.nfc.toCompatIdm
+import org.cf0x.konamiku.nfc.SYSTEM_CODE_FELICA
+import org.cf0x.konamiku.nfc.resolveActiveIdm
 import org.cf0x.konamiku.notification.LiveUpdateManager
 import org.cf0x.konamiku.ui.components.NfcCardItem
 import org.cf0x.konamiku.ui.components.StatusIndicatorBar
@@ -148,7 +149,6 @@ fun MainScreen(dataStore: AppDataStore) {
         isLoading = false
     }
 
-    // Reload cards when import happens in another screen
     LaunchedEffect(refreshVersion) {
         if (refreshVersion > 0L && !isLoading) {
             cards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
@@ -176,13 +176,8 @@ fun MainScreen(dataStore: AppDataStore) {
             }
 
             val mode   = card.emuMode
-            val realIdm   = card.idm.uppercase()
-            val activeIdm = when (mode) {
-                EmuMode.NORMAL           -> realIdm
-                EmuMode.COMPAT, EmuMode.NATIVE -> realIdm.toCompatIdm()
-            }
+            val activeIdm = resolveActiveIdm(card.idm, mode)
             android.util.Log.i("KonamikU", "Activating card: ${card.name} [IDm: $activeIdm] (mode: $mode)")
-            val systemCode = "88B4"
             val activity = context as? ComponentActivity
             if (activity == null) {
                 dataStore.saveActiveCardId(card.id)
@@ -196,13 +191,13 @@ fun MainScreen(dataStore: AppDataStore) {
                 emulation.disableService(activity)
 
                 val resultIdm = emulation.setNfcid2ForService(serviceComponent, activeIdm)
-                val resultSys = emulation.registerSystemCodeForService(serviceComponent, systemCode)
+                val resultSys = emulation.registerSystemCodeForService(serviceComponent, SYSTEM_CODE_FELICA)
 
                 if (!resultIdm || !resultSys) {
                     android.util.Log.w("KonamikU", "NFC setup partial failure: IDm=$resultIdm, Sys=$resultSys. Retrying...")
                     delay(300)
                     emulation.setNfcid2ForService(serviceComponent, activeIdm)
-                    emulation.registerSystemCodeForService(serviceComponent, systemCode)
+                    emulation.registerSystemCodeForService(serviceComponent, SYSTEM_CODE_FELICA)
                 }
 
                 emulation.enableService(activity, serviceComponent)
@@ -356,7 +351,6 @@ fun MainScreen(dataStore: AppDataStore) {
                             scope.launch(Dispatchers.IO) {
                                 jsonManager.saveCards(cards)
                             }
-                            // Add dynamic shortcut for long-press menu
                             showDialog = false
                         }
                     )
