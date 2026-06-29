@@ -51,12 +51,14 @@ class EmuCard : HostNfcFService() {
     }
 
     override fun processNfcFPacket(commandPacket: ByteArray, extras: Bundle?): ByteArray? {
-        if (commandPacket.size < 2) return null
+        // Validate packet length per FeliCa spec
+        if (commandPacket.size < 1 + 1 + 8 || commandPacket.size.toByte() != commandPacket[0]) return null
+
         val card = felicaCard ?: return null
         if (card.emuMode == EmuMode.NATIVE) return null
         return when (commandPacket[1].toInt() and 0xFF) {
             0x06 -> handleRead(commandPacket)
-            0x08 -> handleWrite()
+            0x08 -> handleWrite(commandPacket)
             else -> null
         }
     }
@@ -105,13 +107,13 @@ class EmuCard : HostNfcFService() {
         }.getOrNull()
     }
 
-    private fun handleWrite(): ByteArray? {
+    private fun handleWrite(cmd: ByteArray): ByteArray? {
         val card = felicaCard ?: return null
-        val resp = ByteArray(11)
-        resp[0] = 11
+        val resp = ByteArray(1 + 1 + 8 + 2)  // len + 0x09 + IDm + 2 status flags
+        resp[0] = resp.size.toByte()
         resp[1] = 0x09
         card.activeIdmBytes.copyInto(resp, 2)
-        resp[10] = 0x00
+        // status flags already 0x00 by default
         return resp
     }
 

@@ -97,6 +97,7 @@ import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.NfcCard
 import org.cf0x.konamiku.data.UpdateInterval
 import org.cf0x.konamiku.system.UpdateChecker
+import org.cf0x.konamiku.system.UpdateCheckWorker
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
 import org.cf0x.konamiku.util.applyLocale
@@ -917,7 +918,7 @@ private fun UpdateSection(
                                 .fillMaxWidth()
                                 .clickable {
                                     intervalExpanded = false
-                                    scope.launch { dataStore.saveUpdateInterval(value) }
+                                    scope.launch { dataStore.saveUpdateInterval(value); UpdateCheckWorker.schedule(context, value) }
                                 }
                                 .padding(vertical = 10.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -927,7 +928,7 @@ private fun UpdateSection(
                                 selected = interval == value,
                                 onClick = {
                                     intervalExpanded = false
-                                    scope.launch { dataStore.saveUpdateInterval(value) }
+                                    scope.launch { dataStore.saveUpdateInterval(value); UpdateCheckWorker.schedule(context, value) }
                                 }
                             )
                             Text(label, style = MaterialTheme.typography.bodyMedium)
