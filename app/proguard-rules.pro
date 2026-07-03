@@ -10,3 +10,6 @@
 # Our wrappers that reflectively access hidden system APIs
 -keep class org.cf0x.konamiku.system.HiddenApiNfcChecker { *; }
 -keep class org.cf0x.konamiku.util.SystemPropertyHelper { *; }
+
+# WorkManager (Room) — generated implementation loaded reflectively
+-keep class * extends androidx.room.RoomDatabase { <init>(); }

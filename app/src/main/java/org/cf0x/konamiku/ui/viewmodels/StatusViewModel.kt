@@ -137,10 +137,14 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 if (hooked) return@repeat
                 delay(1000)
             }
-            XposedState.activationState = if (hooked)
-                XposedActivationState.ACTIVE
-            else
-                XposedActivationState.NEEDS_RESTART
+            // Broadcast from the NFC process (NfcHookReceiver) may have already
+            // confirmed ACTIVE before this probe finishes — never downgrade.
+            if (XposedState.activationState != XposedActivationState.ACTIVE) {
+                XposedState.activationState = if (hooked)
+                    XposedActivationState.ACTIVE
+                else
+                    XposedActivationState.NEEDS_RESTART
+            }
         }
     }
 
