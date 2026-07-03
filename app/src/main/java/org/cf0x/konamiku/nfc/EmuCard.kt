@@ -4,6 +4,8 @@ import android.content.Intent
 import android.nfc.cardemulation.HostNfcFService
 import android.os.Bundle
 import android.os.PowerManager
+import android.os.SystemClock
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.loadActiveCard
@@ -13,44 +15,97 @@ import org.cf0x.konamiku.notification.ScanReceiver
 class EmuCard : HostNfcFService() {
 
     companion object {
+        private const val TAG = "KonamikU-EmuCard"
         const val EXTRA_AUTO_ACTIVATE = "org.cf0x.konamiku.EXTRA_AUTO_ACTIVATE"
         const val EXTRA_AUTO_MODE     = "org.cf0x.konamiku.EXTRA_AUTO_MODE"
+
+        private const val WAKE_LOCK_TAG    = "KonamikU::EmuCard"
+        private const val WAKE_LOCK_TIMEOUT_MS = 10 * 60 * 1000L
     }
 
     private var felicaCard: FelicaCard? = null
+    private var initFailed = false
+
+    /** Whether we've attempted card initialization since service start. */
+    private var initAttempted = false
+
     private lateinit var wakeLock: PowerManager.WakeLock
+    private var lastPacketElapsedMs: Long = 0L
 
     override fun onCreate() {
         super.onCreate()
-
         val pm = getSystemService(PowerManager::class.java)
-        wakeLock = pm.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            "KonamikU::EmuCard",
-        ).also { it.acquire(10 * 60 * 1000L) }
-
-        val ctx: android.content.Context = this
-        runBlocking(Dispatchers.IO) {
-            val active = applicationContext.loadActiveCard() ?: return@runBlocking
-            val realIdm = active.card.idm.uppercase()
-            val activeIdm = resolveActiveIdm(active.card.idm, active.mode)
-            android.util.Log.i("KonamikU", "EmuCard active: IDm=$activeIdm, real=$realIdm, mode=${active.mode}")
-            felicaCard = FelicaCard(ctx, activeIdm = activeIdm, realIdm = realIdm, emuMode = active.mode)
-        }
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
+        acquireWakeLock()
     }
 
     override fun processNfcFPacket(commandPacket: ByteArray, extras: Bundle?): ByteArray? {
-        // Validate packet length per FeliCa spec
-        if (commandPacket.size < 1 + 1 + 8 || commandPacket.size.toByte() != commandPacket[0]) return null
+        // Lazy init: initialize card on first packet instead of blocking onCreate
+        if (!initAttempted) {
+            initAttempted = true
+            felicaCard = tryInitCard()
+            initFailed = felicaCard == null
+        }
 
         val card = felicaCard ?: return null
-        if (card.emuMode == EmuMode.NATIVE) return null
+        // NATIVE mode: pass through to the real NFC controller
+        if (card.emuMode == EmuMode.NATIVE) {
+            return null
+        }
+
+        // Validate packet length per FeliCa spec
+        if (commandPacket.size < 1 + 1 + 8 || commandPacket.size.toByte() != commandPacket[0]) {
+            Log.w(TAG, "Invalid packet length: ${commandPacket.size}")
+            return null
+        }
+
+        // Refresh wake lock on each active packet
+        refreshWakeLock()
+
         return when (commandPacket[1].toInt() and 0xFF) {
             0x06 -> handleRead(commandPacket)
             0x08 -> handleWrite(commandPacket)
             else -> null
         }
     }
+
+    // ── Card init (lazy, runs on the calling thread) ──
+
+    private fun tryInitCard(): FelicaCard? = runCatching {
+        val active = runBlocking(Dispatchers.IO) {
+            applicationContext.loadActiveCard()
+        } ?: return@runCatching null.also { Log.w(TAG, "No active card found for emulation") }
+
+        val realIdm   = active.card.idm.uppercase()
+        val activeIdm = resolveActiveIdm(active.card.idm, active.mode)
+        Log.i(TAG, "Initialized: IDm=$activeIdm, real=$realIdm, mode=${active.mode}")
+        FelicaCard(this, activeIdm = activeIdm, realIdm = realIdm, emuMode = active.mode)
+    }.getOrElse { e ->
+        Log.e(TAG, "Failed to init emulation card: ${e.message}")
+        null
+    }
+
+    // ── Wake lock management ──
+
+    private fun acquireWakeLock() {
+        if (!::wakeLock.isInitialized) return
+        runCatching {
+            if (!wakeLock.isHeld) wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS)
+            else wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS) // refresh timeout
+        }.onFailure { Log.w(TAG, "WakeLock acquire failed: ${it.message}") }
+    }
+
+    private fun refreshWakeLock() {
+        if (!::wakeLock.isInitialized) return
+        val now = SystemClock.elapsedRealtime()
+        // Only refresh if more than 30s have passed to avoid excessive calls
+        if (now - lastPacketElapsedMs > 30_000L) {
+            acquireWakeLock()
+            lastPacketElapsedMs = now
+        }
+    }
+
+    // ── FeliCa command handlers ──
 
     private fun handleRead(cmd: ByteArray): ByteArray? {
         if (cmd.size < 12) return null
@@ -102,18 +157,24 @@ class EmuCard : HostNfcFService() {
         resp[0] = resp.size.toByte()
         resp[1] = 0x09
         card.activeIdmBytes.copyInto(resp, 2)
-        // status flags already 0x00 by default
         return resp
     }
 
     private fun fireScanBroadcast() {
-        sendBroadcast(Intent(ScanReceiver.ACTION_SCAN).setPackage(packageName))
+        runCatching {
+            sendBroadcast(Intent(ScanReceiver.ACTION_SCAN).setPackage(packageName))
+        }
     }
 
-    override fun onDeactivated(reason: Int) = Unit
+    override fun onDeactivated(reason: Int) {
+        Log.d(TAG, "onDeactivated reason=$reason")
+    }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::wakeLock.isInitialized && wakeLock.isHeld) wakeLock.release()
+        if (::wakeLock.isInitialized && wakeLock.isHeld) {
+            runCatching { wakeLock.release() }
+        }
     }
 }
+

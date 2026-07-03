@@ -96,8 +96,9 @@ import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.NfcCard
 import org.cf0x.konamiku.data.UpdateInterval
+import org.cf0x.konamiku.data.UpdateMode
 import org.cf0x.konamiku.system.UpdateChecker
-import org.cf0x.konamiku.system.UpdateCheckWorker
+import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
 import org.cf0x.konamiku.util.applyLocale
@@ -648,7 +649,9 @@ private fun UpdateSection(
     var checking by remember { mutableStateOf(false) }
 
     val customBase by dataStore.updateCustomBase.collectAsState(initial = "")
-    val updateMode by dataStore.updateMode.collectAsState(initial = 0)
+    val githubBase by dataStore.updateGithubBase.collectAsState(initial = "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json")
+    val mirrorBase by dataStore.updateMirrorBase.collectAsState(initial = "https://gh-proxy.com/")
+    val updateMode by dataStore.updateMode.collectAsState(initial = UpdateMode.GITHUB)
     val interval by dataStore.updateInterval.collectAsState(initial = UpdateInterval.OFF)
 
     // Interval selector state
@@ -821,13 +824,20 @@ private fun UpdateSection(
                     showResultDialog = true
                     checking = true
                     scope.launch {
-                        val gh = "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
-                        val mirror = "https://gh-proxy.com/"
-                        latestMirrorPrefix = mirror
-                        val state = UpdateChecker.check(
-                            githubUrl = gh,
-                            mirrorPrefix = mirror
+                        // Use the unified check — reads URLs from DataStore internally
+                        val state = UpdateManager.performCheck(
+                            context = context,
+                            dataStore = dataStore,
+                            showNotification = false,
+                            force = true
                         )
+                        // Keep mirror prefix for changelog pagination
+                        val usedMirror = when {
+                            customBase.isNotBlank() -> ""
+                            updateMode == UpdateMode.PROXY -> mirrorBase.ifBlank { "https://gh-proxy.com/" }
+                            else                    -> ""
+                        }
+                        latestMirrorPrefix = usedMirror
                         if (state.error != null) {
                             resultIsError = true
                             resultMsg = state.error
@@ -848,7 +858,6 @@ private fun UpdateSection(
                             currentChangelogUrl = state.changelogUrl
                         }
                         checking = false
-                        dataStore.saveUpdateLastCheck(System.currentTimeMillis())
                     }
                 },
             verticalAlignment = Alignment.CenterVertically,
@@ -918,7 +927,7 @@ private fun UpdateSection(
                                 .fillMaxWidth()
                                 .clickable {
                                     intervalExpanded = false
-                                    scope.launch { dataStore.saveUpdateInterval(value); UpdateCheckWorker.schedule(context, value) }
+                                    scope.launch { dataStore.saveUpdateInterval(value); UpdateManager.schedule(context, value) }
                                 }
                                 .padding(vertical = 10.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -928,7 +937,7 @@ private fun UpdateSection(
                                 selected = interval == value,
                                 onClick = {
                                     intervalExpanded = false
-                                    scope.launch { dataStore.saveUpdateInterval(value); UpdateCheckWorker.schedule(context, value) }
+                                    scope.launch { dataStore.saveUpdateInterval(value); UpdateManager.schedule(context, value) }
                                 }
                             )
                             Text(label, style = MaterialTheme.typography.bodyMedium)
@@ -959,7 +968,7 @@ private fun UpdateSection(
                     Text(stringResource(R.string.setting_update_urls), style = MaterialTheme.typography.bodyLarge)
                     if (!urlExpanded) {
                         val modeLabel = when (updateMode) {
-                            1 -> "GH-Proxy"
+                            UpdateMode.PROXY -> "GH-Proxy"
                             else -> "GitHub"
                         }
                         Text(modeLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -980,12 +989,7 @@ private fun UpdateSection(
             ) {
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     // Mode selector: GitHub / GH-Proxy
-                    val modeOptions = listOf(
-                        "GitHub"  to 0,
-                        "GH-Proxy" to 1
-                    )
-                    val currentMode = updateMode.let { if (it in 0..1) it else 0 }
-                    var selectedMode by remember { mutableStateOf(currentMode) }
+                    var selectedMode by remember { mutableStateOf(updateMode) }
 
                     // Per-mode latency results
                     var latencyGitHub  by remember { mutableStateOf(-1L) }
@@ -997,25 +1001,31 @@ private fun UpdateSection(
 
                     LaunchedEffect(cooldown) { if (cooldown > 0) { delay(1000); cooldown-- } }
 
-                    // Build URLs once
-                    val gitHubUrl = "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
-                    val mirrorPrefix = "https://gh-proxy.com/"
+                    // Build URLs once from DataStore (same resolution as Check Now / Worker)
+                    val gitHubUrl = githubBase.ifBlank {
+                        "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
+                    }
+                    val mirrorPrefix = mirrorBase.ifBlank { "https://gh-proxy.com/" }
                     val proxiedUrl = "${mirrorPrefix.trimEnd('/')}/${gitHubUrl.trimStart('/')}"
 
                     // Render each mode row
                     listOf(
-                        Triple("GitHub", 0, latencyGitHub) to validGitHub,
-                        Triple("GH-Proxy", 1, latencyProxy) to validProxy
-                    ).forEach { (triple, isValid) ->
-                        val (label, idx, latMs) = triple
+                        UpdateMode.GITHUB to validGitHub,
+                        UpdateMode.PROXY  to validProxy
+                    ).forEach { (mode, isValid) ->
+                        val label = when (mode) { UpdateMode.GITHUB -> "GitHub"; UpdateMode.PROXY -> "GH-Proxy" }
+                        val latMs = when (mode) {
+                            UpdateMode.GITHUB -> latencyGitHub
+                            UpdateMode.PROXY  -> latencyProxy
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { selectedMode = idx }
+                                .clickable { selectedMode = mode }
                                 .padding(vertical = 6.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(selected = selectedMode == idx, onClick = { selectedMode = idx })
+                            RadioButton(selected = selectedMode == mode, onClick = { selectedMode = mode })
                             Text(
                                 label,
                                 style = MaterialTheme.typography.bodyMedium,

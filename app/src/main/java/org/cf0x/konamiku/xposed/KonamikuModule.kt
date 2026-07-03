@@ -19,6 +19,7 @@ class KonamikuModule : XposedModule() {
         }
     }
 
+    @Volatile
     private var pmmLoaded = false
 
     private fun hookNfcValidation(param: PackageLoadedParam) {

@@ -6,11 +6,13 @@ import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.cf0x.konamiku.MainActivity
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.JsonManager
@@ -19,33 +21,38 @@ import org.cf0x.konamiku.notification.LiveUpdateManager
 
 class KonamikuTileService : TileService() {
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+    companion object {
+        private const val TAG = "KonamikU-Tile"
+    }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onClick() {
         super.onClick()
-        val dataStore   = AppDataStore(applicationContext)
-        val jsonManager = JsonManager(applicationContext)
+        scope.launch {
+            val dataStore   = AppDataStore(applicationContext)
+            val jsonManager = JsonManager(applicationContext)
 
-        // DataStore is memory-cached, so runBlocking reads are instant
-        val activeId = runBlocking { dataStore.activeCardId.first() }
+            // DataStore reads are memory-cached and instant on subsequent calls
+            val activeId = withContext(Dispatchers.IO) { dataStore.activeCardId.first() }
 
-        if (activeId != null) {
-            // Already active → deactivate
-            scope.launch {
+            if (activeId != null) {
+                // Already active → deactivate
                 dataStore.saveActiveCardId(null)
                 LiveUpdateManager.cancel(applicationContext)
                 updateTileState()
+                return@launch
             }
-            return
-        }
 
-        val cards = runBlocking { jsonManager.loadCards() }
-        if (cards.isEmpty()) return
+            // Card list read from file — run on IO
+            val cards = withContext(Dispatchers.IO) { jsonManager.loadCards() }
+            if (cards.isEmpty()) return@launch
 
-        if (cards.size == 1) {
-            activateAndLaunch(cards[0], dataStore)
-        } else {
-            showCardPicker(cards, dataStore)
+            if (cards.size == 1) {
+                activateAndLaunch(cards[0], dataStore)
+            } else {
+                showCardPicker(cards, dataStore)
+            }
         }
     }
 
@@ -74,21 +81,13 @@ class KonamikuTileService : TileService() {
     private fun showCardPicker(cards: List<org.cf0x.konamiku.data.NfcCard>, dataStore: AppDataStore) {
         val names = cards.map { it.name }.toTypedArray()
 
-        val dialog = AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Select Card")
             .setItems(names) { _, which ->
                 activateAndLaunch(cards[which], dataStore)
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .create()
-
-        if (Build.VERSION.SDK_INT < 35) {
-            showDialog(dialog)
-        } else {
-            // API 35+: showDialog is deprecated but still functional.
-            // Fall back to picking the first card directly.
-            if (cards.isNotEmpty()) activateAndLaunch(cards[0], dataStore)
-        }
+            .show()  // TileService.showDialog is deprecated on API 35+ but still works
     }
 
     override fun onStartListening() {
@@ -98,11 +97,15 @@ class KonamikuTileService : TileService() {
 
     private fun updateTileState() {
         scope.launch {
-            val dataStore = AppDataStore(applicationContext)
-            val activeId = dataStore.activeCardId.first()
-            val tile = qsTile ?: return@launch
-            tile.state = if (activeId != null) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-            tile.updateTile()
+            try {
+                val dataStore = AppDataStore(applicationContext)
+                val activeId = withContext(Dispatchers.IO) { dataStore.activeCardId.first() }
+                val tile = qsTile ?: return@launch
+                tile.state = if (activeId != null) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+                tile.updateTile()
+            } catch (e: Exception) {
+                Log.w(TAG, "updateTileState failed: ${e.message}")
+            }
         }
     }
 

@@ -50,8 +50,8 @@
     <string name="status_rf_off">已关闭</string>
 
     <string name="status_hidden_api">隐藏 API</string>
-    <string name="status_hidden_api_open">系统码可通过</string>
-    <string name="status_hidden_api_blocked">系统码被屏蔽</string>
+    <string name="status_hidden_api_open">已通过</string>
+    <string name="status_hidden_api_blocked">已拦截</string>
 
     <string name="setting_nav_layout">导航布局</string>
     <string name="setting_nav_auto">自动</string>
@@ -143,7 +143,7 @@
     <string name="setting_update">更新</string>
     <string name="setting_update_check_now">立刻检测</string>
     <string name="setting_update_check_now_desc">手动检查更新</string>
-    <string name="setting_update_interval">检测间隔</string>
+    <string name="setting_update_interval">自动检测更新</string>
     <string name="setting_update_urls">更新链接</string>
     <string name="setting_update_urls_github">GitHub 仓库地址</string>
     <string name="setting_update_urls_mirror">镜像代理地址</string>

@@ -51,8 +51,8 @@
     <string name="status_rf_off">Disabled</string>
 
     <string name="status_hidden_api">Hidden API</string>
-    <string name="status_hidden_api_open">System code accepted</string>
-    <string name="status_hidden_api_blocked">System code blocked</string>
+    <string name="status_hidden_api_open">Accepted</string>
+    <string name="status_hidden_api_blocked">Blocked</string>
 
     <string name="setting_nav_layout">Navigation Layout</string>
     <string name="setting_nav_auto">Auto</string>
@@ -148,7 +148,7 @@
     <string name="setting_update">Update</string>
     <string name="setting_update_check_now">Check Now</string>
     <string name="setting_update_check_now_desc">Manually check for updates</string>
-    <string name="setting_update_interval">Check Interval</string>
+    <string name="setting_update_interval">Auto Update</string>
     <string name="setting_update_urls">Update URLs</string>
     <string name="setting_update_urls_github">GitHub Repository</string>
     <string name="setting_update_urls_mirror">Mirror Proxy</string>

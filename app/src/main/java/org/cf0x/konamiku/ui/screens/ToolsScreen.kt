@@ -162,7 +162,7 @@ private fun IdConverterPanel() {
 private fun convertAll(sourceIndex: Int, value: String, context: android.content.Context): List<ConvertResult> {
     return when (sourceIndex) {
         0 -> {
-            val kid = when (val r = CardIdConverter.toKonamiId(value, context)) {
+            val kid = when (val r = CardIdConverter.toKonamiId(value, context::getString)) {
                 is CardIdConverter.Result.Success -> ConvertResult.Success(r.value)
                 is CardIdConverter.Result.Failure -> ConvertResult.Failure(r.reason)
             }
@@ -170,7 +170,7 @@ private fun convertAll(sourceIndex: Int, value: String, context: android.content
             listOf(ConvertResult.Skip, kid, ac)
         }
         1 -> {
-            val idmResult = CardIdConverter.toUid(value, context)
+            val idmResult = CardIdConverter.toUid(value, context::getString)
             val idm = when (idmResult) {
                 is CardIdConverter.Result.Success -> ConvertResult.Success(idmResult.value)
                 is CardIdConverter.Result.Failure -> ConvertResult.Failure(idmResult.reason)
@@ -183,7 +183,7 @@ private fun convertAll(sourceIndex: Int, value: String, context: android.content
         }
         2 -> {
             val digits = value.filter { it.isDigit() }
-            val idmResult = AimeAccessCodeConverter.accessCodeToIdm(digits, context)
+            val idmResult = AimeAccessCodeConverter.accessCodeToIdm(digits, context::getString)
             val (idmStr, idmConvertResult) = when (idmResult) {
                 is AimeAccessCodeConverter.Result.Single -> {
                     idmResult.value to ConvertResult.Success(idmResult.value)
@@ -199,7 +199,7 @@ private fun convertAll(sourceIndex: Int, value: String, context: android.content
                 }
             }
             val kid = if (idmStr != null) {
-                when (val r = CardIdConverter.toKonamiId(idmStr, context)) {
+                when (val r = CardIdConverter.toKonamiId(idmStr, context::getString)) {
                     is CardIdConverter.Result.Success -> ConvertResult.Success(r.value)
                     is CardIdConverter.Result.Failure -> ConvertResult.Failure(r.reason)
                 }
@@ -213,7 +213,7 @@ private fun convertAll(sourceIndex: Int, value: String, context: android.content
 }
 
 private fun idmToAccessCodeResult(idm: String, context: android.content.Context): ConvertResult {
-    return when (val r = AimeAccessCodeConverter.idmToAccessCode(idm, context)) {
+    return when (val r = AimeAccessCodeConverter.idmToAccessCode(idm, context::getString)) {
         is AimeAccessCodeConverter.Result.Single ->
             ConvertResult.Success(AimeAccessCodeConverter.formatAccessCode(r.value))
         is AimeAccessCodeConverter.Result.Ambiguous ->

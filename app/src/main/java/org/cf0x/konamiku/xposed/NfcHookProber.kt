@@ -4,9 +4,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.nfc.NfcAdapter
 import android.nfc.cardemulation.NfcFCardEmulation
+import android.util.Log
 import org.cf0x.konamiku.nfc.EmuCard
 
 object NfcHookProber {
+    private const val TAG = "KonamikU-Prober"
+
     /**
      * Probes if the NFC hook (isValidSystemCode) is active by attempting to register
      * a system code that would normally be rejected (or just calling the method).
@@ -24,7 +27,13 @@ object NfcHookProber {
         // makes isValidSystemCode always return true.
         return runCatching {
             val ok = emulation.registerSystemCodeForService(component, "FFFF")
-            if (ok) emulation.unregisterSystemCodeForService(component)
+            if (ok) {
+                runCatching {
+                    emulation.unregisterSystemCodeForService(component)
+                }.onFailure { e ->
+                    Log.w(TAG, "Failed to unregister probe code: ${e.message}")
+                }
+            }
             ok
         }.getOrDefault(false)
     }

@@ -1,6 +1,7 @@
 package org.cf0x.konamiku.data
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,6 +37,10 @@ suspend fun Context.loadActiveCard(): ActiveCard? {
 
 class JsonManager(private val context: Context) {
 
+    companion object {
+        private const val TAG = "KonamikU-JsonMgr"
+    }
+
     private val fileName  = "cards.json"
     private val jsonFile: File get() = File(context.filesDir, fileName)
     private val mutex     = Mutex()
@@ -49,8 +54,8 @@ class JsonManager(private val context: Context) {
             if (jsonFile.exists()) {
                 runCatching {
                     jsonConfig.decodeFromString<List<NfcCard>>(jsonFile.readText())
-                }.getOrElse {
-                    it.printStackTrace()
+                }.getOrElse { e ->
+                    Log.w(TAG, "Failed to load cards.json: ${e.message}")
                     emptyList()
                 }
             } else {
@@ -67,6 +72,8 @@ class JsonManager(private val context: Context) {
         withContext(Dispatchers.IO) {
             runCatching {
                 jsonFile.writeText(jsonConfig.encodeToString(cards))
-            }.onFailure { it.printStackTrace() }
+            }.onFailure { e ->
+                Log.w(TAG, "Failed to save cards.json: ${e.message}")
+            }
         }
 }

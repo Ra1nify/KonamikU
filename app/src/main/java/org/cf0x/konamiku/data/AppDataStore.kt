@@ -1,6 +1,7 @@
 package org.cf0x.konamiku.data
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
@@ -27,6 +28,9 @@ enum class UpdateInterval(val millis: Long) {
     DAY_3(3 * 24 * 60 * 60 * 1000L),
     DAY_7(7 * 24 * 60 * 60 * 1000L);
 }
+
+enum class UpdateMode { GITHUB, PROXY }
+
 enum class AppLocale(val tag: String, val labelRes: Int) {
     SYSTEM("", R.string.setting_language_system),
     ZH_CN("zh-CN", R.string.setting_language_zh),
@@ -48,9 +52,8 @@ enum class AppLocale(val tag: String, val labelRes: Int) {
 }
 
 class AppDataStore(private val context: Context) {
-    private val sp = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
 
-    var devModeForceEmuSync = sp.getBoolean("dev_mode_force_emu", false)
+    var devModeForceEmuSync = false
         private set
 
     private object Keys {
@@ -74,15 +77,21 @@ class AppDataStore(private val context: Context) {
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
-        runCatching { NavigationMode.valueOf(p[Keys.NAV_MODE] ?: "") }.getOrDefault(NavigationMode.AUTO)
+        runCatching { NavigationMode.valueOf(p[Keys.NAV_MODE] ?: "") }
+            .getOrDefault(NavigationMode.AUTO)
+            .also { if (it == NavigationMode.AUTO && p[Keys.NAV_MODE] != null && p[Keys.NAV_MODE] != NavigationMode.AUTO.name) Log.w("AppDataStore", "Unknown NAV_MODE: ${p[Keys.NAV_MODE]}") }
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { p ->
-        runCatching { ThemeMode.valueOf(p[Keys.THEME_MODE] ?: "") }.getOrDefault(ThemeMode.SYSTEM)
+        runCatching { ThemeMode.valueOf(p[Keys.THEME_MODE] ?: "") }
+            .getOrDefault(ThemeMode.SYSTEM)
+            .also { if (it == ThemeMode.SYSTEM && p[Keys.THEME_MODE] != null && p[Keys.THEME_MODE] != ThemeMode.SYSTEM.name) Log.w("AppDataStore", "Unknown THEME_MODE: ${p[Keys.THEME_MODE]}") }
     }
 
     val colorSource: Flow<ColorSource> = context.dataStore.data.map { p ->
-        runCatching { ColorSource.valueOf(p[Keys.COLOR_SOURCE] ?: "") }.getOrDefault(ColorSource.MONET)
+        runCatching { ColorSource.valueOf(p[Keys.COLOR_SOURCE] ?: "") }
+            .getOrDefault(ColorSource.MONET)
+            .also { if (it == ColorSource.MONET && p[Keys.COLOR_SOURCE] != null && p[Keys.COLOR_SOURCE] != ColorSource.MONET.name) Log.w("AppDataStore", "Unknown COLOR_SOURCE: ${p[Keys.COLOR_SOURCE]}") }
     }
 
     val presetColor: Flow<Color> = context.dataStore.data.map { p ->
@@ -92,7 +101,9 @@ class AppDataStore(private val context: Context) {
     val activeCardId: Flow<String?> = context.dataStore.data.map { it[Keys.ACTIVE_CARD_ID] }
 
     val emuMode: Flow<EmuMode> = context.dataStore.data.map { p ->
-        runCatching { EmuMode.valueOf(p[Keys.EMU_MODE] ?: "") }.getOrDefault(EmuMode.NORMAL)
+        runCatching { EmuMode.valueOf(p[Keys.EMU_MODE] ?: "") }
+            .getOrDefault(EmuMode.NORMAL)
+            .also { if (it == EmuMode.NORMAL && p[Keys.EMU_MODE] != null && p[Keys.EMU_MODE] != EmuMode.NORMAL.name) Log.w("AppDataStore", "Unknown EMU_MODE: ${p[Keys.EMU_MODE]}") }
     }
 
     val appLocale: Flow<AppLocale> = context.dataStore.data.map { p ->
@@ -103,7 +114,8 @@ class AppDataStore(private val context: Context) {
     private fun detectSystemLocale(): AppLocale {
         val locale = java.util.Locale.getDefault()
         return when (locale.language) {
-            "zh" -> if (locale.country in listOf("TW", "HK", "MO")) AppLocale.ZH_TW else AppLocale.ZH_CN
+            "zh" -> if (locale.country in listOf("TW", "HK", "MO")) AppLocale.ZH_TW
+                    else AppLocale.ZH_CN  // includes SG, MY and any other zh variant → simplified
             "ja" -> AppLocale.JA
             "ko" -> AppLocale.KO
             "fr" -> AppLocale.FR
@@ -117,6 +129,7 @@ class AppDataStore(private val context: Context) {
     val paletteStyle: Flow<PaletteStyle> = context.dataStore.data.map { p ->
         runCatching { PaletteStyle.valueOf(p[Keys.PALETTE_STYLE] ?: "") }
             .getOrDefault(PaletteStyle.TonalSpot)
+            .also { if (it == PaletteStyle.TonalSpot && p[Keys.PALETTE_STYLE] != null && p[Keys.PALETTE_STYLE] != PaletteStyle.TonalSpot.name) Log.w("AppDataStore", "Unknown PALETTE_STYLE: ${p[Keys.PALETTE_STYLE]}") }
     }
 
     val setupVersion: Flow<Long> = context.dataStore.data.map { it[Keys.SETUP_VERSION] ?: -1L }
@@ -129,8 +142,10 @@ class AppDataStore(private val context: Context) {
         runCatching { UpdateInterval.valueOf(p[Keys.UPDATE_INTERVAL] ?: "") }
             .getOrDefault(UpdateInterval.OFF)
     }
-    val updateMode: Flow<Int> = context.dataStore.data.map { p ->
-        p[Keys.UPDATE_MODE]?.toIntOrNull() ?: 0
+    val updateMode: Flow<UpdateMode> = context.dataStore.data.map { p ->
+        runCatching { UpdateMode.valueOf(p[Keys.UPDATE_MODE] ?: "") }
+            .getOrDefault(UpdateMode.GITHUB)
+            .also { if (it == UpdateMode.GITHUB && p[Keys.UPDATE_MODE] != null && p[Keys.UPDATE_MODE] != UpdateMode.GITHUB.name) Log.w("AppDataStore", "Unknown UPDATE_MODE: ${p[Keys.UPDATE_MODE]}") }
     }
 
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
@@ -148,7 +163,6 @@ class AppDataStore(private val context: Context) {
     suspend fun saveDevModeForceEmu(v: Boolean) = context.dataStore.edit {
         it[Keys.DEV_FORCE_EMU] = v
         devModeForceEmuSync = v
-        sp.edit().putBoolean("dev_mode_force_emu", v).apply()
     }
 
     suspend fun saveThemeExpressive(v: Boolean) = context.dataStore.edit { it[Keys.THEME_EXPRESSIVE] = v }
@@ -160,5 +174,5 @@ class AppDataStore(private val context: Context) {
     suspend fun saveUpdateCustomBase(v: String) = context.dataStore.edit { it[Keys.UPDATE_CUSTOM_BASE] = v }
     suspend fun saveUpdateLastCheck(v: Long) = context.dataStore.edit { it[Keys.UPDATE_LAST_CHECK] = v }
     suspend fun saveUpdateInterval(v: UpdateInterval) = context.dataStore.edit { it[Keys.UPDATE_INTERVAL] = v.name }
-    suspend fun saveUpdateMode(v: Int) = context.dataStore.edit { it[Keys.UPDATE_MODE] = v.toString() }
+    suspend fun saveUpdateMode(v: UpdateMode) = context.dataStore.edit { it[Keys.UPDATE_MODE] = v.name }
 }

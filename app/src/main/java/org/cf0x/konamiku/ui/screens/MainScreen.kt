@@ -366,7 +366,6 @@ private fun AddCardDialog(
     onConfirm: (name: String, idm: String) -> Unit
 ) {
     val context      = LocalContext.current
-    rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
     var name       by remember { mutableStateOf("") }

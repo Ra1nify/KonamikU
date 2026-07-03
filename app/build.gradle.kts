@@ -107,4 +107,5 @@ dependencies {
 
     implementation(libs.hiddenapibypass)
 
+    testImplementation(kotlin("test"))
 }

@@ -84,40 +84,37 @@ object NfcRestart {
      * This forces the app to re-obtain the service binder and prevents DeadObjectException.
      */
     fun clearNfcFCache() {
-        runCatching {
-            // 1. NfcFCardEmulation cache
-            val nfcFCls = Class.forName("android.nfc.cardemulation.NfcFCardEmulation")
-            runCatching {
-                val nfcFField = nfcFCls.getDeclaredField("sServiceCache")
-                nfcFField.isAccessible = true
-                (nfcFField.get(null) as? MutableMap<*, *>)?.clear()
-            }
+        android.util.Log.i("KonamikU", "Clearing NFC binder caches…")
 
-            // 2. CardEmulation cache (for NFC-A/B)
-            val nfcACls = Class.forName("android.nfc.cardemulation.CardEmulation")
+        // Each reflective access is individually caught so one failure
+        // doesn't prevent the others from being attempted.
+        fun clearCache(clsName: String, fieldName: String) {
             runCatching {
-                val nfcAField = nfcACls.getDeclaredField("sServiceCache")
-                nfcAField.isAccessible = true
-                (nfcAField.get(null) as? MutableMap<*, *>)?.clear()
+                val cls = Class.forName(clsName)
+                val field = cls.getDeclaredField(fieldName)
+                field.isAccessible = true
+                (field.get(null) as? MutableMap<*, *>)?.clear()
+            }.onFailure { e ->
+                android.util.Log.w("KonamikU", "clearCache $clsName.$fieldName: ${e.message}")
             }
-
-            // 3. NfcAdapter cache and singleton
-            val adapterCls = Class.forName("android.nfc.NfcAdapter")
-            runCatching {
-                val sServiceCacheField = adapterCls.getDeclaredField("sServiceCache")
-                sServiceCacheField.isAccessible = true
-                (sServiceCacheField.get(null) as? MutableMap<*, *>)?.clear()
-            }
-
-            runCatching {
-                val sAdapterField = adapterCls.getDeclaredField("sAdapter")
-                sAdapterField.isAccessible = true
-                sAdapterField.set(null, null)
-            }
-
-            android.util.Log.i("KonamikU", "NFC binder caches cleared and adapter singleton reset")
-        }.onFailure {
-            android.util.Log.e("KonamikU", "Failed to clear NFC cache: ${it.message}")
         }
+
+        fun setNull(clsName: String, fieldName: String) {
+            runCatching {
+                val cls = Class.forName(clsName)
+                val field = cls.getDeclaredField(fieldName)
+                field.isAccessible = true
+                field.set(null, null)
+            }.onFailure { e ->
+                android.util.Log.w("KonamikU", "setNull $clsName.$fieldName: ${e.message}")
+            }
+        }
+
+        clearCache("android.nfc.cardemulation.NfcFCardEmulation", "sServiceCache")
+        clearCache("android.nfc.cardemulation.CardEmulation", "sServiceCache")
+        clearCache("android.nfc.NfcAdapter", "sServiceCache")
+        setNull("android.nfc.NfcAdapter", "sAdapter")
+
+        android.util.Log.i("KonamikU", "NFC binder caches cleared")
     }
 }

@@ -1,5 +1,6 @@
 package org.cf0x.konamiku.util
 
+import org.cf0x.konamiku.R
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -10,7 +11,7 @@ object CardIdConverter {
         (RAW_KEY[it].toInt() and 0xFF).shl(1).and(0xFF).toByte()
     }
     private val IV_SPEC = IvParameterSpec(ByteArray(8))
-    private const val ALPHABET = "0123456789ABCDEFGHJKLMNPRSTUWXYZ"
+    internal const val ALPHABET = "0123456789ABCDEFGHJKLMNPRSTUWXYZ"
 
     private fun encDes(data: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("DESede/CBC/NoPadding")
@@ -53,16 +54,16 @@ object CardIdConverter {
         data class Failure(val reason: String) : Result()
     }
 
-    fun toKonamiId(uid: String, context: android.content.Context): Result {
+    fun toKonamiId(uid: String, errorProvider: (Int) -> String = { "" }): Result {
         if (uid.length != 16)
-            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_idm_length))
+            return Result.Failure(errorProvider(R.string.tools_err_idm_length))
         val upper = uid.uppercase()
         if (upper.any { it !in '0'..'9' && it !in 'A'..'F' })
-            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_idm_hex))
+            return Result.Failure(errorProvider(R.string.tools_err_idm_hex))
         val cardType = when {
             upper.startsWith("E004") -> 1
             upper.startsWith("0")   -> 2
-            else -> return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_idm_prefix))
+            else -> return Result.Failure(errorProvider(R.string.tools_err_idm_prefix))
         }
         return runCatching {
             val kidBytes = ByteArray(8) { i ->
@@ -78,14 +79,14 @@ object CardIdConverter {
             out[14] = cardType
             out[15] = checksum(out)
             Result.Success(out.joinToString("") { ALPHABET[it].toString() })
-        }.getOrElse { Result.Failure("${context.getString(org.cf0x.konamiku.R.string.tools_err_generic)}: ${it.message}") }
+        }.getOrElse { Result.Failure("${errorProvider(R.string.tools_err_generic)}: ${it.message}") }
     }
 
-    fun toUid(konamiId: String, context: android.content.Context): Result {
+    fun toUid(konamiId: String, errorProvider: (Int) -> String = { "" }): Result {
         if (konamiId.length != 16)
-            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_kid_length))
+            return Result.Failure(errorProvider(R.string.tools_err_kid_length))
         if (konamiId.any { it !in ALPHABET })
-            return Result.Failure(context.getString(org.cf0x.konamiku.R.string.tools_err_kid_chars))
+            return Result.Failure(errorProvider(R.string.tools_err_kid_chars))
         return runCatching {
             val card     = IntArray(16) { i -> ALPHABET.indexOf(konamiId[i]) }
             val cardType = when (konamiId[14]) {
@@ -110,6 +111,6 @@ object CardIdConverter {
                     return Result.Failure("Post-decode check failed: expected 0 prefix")
             }
             Result.Success(uid)
-        }.getOrElse { Result.Failure("${context.getString(org.cf0x.konamiku.R.string.tools_err_generic)}: ${it.message}") }
+        }.getOrElse { Result.Failure("${errorProvider(R.string.tools_err_generic)}: ${it.message}") }
     }
 }

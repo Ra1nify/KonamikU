@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.nfc.EmuCard
-import org.cf0x.konamiku.system.UpdateCheckWorker
+import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.util.applyLocale
 import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
@@ -33,7 +33,7 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
 
         runBlocking {
             val interval = dataStore.updateInterval.first()
-            UpdateCheckWorker.schedule(this@KonamikuApp, interval)
+            UpdateManager.schedule(this@KonamikuApp, interval)
         }
 
         // Sync with system per-app language (API 33+). If the user changed it via

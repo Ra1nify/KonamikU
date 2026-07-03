@@ -3,21 +3,30 @@ package org.cf0x.konamiku.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.loadActiveCard
 import org.cf0x.konamiku.nfc.updateHceRegistration
 
+/**
+ * Handles notification action buttons while the emulation service is active.
+ * Uses a [SupervisorJob]-scoped coroutine so that individual action failures
+ * don't cancel sibling actions.
+ */
 class NotificationActionReceiver : BroadcastReceiver() {
+
+    companion object {
+        private const val TAG = "KonamikU-NotifAct"
+    }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             try {
                 val dataStore   = AppDataStore(context)
                 val jsonManager = JsonManager(context)
@@ -54,6 +63,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     LiveUpdateManager.ACTION_DISMISSED -> {
                         dataStore.saveActiveCardId(null)
                     }
+                    else -> {} // unknown action, ignore
                 }
             } finally {
                 pending.finish()

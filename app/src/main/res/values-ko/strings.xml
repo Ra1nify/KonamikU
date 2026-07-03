@@ -49,8 +49,8 @@
     <string name="status_rf_off">비활성화됨</string>
 
     <string name="status_hidden_api">Hidden API</string>
-    <string name="status_hidden_api_open">시스템 코드 허용됨</string>
-    <string name="status_hidden_api_blocked">시스템 코드 차단됨</string>
+    <string name="status_hidden_api_open">허용됨</string>
+    <string name="status_hidden_api_blocked">차단됨</string>
 
     <string name="setting_nav_layout">탐색 레이아웃</string>
     <string name="setting_nav_auto">자동</string>
@@ -143,7 +143,7 @@
     <string name="setting_update">업데이트</string>
     <string name="setting_update_check_now">지금 확인</string>
     <string name="setting_update_check_now_desc">수동으로 업데이트 확인</string>
-    <string name="setting_update_interval">확인 간격</string>
+    <string name="setting_update_interval">자동 업데이트</string>
     <string name="setting_update_urls">업데이트 URL</string>
     <string name="setting_update_urls_github">GitHub 저장소</string>
     <string name="setting_update_urls_mirror">미러 프록시</string>

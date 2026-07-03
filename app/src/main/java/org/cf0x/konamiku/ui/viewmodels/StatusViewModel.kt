@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,24 +91,22 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun onRootLongPress() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             if (_status.value?.root?.available != true) {
                 _toastEvent.emit(str(R.string.toast_root_no_permission))
                 return@launch
             }
 
-            val result = NfcRestart.restart(context)
+            val result = withContext(Dispatchers.IO) { NfcRestart.restart(context) }
             if (result is NfcRestart.Result.Restarted || result is NfcRestart.Result.Killed || result is NfcRestart.Result.WasDead) {
-                viewModelScope.launch {
-                    delay(2000)
-                    reprobeHook()
-                    refreshNfc()
-                    // Force the QS tile to call onStartListening() and re-render
-                    android.service.quicksettings.TileService.requestListeningState(
-                        context,
-                        ComponentName(context, org.cf0x.konamiku.system.KonamikuTileService::class.java)
-                    )
-                }
+                delay(2000)
+                reprobeHook()
+                refreshNfc()
+                // Force the QS tile to call onStartListening() and re-render
+                android.service.quicksettings.TileService.requestListeningState(
+                    context,
+                    ComponentName(context, org.cf0x.konamiku.system.KonamikuTileService::class.java)
+                )
             }
 
             val msg = when (result) {

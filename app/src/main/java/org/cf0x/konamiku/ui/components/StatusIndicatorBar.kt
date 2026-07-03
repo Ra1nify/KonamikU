@@ -320,7 +320,8 @@ private fun DetailRow(active: Boolean, label: String, detail: String) {
             text  = if (active) "✓" else "✗",
             color = if (active) MaterialTheme.colorScheme.primary
             else        MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.width(16.dp)
         )
         Text(
             text     = label,

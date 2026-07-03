@@ -49,8 +49,8 @@
     <string name="status_rf_off">Désactivé</string>
 
     <string name="status_hidden_api">API cachée</string>
-    <string name="status_hidden_api_open">Code système accepté</string>
-    <string name="status_hidden_api_blocked">Code système bloqué</string>
+    <string name="status_hidden_api_open">Accepté</string>
+    <string name="status_hidden_api_blocked">Bloqué</string>
 
     <string name="setting_nav_layout">Disposition de navigation</string>
     <string name="setting_nav_auto">Auto</string>
@@ -143,7 +143,7 @@
     <string name="setting_update">Mise à jour</string>
     <string name="setting_update_check_now">Vérifier maintenant</string>
     <string name="setting_update_check_now_desc">Vérifier manuellement les mises à jour</string>
-    <string name="setting_update_interval">Intervalle de vérification</string>
+    <string name="setting_update_interval">Màj automatique</string>
     <string name="setting_update_urls">URLs de mise à jour</string>
     <string name="setting_update_urls_github">Dépôt GitHub</string>
     <string name="setting_update_urls_mirror">Proxy miroir</string>

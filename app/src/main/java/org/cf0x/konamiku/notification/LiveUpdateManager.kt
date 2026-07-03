@@ -33,7 +33,7 @@ object LiveUpdateManager {
     @Volatile
     private var promotedOngoingMethod: Method? = null
     @Volatile
-    private var lastNotifyKey: String? = null
+    private var lastNotifyKey: Int = -1
 
     fun createChannel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
@@ -77,7 +77,7 @@ object LiveUpdateManager {
 
     fun cancel(context: Context) {
         pulseJob?.cancel()
-        lastNotifyKey = null
+        lastNotifyKey = -1
         context.getSystemService(NotificationManager::class.java).cancel(NOTIF_ID)
     }
 
@@ -86,7 +86,7 @@ object LiveUpdateManager {
         val isA15Plus = Build.VERSION.SDK_INT >= 35
         val channelId = if (isA15Plus) CHANNEL_ID_LIVE else CHANNEL_ID_IMPORTANT
         
-        val notifyKey = "$channelId|$title|$contentText|$progress"
+        val notifyKey = listOf(channelId, title, contentText, progress).hashCode()
         if (lastNotifyKey == notifyKey) return
         lastNotifyKey = notifyKey
 
@@ -112,8 +112,19 @@ object LiveUpdateManager {
         
         if (isA15Plus) {
             runCatching {
-                val m = promotedOngoingMethod ?: Notification.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType).also { promotedOngoingMethod = it }
-                m.invoke(builder, true)
+                val m = promotedOngoingMethod
+                    ?: runCatching {
+                        Notification.Builder::class.java
+                            .getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
+                    }.onFailure {
+                        android.util.Log.w("KonamikU-Live", "setRequestPromotedOngoing not found: ${it.message}")
+                    }.getOrNull()
+                if (m != null) {
+                    promotedOngoingMethod = m
+                    m.invoke(builder, true)
+                }
+            }.onFailure {
+                android.util.Log.w("KonamikU-Live", "setRequestPromotedOngoing invoke failed: ${it.message}")
             }
         }
 
