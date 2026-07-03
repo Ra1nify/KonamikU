@@ -48,6 +48,10 @@
     <string name="status_rf_on">Activé</string>
     <string name="status_rf_off">Désactivé</string>
 
+    <string name="status_hidden_api">API cachée</string>
+    <string name="status_hidden_api_open">Code système accepté</string>
+    <string name="status_hidden_api_blocked">Code système bloqué</string>
+
     <string name="setting_nav_layout">Disposition de navigation</string>
     <string name="setting_nav_auto">Auto</string>
     <string name="setting_nav_bottom">Bas</string>

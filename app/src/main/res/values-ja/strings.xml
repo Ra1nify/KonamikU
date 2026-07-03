@@ -48,6 +48,10 @@
     <string name="status_rf_on">有効</string>
     <string name="status_rf_off">無効</string>
 
+    <string name="status_hidden_api">Hidden API</string>
+    <string name="status_hidden_api_open">システムコード許可</string>
+    <string name="status_hidden_api_blocked">システムコード拒否</string>
+
     <string name="setting_nav_layout">ナビゲーション配置</string>
     <string name="setting_nav_auto">自動</string>
     <string name="setting_nav_bottom">下部</string>

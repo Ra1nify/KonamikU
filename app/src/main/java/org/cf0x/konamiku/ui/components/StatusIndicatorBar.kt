@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.cf0x.konamiku.R
+import org.cf0x.konamiku.system.HiddenApiNfcChecker
 import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.system.StatusDetector.RootProvider
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
@@ -228,6 +229,20 @@ private fun PanelHcef(nfc: StatusDetector.NfcStatus?) {
                 active = rfOn,
                 label  = stringResource(R.string.status_nfc_rf),
                 detail = stringResource(if (rfOn) R.string.status_rf_on else R.string.status_rf_off)
+            )
+        }
+        // Hidden-API fallback status (non-Xposed system code validation check)
+        val hiddenApi = nfc?.hiddenApi
+        if (hiddenApi != null) {
+            val sysOk = hiddenApi.systemCodeValid
+            DetailRow(
+                active = sysOk == true,
+                label  = stringResource(R.string.status_hidden_api),
+                detail = when (sysOk) {
+                    true  -> stringResource(R.string.status_hidden_api_open)
+                    false -> stringResource(R.string.status_hidden_api_blocked)
+                    null  -> stringResource(R.string.status_unavailable)
+                }
             )
         }
     }

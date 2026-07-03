@@ -49,6 +49,10 @@
     <string name="status_rf_on">已开启</string>
     <string name="status_rf_off">已关闭</string>
 
+    <string name="status_hidden_api">隐藏 API</string>
+    <string name="status_hidden_api_open">系统码可通过</string>
+    <string name="status_hidden_api_blocked">系统码被屏蔽</string>
+
     <string name="setting_nav_layout">导航布局</string>
     <string name="setting_nav_auto">自动</string>
     <string name="setting_nav_bottom">底栏</string>

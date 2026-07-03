@@ -53,7 +53,9 @@ object StatusDetector {
         val hcefSupported: Boolean,
         val hcefRuntimeOk: Boolean,
         val defaultPaymentIsUs: Boolean,
-        val defaultPaymentLabel: String
+        val defaultPaymentLabel: String,
+        /** Hidden-API fallback status (null = bridge unavailable). */
+        val hiddenApi: HiddenApiNfcChecker.NfcHiddenApiResult? = null
     )
 
     data class XposedStatus(
@@ -102,7 +104,17 @@ object StatusDetector {
         }.getOrDefault(false)
         // Do not use reflection for getDefaultServiceForCategory (Hidden API, restricted on Android 14+)
         val defaultLabel = if (defaultIsUs) "KonamikU" else "None"
-        return NfcStatus(rfEnabled, hcefSupported, hcefRuntimeOk, defaultIsUs, defaultLabel)
+
+        // Non-Xposed fallback: check hidden NFC APIs via HiddenApiBypass
+        val hiddenApiResult = HiddenApiNfcChecker.checkAll().takeIf {
+            it.bridgeAvailable // only attach when the bridge actually works
+        }
+
+        return NfcStatus(
+            rfEnabled, hcefSupported, hcefRuntimeOk,
+            defaultIsUs, defaultLabel,
+            hiddenApi = hiddenApiResult
+        )
     }
 
     fun detectXposed(): XposedStatus {

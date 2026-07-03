@@ -17,6 +17,7 @@ workRuntime             = "2.10.0"
 libxposedApi            = "101.0.1"
 libxposedService        = "101.0.0"
 material3 = "1.4.0"
+hiddenapibypass = "4.3"
 
 [libraries]
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
@@ -39,6 +40,7 @@ androidx-work-runtime-ktx        = { group = "androidx.work",                 na
 libxposed-api                   = { group = "io.github.libxposed",           name = "api",                             version.ref = "libxposedApi" }
 libxposed-service               = { group = "io.github.libxposed",           name = "service",                         version.ref = "libxposedService" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenapibypass" }
 
 [plugins]
 android-application     = { id = "com.android.application",              version.ref = "agp" }

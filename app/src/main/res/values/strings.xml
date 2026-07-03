@@ -50,6 +50,10 @@
     <string name="status_rf_on">Enabled</string>
     <string name="status_rf_off">Disabled</string>
 
+    <string name="status_hidden_api">Hidden API</string>
+    <string name="status_hidden_api_open">System code accepted</string>
+    <string name="status_hidden_api_blocked">System code blocked</string>
+
     <string name="setting_nav_layout">Navigation Layout</string>
     <string name="setting_nav_auto">Auto</string>
     <string name="setting_nav_bottom">Bottom</string>
