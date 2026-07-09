@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,8 +19,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -158,18 +159,23 @@ fun ReorderableConverter(
                     focusRequester = focusRequester
                 )
 
-                Button(
+                FilledTonalButton(
                     onClick  = ::doConvert,
                     enabled  = canConvert,
-                    modifier = Modifier.fillMaxWidth()
+                    shape    = if (org.cf0x.konamiku.ui.theme.LocalExpressiveMode.current) 
+                                MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
                 ) {
                     Icon(
                         imageVector        = Icons.Filled.SwapVert,
                         contentDescription = null,
-                        modifier           = Modifier.size(18.dp)
+                        modifier           = Modifier.size(20.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Convert")
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text  = "Convert",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
 
                 order.drop(1).forEach { idx ->
@@ -213,14 +219,14 @@ private fun FieldItem(
 
     val containerColor = when {
         isResult -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else     -> Color.Unspecified
+        else     -> MaterialTheme.colorScheme.surfaceContainer
     }
 
     val supportingText: (@Composable () -> Unit)? = when {
         error      != null -> {{ Text(error, color = MaterialTheme.colorScheme.error) }}
         resultNote != null -> {{ Text(resultNote, color = MaterialTheme.colorScheme.tertiary) }}
         isSource           -> {{ Text("${value.length}${if (field.maxLength != Int.MAX_VALUE) " / ${field.maxLength}" else ""}",
-            color = LocalContentColor.current.copy(alpha = 0.6f)) }}
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) }}
         else               -> null
     }
 
@@ -230,10 +236,15 @@ private fun FieldItem(
             onValueChange  = onValueChange,
             readOnly       = !isSource,
             label          = { Text(field.label) },
+            shape          = if (org.cf0x.konamiku.ui.theme.LocalExpressiveMode.current) 
+                                MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.medium,
             placeholder    = {
                 Text(
                     field.placeholder,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = FontFamily.Monospace,
+                        color      = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
                 )
             },
             singleLine     = true,
@@ -262,6 +273,8 @@ private fun FieldItem(
                 unfocusedContainerColor = containerColor,
                 focusedContainerColor   = containerColor,
                 disabledContainerColor  = containerColor,
+                unfocusedBorderColor    = Color.Transparent,
+                focusedBorderColor      = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             ),
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
             keyboardOptions = KeyboardOptions(

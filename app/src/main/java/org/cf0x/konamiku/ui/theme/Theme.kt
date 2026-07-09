@@ -19,20 +19,20 @@ import org.cf0x.konamiku.data.ThemeMode
 // CompositionLocal to allow components to check for expressive mode
 val LocalExpressiveMode = staticCompositionLocalOf { true }
 
-// Standard M3 Shapes
+// Standard M3 Shapes - Strictly following M3 guidelines
 val StandardShapes = Shapes(
-    extraSmall = ShapeDefaults.ExtraSmall,
-    small      = ShapeDefaults.Small,
-    medium     = ShapeDefaults.Medium,
-    large      = ShapeDefaults.Large,
-    extraLarge = ShapeDefaults.ExtraLarge
+    extraSmall = RoundedCornerShape(4.dp),
+    small      = RoundedCornerShape(8.dp),
+    medium     = RoundedCornerShape(12.dp),
+    large      = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(28.dp)
 )
 
-// Expressive M3 Shapes with larger radii
+// Expressive M3 Shapes with bolder, larger radii
 val ExpressiveShapes = Shapes(
-    extraSmall = ShapeDefaults.ExtraSmall,
-    small      = ShapeDefaults.Small,
-    medium     = RoundedCornerShape(24.dp),
+    extraSmall = RoundedCornerShape(4.dp),
+    small      = RoundedCornerShape(12.dp),
+    medium     = RoundedCornerShape(20.dp),
     large      = RoundedCornerShape(28.dp),
     extraLarge = RoundedCornerShape(32.dp)
 )

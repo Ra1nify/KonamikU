@@ -15,7 +15,6 @@ import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.nfc.EmuCard
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.util.applyLocale
-import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
@@ -67,7 +66,9 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         XposedState.pmmActive = getSharedPreferences("KonamikU_xposed", MODE_PRIVATE)
             .getBoolean("pmmtool_active", false)
 
-        val hooked = NfcHookProber.probe(this)
+        val hooked = runCatching {
+            service.getRunningTargets().any { it.processName == "com.android.nfc" }
+        }.getOrDefault(false)
         XposedState.activationState = if (hooked) XposedActivationState.ACTIVE 
                                       else XposedActivationState.NEEDS_RESTART
 

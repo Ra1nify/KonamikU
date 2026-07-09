@@ -22,7 +22,6 @@ import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.util.NfcRestart
-import org.cf0x.konamiku.xposed.NfcHookProber
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 import org.cf0x.konamiku.data.AppDataStore
@@ -131,20 +130,8 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun reprobeHook() {
         viewModelScope.launch {
-            var hooked = false
-            repeat(3) {
-                hooked = NfcHookProber.probe(context)
-                if (hooked) return@repeat
-                delay(1000)
-            }
-            // Broadcast from the NFC process (NfcHookReceiver) may have already
-            // confirmed ACTIVE before this probe finishes — never downgrade.
-            if (XposedState.activationState != XposedActivationState.ACTIVE) {
-                XposedState.activationState = if (hooked)
-                    XposedActivationState.ACTIVE
-                else
-                    XposedActivationState.NEEDS_RESTART
-            }
+            delay(2000)
+            refreshNfc()
         }
     }
 

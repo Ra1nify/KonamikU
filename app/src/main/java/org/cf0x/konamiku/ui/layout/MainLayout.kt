@@ -2,12 +2,16 @@ package org.cf0x.konamiku.ui.layout
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.*
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
@@ -28,6 +32,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -129,9 +134,13 @@ fun MainLayout(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 0.dp
+                ) {
                     navDestinations.forEach { screen ->
                         val isSelected =
                             currentDestination?.hierarchy?.any { it.route == screen.route } == true
@@ -146,7 +155,10 @@ fun MainLayout(
                                 )
                             },
                             label = {
-                                Text(stringResource(labelRes[screen.route] ?: R.string.app_name))
+                                Text(
+                                    text  = stringResource(labelRes[screen.route] ?: R.string.app_name),
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
                         )
                     }
@@ -160,7 +172,12 @@ fun MainLayout(
                 .padding(innerPadding)
         ) {
             if (!showBottomBar) {
-                NavigationRail {
+                NavigationRail(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    header = {
+                        Spacer(Modifier.height(8.dp))
+                    }
+                ) {
                     navDestinations.forEach { screen ->
                         val isSelected =
                             currentDestination?.hierarchy?.any { it.route == screen.route } == true
@@ -198,8 +215,12 @@ fun MainLayout(
                 NavHost(
                     navController    = navController,
                     startDestination = Screen.Main.route,
-                    enterTransition = { fadeIn(tween(300)) + slideInHorizontally(tween(300)) { 20 } },
-                    exitTransition  = { fadeOut(tween(250)) + slideOutHorizontally(tween(250)) { -20 } }
+                    enterTransition = { 
+                        fadeIn(tween(300)) + slideInHorizontally(tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { 40 } + scaleIn(initialScale = 0.95f, animationSpec = tween(400))
+                    },
+                    exitTransition  = { 
+                        fadeOut(tween(250)) + slideOutHorizontally(tween(300)) { -40 }
+                    }
                 ) {
                     composable(Screen.Main.route)     { MainScreen(dataStore = dataStore) }
                     composable(Screen.Tools.route)    { ToolsScreen() }

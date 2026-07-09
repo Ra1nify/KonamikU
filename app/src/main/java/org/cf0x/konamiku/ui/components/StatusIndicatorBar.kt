@@ -38,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.HiddenApiNfcChecker
 import org.cf0x.konamiku.system.StatusDetector
@@ -65,6 +68,7 @@ fun StatusIndicatorBar(
     val allStatus   by viewModel.status.collectAsState()
     val xposedState by XposedState.activationStateFlow.collectAsState()
     var expanded    by remember { mutableStateOf<Panel?>(null) }
+    val scope       = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { msg ->
@@ -74,6 +78,22 @@ fun StatusIndicatorBar(
 
     val hcefActive = allStatus?.nfc?.hcefSupported == true && allStatus?.nfc?.rfEnabled == true
     val rootActive = allStatus?.root?.available == true
+
+    // Sequential expansion logic: collapse then expand
+    val onPanelToggle: (Panel) -> Unit = { target ->
+        scope.launch {
+            if (expanded == target) {
+                expanded = null
+            } else if (expanded == null) {
+                expanded = target
+            } else {
+                // Switch: collapse first
+                expanded = null
+                delay(180) // Wait for shrink animation
+                expanded = target
+            }
+        }
+    }
 
     Surface(
         color    = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -92,7 +112,7 @@ fun StatusIndicatorBar(
                 StatusIconSlot(
                     panel       = Panel.HCEF,
                     expanded    = expanded,
-                    onToggle    = { expanded = if (expanded == it) null else it },
+                    onToggle    = onPanelToggle,
                     onLongClick = { viewModel.onNfcLongPress() },
                     activeIcon  = Icons.Filled.Memory,
                     idleIcon    = Icons.Outlined.Memory,
@@ -105,7 +125,7 @@ fun StatusIndicatorBar(
                 StatusIconSlot(
                     panel       = Panel.ROOT,
                     expanded    = expanded,
-                    onToggle    = { expanded = if (expanded == it) null else it },
+                    onToggle    = onPanelToggle,
                     onLongClick = { viewModel.onRootLongPress() },
                     activeIcon  = Icons.Filled.Tag,
                     idleIcon    = Icons.Outlined.Tag,
@@ -118,7 +138,7 @@ fun StatusIndicatorBar(
                 StatusIconSlot(
                     panel       = Panel.XPOSED,
                     expanded    = expanded,
-                    onToggle    = { expanded = if (expanded == it) null else it },
+                    onToggle    = onPanelToggle,
                     onLongClick = { viewModel.onXposedLongPress() },
                     activeIcon  = Icons.Filled.Extension,
                     idleIcon    = Icons.Outlined.Extension,

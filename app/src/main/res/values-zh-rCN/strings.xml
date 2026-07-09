@@ -64,8 +64,8 @@
     <string name="setting_theme_system">跟随系统</string>
     <string name="setting_theme_light">浅色</string>
     <string name="setting_theme_dark">深色</string>
-    <string name="setting_theme_expressive">Material You 灵动设计</string>
-    <string name="setting_theme_expressive_desc">开启大圆角与加粗字体设计。</string>
+    <string name="setting_theme_expressive">Material You 灵动模式</string>
+    <string name="setting_theme_expressive_desc">启用更具表现力的圆角与加粗紧凑字体设计。</string>
     <string name="setting_palette_style">取色方案</string>
     <string name="setting_palette_style_tonalspot">Tonal Spot</string>
     <string name="setting_palette_style_neutral">Neutral</string>

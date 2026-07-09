@@ -66,7 +66,7 @@
     <string name="setting_theme_light">Light</string>
     <string name="setting_theme_dark">Dark</string>
     <string name="setting_theme_expressive">Material You Expressive</string>
-    <string name="setting_theme_expressive_desc">Enable larger rounded corners and bolder typography.</string>
+    <string name="setting_theme_expressive_desc">Enable bolder shapes and tighter, bold typography.</string>
     <string name="setting_palette_style">Color Palette Style</string>
     <string name="setting_palette_style_tonalspot">Tonal Spot</string>
     <string name="setting_palette_style_neutral">Neutral</string>

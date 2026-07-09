@@ -11,29 +11,37 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun getTypography(isExpressive: Boolean): Typography {
     val weight = if (isExpressive) FontWeight.SemiBold else FontWeight.Medium
+    val tracking = if (isExpressive) (-0.02).sp else 0.sp
     val bodyWeight = FontWeight.Normal
 
     return Typography(
+        headlineLarge = TextStyle(
+            fontFamily    = FontFamily.Default,
+            fontWeight    = weight,
+            fontSize      = 32.sp,
+            lineHeight    = 40.sp,
+            letterSpacing = tracking
+        ),
         headlineSmall = TextStyle(
             fontFamily    = FontFamily.Default,
             fontWeight    = weight,
             fontSize      = 24.sp,
             lineHeight    = 32.sp,
-            letterSpacing = 0.sp
+            letterSpacing = tracking
         ),
         titleLarge = TextStyle(
             fontFamily    = FontFamily.Default,
             fontWeight    = weight,
             fontSize      = 22.sp,
             lineHeight    = 28.sp,
-            letterSpacing = 0.sp
+            letterSpacing = tracking
         ),
         titleMedium = TextStyle(
             fontFamily    = FontFamily.Default,
             fontWeight    = weight,
             fontSize      = 16.sp,
             lineHeight    = 24.sp,
-            letterSpacing = 0.15.sp
+            letterSpacing = tracking
         ),
         bodyLarge = TextStyle(
             fontFamily    = FontFamily.Default,

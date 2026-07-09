@@ -36,11 +36,16 @@ fun ToolsScreen() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             if (isExpressive) {
                 LargeTopAppBar(
                     title = { Text(stringResource(R.string.nav_tools)) },
-                    scrollBehavior = topBarScrollBehavior
+                    scrollBehavior = topBarScrollBehavior,
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
                 )
             } else {
                 TopAppBar(
@@ -50,64 +55,69 @@ fun ToolsScreen() {
             }
         }
     ) { innerPadding ->
-        Column(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(innerPadding),
+            color = MaterialTheme.colorScheme.surface
         ) {
-            ElevatedCard(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness    = Spring.StiffnessMedium
-                        )
-                    ),
-                onClick = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
-                shape   = MaterialTheme.shapes.extraLarge,
-                colors  = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Column(
+                ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .animateContentSize(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness    = Spring.StiffnessMedium
+                            )
+                        ),
+                    onClick = { expandedBar = if (expandedBar == "id_converter") null else "id_converter" },
+                    shape   = MaterialTheme.shapes.extraLarge,
+                    colors  = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
                 ) {
-                    Row(
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
                     ) {
-                        Surface(
-                            modifier = Modifier.size(48.dp),
-                            shape    = MaterialTheme.shapes.large,
-                            // Color Correction: Use Container roles
-                            color    = MaterialTheme.colorScheme.secondaryContainer
+                        Row(
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.AutoMirrored.Outlined.CompareArrows, null,
-                                    tint     = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                            Surface(
+                                modifier = Modifier.size(48.dp),
+                                shape    = MaterialTheme.shapes.large,
+                                color    = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.AutoMirrored.Outlined.CompareArrows, null,
+                                        tint     = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
+                            Text(
+                                stringResource(R.string.tools_id_converter_title),
+                                style = MaterialTheme.typography.titleLarge
+                            )
                         }
-                        Text(
-                            stringResource(R.string.tools_id_converter_title),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
 
-                    if (expandedBar == "id_converter") {
-                        Column {
-                            Spacer(Modifier.height(18.dp))
-                            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            Spacer(Modifier.height(16.dp))
-                            IdConverterPanel()
+                        if (expandedBar == "id_converter") {
+                            Column {
+                                Spacer(Modifier.height(18.dp))
+                                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                Spacer(Modifier.height(16.dp))
+                                IdConverterPanel()
+                            }
                         }
                     }
                 }
