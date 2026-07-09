@@ -40,7 +40,7 @@ fun NfcCardItem(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val isExpressive = LocalExpressiveMode.current
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
     val glowAlpha by animateFloatAsState(
         targetValue   = if (isExpanded) 1f else 0f,

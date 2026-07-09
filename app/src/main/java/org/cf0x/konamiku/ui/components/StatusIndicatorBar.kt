@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
-import org.cf0x.konamiku.system.HiddenApiNfcChecker
 import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.system.StatusDetector.RootProvider
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel

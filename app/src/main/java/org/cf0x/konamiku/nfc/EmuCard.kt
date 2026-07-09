@@ -90,8 +90,7 @@ class EmuCard : HostNfcFService() {
     private fun acquireWakeLock() {
         if (!::wakeLock.isInitialized) return
         runCatching {
-            if (!wakeLock.isHeld) wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS)
-            else wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS) // refresh timeout
+            wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS)
         }.onFailure { Log.w(TAG, "WakeLock acquire failed: ${it.message}") }
     }
 

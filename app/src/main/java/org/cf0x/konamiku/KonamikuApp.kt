@@ -1,9 +1,6 @@
 package org.cf0x.konamiku
 
 import android.app.Application
-import android.content.ComponentName
-import android.nfc.NfcAdapter
-import android.nfc.cardemulation.NfcFCardEmulation
 import android.os.Build
 import android.util.Log
 import io.github.libxposed.service.XposedService
@@ -12,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
-import org.cf0x.konamiku.nfc.EmuCard
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.util.applyLocale
 import org.cf0x.konamiku.xposed.XposedActivationState
@@ -27,10 +23,6 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
 
         runBlocking {
             dataStore.saveActiveCardId(null)
-        }
-
-
-        runBlocking {
             val interval = dataStore.updateInterval.first()
             UpdateManager.schedule(this@KonamikuApp, interval)
         }
@@ -60,13 +52,13 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
     }
 
     override fun onServiceBind(service: XposedService) {
-        XposedState.frameworkName    = service.frameworkName    ?: ""
-        XposedState.frameworkVersion = service.frameworkVersion ?: ""
+        XposedState.frameworkName    = service.frameworkName
+        XposedState.frameworkVersion = service.frameworkVersion
 
         XposedState.pmmActive = getSharedPreferences("KonamikU_xposed", MODE_PRIVATE)
             .getBoolean("pmmtool_active", false)
 
-        val hooked = runCatching {
+        val hooked = runCatching<Boolean> {
             service.getRunningTargets().any { it.processName == "com.android.nfc" }
         }.getOrDefault(false)
         XposedState.activationState = if (hooked) XposedActivationState.ACTIVE 

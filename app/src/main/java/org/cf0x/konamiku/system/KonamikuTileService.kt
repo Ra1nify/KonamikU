@@ -3,7 +3,6 @@ package org.cf0x.konamiku.system
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
-import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
@@ -77,7 +76,6 @@ class KonamikuTileService : TileService() {
         )
     }
 
-    @Suppress("DEPRECATION")
     private fun showCardPicker(cards: List<org.cf0x.konamiku.data.NfcCard>, dataStore: AppDataStore) {
         val names = cards.map { it.name }.toTypedArray()
 

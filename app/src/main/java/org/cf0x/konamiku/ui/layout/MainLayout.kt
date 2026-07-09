@@ -2,7 +2,6 @@ package org.cf0x.konamiku.ui.layout
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.*
-import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -118,20 +117,6 @@ fun MainLayout(
         Screen.Tools.route    to R.string.nav_tools,
         Screen.Settings.route to R.string.nav_settings
     )
-
-    // Fullscreen in OOBE mode without the main Scaffold
-    if (isOobe) {
-        NavHost(
-            navController    = navController,
-            startDestination = Screen.Main.route,
-            enterTransition  = { fadeIn(tween(300)) },
-            exitTransition   = { fadeOut(tween(250)) }
-        ) {
-            composable(Screen.Main.route)     { }
-            composable(Screen.SetupNew.route) { SetupScreen(dataStore = dataStore) }
-        }
-        return
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,

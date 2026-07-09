@@ -66,7 +66,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-
     fun onNfcLongPress() {
         viewModelScope.launch(Dispatchers.IO) {
             val adapter = NfcAdapter.getDefaultAdapter(context)
@@ -134,7 +133,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             refreshNfc()
         }
     }
-
 
     private fun observeXposedState() {
         viewModelScope.launch {

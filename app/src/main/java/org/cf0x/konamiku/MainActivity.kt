@@ -13,14 +13,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.ColorSource
 import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.layout.MainLayout
 import org.cf0x.konamiku.ui.theme.KonamikuTheme
-import org.cf0x.konamiku.util.CardIdConverter
 
 class MainActivity : ComponentActivity() {
 

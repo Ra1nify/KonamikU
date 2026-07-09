@@ -383,7 +383,6 @@ private fun LanguagePage(
     }
 }
 
-
 // --- Page 3: Status Check ---
 
 @Composable
