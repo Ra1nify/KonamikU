@@ -193,4 +193,7 @@
 
     <string name="restart_app_dialog_msg">모듈이 올바르게 작동하려면 앱을 다시 시작해야 합니다. 이 프로세스는 추후 업데이트에서 최적화될 예정입니다.</string>
     <string name="restart_app_dialog_confirm">앱 다시 시작</string>
+
+    <string name="setting_pmm_title">PMm 도구</string>
+    <string name="setting_pmm_desc">NFC 칩의 PMm 매개변수를 KONAMI 리더기와 호환되는 값으로 교체합니다. 아케이드 기기에서 카드 에뮬레이션에 필요합니다.</string>
 </resources>

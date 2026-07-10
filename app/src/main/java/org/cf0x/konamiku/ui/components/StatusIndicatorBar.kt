@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -70,6 +72,7 @@ fun StatusIndicatorBar(
     val context     = LocalContext.current
     val allStatus   by viewModel.status.collectAsState()
     val xposedState by XposedState.activationStateFlow.collectAsState()
+    val currentPmmEnabled by viewModel.pmmEnabled.collectAsState()
     var expanded    by remember { mutableStateOf<Panel?>(null) }
     val scope       = rememberCoroutineScope()
 
@@ -172,7 +175,7 @@ fun StatusIndicatorBar(
                         when (expanded) {
                             Panel.HCEF   -> PanelHcef(allStatus?.nfc)
                             Panel.ROOT   -> PanelRoot(allStatus?.root)
-                            Panel.XPOSED -> PanelXposed(allStatus?.xposed)
+                            Panel.XPOSED -> PanelXposed(allStatus?.xposed, currentPmmEnabled)
                             null         -> {}
                         }
                     }
@@ -195,12 +198,41 @@ fun StatusIndicatorBar(
             PendingAction.NfcRestart    -> stringResource(R.string.dialog_nfc_restart_desc)
             PendingAction.XposedRefresh -> stringResource(R.string.dialog_xposed_refresh_desc)
         }
+
+        // Xposed dialog includes a PMm Tool toggle
+        val currentPmm by viewModel.pmmEnabled.collectAsState()
+        var localPmm by remember(action) { mutableStateOf(currentPmm) }
+        val isXposed = action == PendingAction.XposedRefresh
+
         AlertDialog(
             onDismissRequest = { viewModel.cancelAction() },
             title       = { Text(dialogTitle) },
-            text        = { Text(dialogDesc) },
+            text        = {
+                Column {
+                    Text(dialogDesc)
+                    if (isXposed) {
+                        Spacer(Modifier.height(12.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.setting_pmm_title),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Switch(checked = localPmm, onCheckedChange = { localPmm = it })
+                        }
+                    }
+                }
+            },
             confirmButton = {
-                Button(onClick = { viewModel.confirmAction() }) {
+                Button(onClick = {
+                    if (isXposed) viewModel.confirmXposedAction(localPmm)
+                    else viewModel.confirmAction()
+                }) {
                     Text(stringResource(R.string.card_add_confirm))
                 }
             },
@@ -323,7 +355,7 @@ private fun PanelRoot(root: StatusDetector.RootStatus?) {
 }
 
 @Composable
-private fun PanelXposed(xposed: StatusDetector.XposedStatus?) {
+private fun PanelXposed(xposed: StatusDetector.XposedStatus?, pmmEnabled: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when {
             xposed == null || (!xposed.active && !xposed.needsRestart) -> {
@@ -351,13 +383,13 @@ private fun PanelXposed(xposed: StatusDetector.XposedStatus?) {
                     label  = stringResource(R.string.status_lsposed),
                     detail = xposed.provider
                 )
+                val pmmDetailRes = if (!pmmEnabled) R.string.status_rf_off
+                    else if (xposed.pmmActive) R.string.status_injected
+                    else R.string.status_not_injected
                 DetailRow(
-                    active = xposed.pmmActive,
+                    active = pmmEnabled && xposed.pmmActive,
                     label  = stringResource(R.string.status_pmmtool),
-                    detail = stringResource(
-                        if (xposed.pmmActive) R.string.status_injected
-                        else                  R.string.status_not_injected
-                    )
+                    detail = stringResource(pmmDetailRes)
                 )
             }
         }

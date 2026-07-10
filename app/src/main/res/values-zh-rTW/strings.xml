@@ -193,4 +193,7 @@
 
     <string name="restart_app_dialog_msg">現在需要重新啟動軟體以讓模組正常工作。此流程將在後續更新被優化。</string>
     <string name="restart_app_dialog_confirm">重新啟動軟體</string>
+
+    <string name="setting_pmm_title">PMm 工具</string>
+    <string name="setting_pmm_desc">將 NFC 晶片的 PMm 參數替換為 KONAMI 讀卡器相容的值。街機卡片模擬需要此功能。</string>
 </resources>

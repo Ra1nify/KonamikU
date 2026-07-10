@@ -193,4 +193,7 @@
 
     <string name="restart_app_dialog_msg">L\'application doit redémarrer pour que le module fonctionne correctement. Ce processus sera optimisé dans une future mise à jour.</string>
     <string name="restart_app_dialog_confirm">Redémarrer l\'app</string>
+
+    <string name="setting_pmm_title">Outil PMm</string>
+    <string name="setting_pmm_desc">Remplace le paramètre PMm de la puce NFC par une valeur compatible avec les lecteurs KONAMI. Nécessaire pour l\'émulation de cartes sur bornes d\'arcade.</string>
 </resources>

@@ -51,12 +51,18 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     private val _pendingAction = MutableStateFlow<PendingAction?>(null)
     val pendingAction: StateFlow<PendingAction?> = _pendingAction.asStateFlow()
 
+    private val _pmmEnabled = MutableStateFlow(true)
+    val pmmEnabled: StateFlow<Boolean> = _pmmEnabled.asStateFlow()
+
     private val _showRestartDialog = MutableStateFlow(false)
     val showRestartDialog: StateFlow<Boolean> = _showRestartDialog.asStateFlow()
 
     init {
         refresh()
         observeXposedState()
+        viewModelScope.launch {
+            dataStore.pmmEnabled.collect { _pmmEnabled.value = it }
+        }
     }
 
     fun refresh() {
@@ -109,12 +115,33 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     fun confirmAction() {
         val action = _pendingAction.value ?: return
         _pendingAction.value = null
-        // Deactivate any active emulated card before proceeding
         deactivateActiveCard()
         when (action) {
             PendingAction.NfcEnable     -> executeNfcEnable()
             PendingAction.NfcRestart    -> executeNfcRestart()
             PendingAction.XposedRefresh -> executeXposedRefresh()
+        }
+    }
+
+    /**
+     * Confirm the Xposed refresh dialog, saving the new PMm Tool state.
+     * If the PMm state changed, also restarts NFC so the module picks up
+     * the change, and updates [XposedState.pmmActive] immediately so the
+     * status indicator reflects the intended state.
+     */
+    fun confirmXposedAction(newPmmEnabled: Boolean) {
+        _pendingAction.value = null
+        val changed = newPmmEnabled != _pmmEnabled.value
+        if (changed) {
+            viewModelScope.launch { dataStore.savePmmEnabled(newPmmEnabled) }
+            // Optimistic UI update — actual injection state will follow after restart
+            XposedState.pmmActive = newPmmEnabled
+        }
+        executeXposedRefresh()
+        if (changed) {
+            // PMm changed → full NFC restart so the module picks it up
+            deactivateActiveCard()
+            executeNfcRestart()
         }
     }
 

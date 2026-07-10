@@ -55,6 +55,8 @@ class AppDataStore(private val context: Context) {
 
     var devModeForceEmuSync = false
         private set
+    var pmmEnabledSync = true
+        private set
 
     private object Keys {
         val NAV_MODE           = stringPreferencesKey("navigation_mode")
@@ -65,6 +67,7 @@ class AppDataStore(private val context: Context) {
         val EMU_MODE           = stringPreferencesKey("emu_mode")
         val APP_LOCALE         = stringPreferencesKey("app_locale")
         val DEV_FORCE_EMU      = booleanPreferencesKey("dev_mode_force_emu")
+        val PMM_ENABLED        = booleanPreferencesKey("pmm_enabled")
         val THEME_EXPRESSIVE   = booleanPreferencesKey("theme_expressive")
         val PALETTE_STYLE      = stringPreferencesKey("palette_style")
         val SETUP_VERSION      = longPreferencesKey("setup_version")
@@ -159,6 +162,14 @@ class AppDataStore(private val context: Context) {
 
     suspend fun saveEmuMode(m: EmuMode) = context.dataStore.edit { it[Keys.EMU_MODE] = m.name }
     suspend fun saveAppLocale(l: AppLocale) = context.dataStore.edit { it[Keys.APP_LOCALE] = l.tag }
+
+    val pmmEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.PMM_ENABLED] ?: true }
+
+    suspend fun savePmmEnabled(v: Boolean) = context.dataStore.edit {
+        it[Keys.PMM_ENABLED] = v
+        pmmEnabledSync = v
+        org.cf0x.konamiku.system.PmmConfigProvider.pmmEnabled = v
+    }
 
     suspend fun saveDevModeForceEmu(v: Boolean) = context.dataStore.edit {
         it[Keys.DEV_FORCE_EMU] = v

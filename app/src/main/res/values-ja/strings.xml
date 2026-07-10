@@ -193,4 +193,7 @@
 
     <string name="restart_app_dialog_msg">モジュールを正常に動作させるには、アプリの再起動が必要です。このプロセスは今後のアップデートで最適化されます。</string>
     <string name="restart_app_dialog_confirm">アプリを再起動</string>
+
+    <string name="setting_pmm_title">PMm ツール</string>
+    <string name="setting_pmm_desc">NFCチップのPMmパラメータをKONAMIリーダー互換の値に置き換えます。アーケード機でのカードエミュレーションに必要です。</string>
 </resources>

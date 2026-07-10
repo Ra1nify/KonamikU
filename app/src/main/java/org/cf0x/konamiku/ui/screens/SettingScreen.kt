@@ -116,6 +116,7 @@ fun SettingScreen(dataStore: AppDataStore) {
     var savedColor   by remember { mutableStateOf(Color(0xFF6750A4)) }
     val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
     var devModeForce by remember { mutableStateOf(dataStore.devModeForceEmuSync) }
+    var pmmEnabled by remember { mutableStateOf(dataStore.pmmEnabledSync) }
     var isExpressive by remember { mutableStateOf(true) }
     var paletteStyle by remember { mutableStateOf(PaletteStyle.TonalSpot) }
 
@@ -142,6 +143,7 @@ fun SettingScreen(dataStore: AppDataStore) {
         colorSource  = dataStore.colorSource.first()
         savedColor   = dataStore.presetColor.first()
         devModeForce = dataStore.devModeForceEmu.first()
+        pmmEnabled = dataStore.pmmEnabled.first()
         isExpressive = dataStore.themeExpressive.first()
         paletteStyle = dataStore.paletteStyle.first()
         loaded       = true
@@ -254,7 +256,12 @@ fun SettingScreen(dataStore: AppDataStore) {
             NfcSettingsItem(context)
         }
 
-        // --- Group 7: Debug ---
+        // --- Group 7: PMm Tool ---
+        SettingGroup {
+            PmmItem(pmmEnabled = pmmEnabled, onToggle = { v -> pmmEnabled = v; scope.launch { dataStore.savePmmEnabled(v) } })
+        }
+
+        // --- Group 8: Debug ---
         SettingGroup {
             DebugSection(
                 dataStore = dataStore,
@@ -1204,6 +1211,23 @@ private fun DevModeItem(devMode: Boolean, onToggle: (Boolean) -> Unit) {
             Text(stringResource(R.string.setting_dev_force_emu_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Switch(checked = devMode, onCheckedChange = onToggle)
+    }
+}
+
+@Composable
+private fun PmmItem(pmmEnabled: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.setting_pmm_title), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.setting_pmm_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        }
+        Switch(checked = pmmEnabled, onCheckedChange = onToggle)
     }
 }
 

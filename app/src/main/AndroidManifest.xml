@@ -113,6 +113,12 @@
         </service>
         -->
 
+        <!-- Cross-process config provider for Xposed module (reads PMm enabled state) -->
+        <provider
+            android:name=".system.PmmConfigProvider"
+            android:authorities="org.cf0x.konamiku.pmmconfig"
+            android:exported="true" />
+
     </application>
 
 </manifest>
