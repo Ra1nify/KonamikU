@@ -100,8 +100,8 @@
     <string name="toast_nfc_restarted">Service NFC redémarré (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">Actualisation du statut du module…</string>
     <string name="toast_mode_locked">Module inactif · Mode Natf uniquement</string>
-    <string name="setting_dev_force_emu">Forcer tous les modes</string>
-    <string name="setting_dev_force_emu_desc">Ignorer les vérifications du module (à utiliser avec prudence).</string>
+    <string name="setting_dev_force_emu">Appareil HCE-F natif</string>
+    <string name="setting_dev_force_emu_desc">Déverrouille tous les modes d\'émulation sur les appareils prenant en charge HCE-F nativement.</string>
 
     <string name="toast_idm_scanned">IDm : %1$s</string>
     <string name="toast_nfc_loaded">NFC chargé</string>

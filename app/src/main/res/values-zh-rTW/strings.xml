@@ -100,8 +100,8 @@
     <string name="toast_nfc_restarted">NFC 服務已重啟 (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">正在重新整理模組狀態…</string>
     <string name="toast_mode_locked">模組未載入 · 僅 Native 模式可用</string>
-    <string name="setting_dev_force_emu">強制解鎖所有模式</string>
-    <string name="setting_dev_force_emu_desc">繞過模組環境檢查（請謹慎使用）。</string>
+    <string name="setting_dev_force_emu">原生 HCE-F 裝置</string>
+    <string name="setting_dev_force_emu_desc">在原生支援 HCE-F 的裝置上解鎖所有模擬模式。</string>
 
     <string name="toast_idm_scanned">IDm: %1$s</string>
     <string name="toast_nfc_loaded">NFC 已載入</string>

@@ -100,8 +100,8 @@
     <string name="toast_nfc_restarted">NFC 서비스가 재시작되었습니다 (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">모듈 상태를 새로고치는 중…</string>
     <string name="toast_mode_locked">모듈이 로드되지 않음 · Native 모드만 가능</string>
-    <string name="setting_dev_force_emu">모든 모드 강제 해제</string>
-    <string name="setting_dev_force_emu_desc">모듈 검사를 우회합니다 (주의해서 사용하세요).</string>
+    <string name="setting_dev_force_emu">네이티브 HCE-F 기기</string>
+    <string name="setting_dev_force_emu_desc">네이티브 HCE-F 지원 기기에서 모든 에뮬레이션 모드를 잠금 해제합니다.</string>
 
     <string name="toast_idm_scanned">IDm: %1$s</string>
     <string name="toast_nfc_loaded">NFC 로드됨</string>

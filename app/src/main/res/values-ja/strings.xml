@@ -100,8 +100,8 @@
     <string name="toast_nfc_restarted">NFCサービスが再起動されました (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">モジュールステータスを更新中…</string>
     <string name="toast_mode_locked">モジュール未読込 · Nativeモードのみ</string>
-    <string name="setting_dev_force_emu">全モードを強制解除</string>
-    <string name="setting_dev_force_emu_desc">モジュールチェックをバイパスします（注意して使用）。</string>
+    <string name="setting_dev_force_emu">ネイティブ HCE-F 端末</string>
+    <string name="setting_dev_force_emu_desc">ネイティブ HCE-F 対応端末で全エミュレーションモードを有効化します。</string>
 
     <string name="toast_idm_scanned">IDm: %1$s</string>
     <string name="toast_nfc_loaded">NFC ロード済み</string>

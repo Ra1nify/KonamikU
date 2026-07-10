@@ -102,8 +102,8 @@
     <string name="toast_nfc_restarted">NFC service restarted (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">Refreshing module status…</string>
     <string name="toast_mode_locked">Module inactive · Native mode only</string>
-    <string name="setting_dev_force_emu">Force Unlock All Modes</string>
-    <string name="setting_dev_force_emu_desc">Bypass module checks (Use with caution).</string>
+    <string name="setting_dev_force_emu">Native HCE-F device</string>
+    <string name="setting_dev_force_emu_desc">Unlock all emulation modes on native HCE-F devices.</string>
 
     <string name="tools_id_converter_title">ID Converter</string>
     <string name="tools_label_idm">IDm (16 hex chars)</string>
