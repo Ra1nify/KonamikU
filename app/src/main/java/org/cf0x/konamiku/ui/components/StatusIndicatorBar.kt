@@ -27,11 +27,14 @@ import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Tag
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,6 +54,7 @@ import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.system.StatusDetector.RootProvider
+import org.cf0x.konamiku.ui.viewmodels.PendingAction
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
@@ -175,6 +179,52 @@ fun StatusIndicatorBar(
                 }
             }
         }
+    }
+
+    // Confirmation dialog for long-press actions
+    val pendingAction by viewModel.pendingAction.collectAsState()
+    val action = pendingAction
+    if (action != null) {
+        val dialogTitle = when (action) {
+            PendingAction.NfcEnable     -> stringResource(R.string.dialog_nfc_enable_title)
+            PendingAction.NfcRestart    -> stringResource(R.string.dialog_nfc_restart_title)
+            PendingAction.XposedRefresh -> stringResource(R.string.dialog_xposed_refresh_title)
+        }
+        val dialogDesc = when (action) {
+            PendingAction.NfcEnable     -> stringResource(R.string.dialog_nfc_enable_desc)
+            PendingAction.NfcRestart    -> stringResource(R.string.dialog_nfc_restart_desc)
+            PendingAction.XposedRefresh -> stringResource(R.string.dialog_xposed_refresh_desc)
+        }
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelAction() },
+            title       = { Text(dialogTitle) },
+            text        = { Text(dialogDesc) },
+            confirmButton = {
+                Button(onClick = { viewModel.confirmAction() }) {
+                    Text(stringResource(R.string.card_add_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelAction() }) {
+                    Text(stringResource(R.string.card_add_cancel))
+                }
+            }
+        )
+    }
+
+    // Restart-app dialog (shown after NFC restart completes)
+    val showRestartDialog by viewModel.showRestartDialog.collectAsState()
+    if (showRestartDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            title       = { Text(stringResource(R.string.restart_app_dialog_confirm)) },
+            text        = { Text(stringResource(R.string.restart_app_dialog_msg)) },
+            confirmButton = {
+                Button(onClick = { viewModel.restartApp() }) {
+                    Text(stringResource(R.string.restart_app_dialog_confirm))
+                }
+            }
+        )
     }
 }
 

@@ -179,4 +179,18 @@
     <string name="toast_import_fail_parse">Fichier JSON invalide</string>
     <string name="toast_import_fail_validation">%d carte(s) ignorée(s) (IDm invalide)</string>
     <string name="toast_import_duplicate">%d carte(s) ignorée(s) (doublons)</string>
+
+    <string name="dialog_nfc_enable_title">Activer NFC</string>
+    <string name="dialog_nfc_enable_desc">Activer le service NFC via root ? L\'application peut ne pas répondre brièvement.</string>
+    <string name="dialog_nfc_restart_title">Redémarrer NFC</string>
+    <string name="dialog_nfc_restart_desc">Redémarrer le service NFC via root ?\n\nCela tuera et redémarrera com.android.nfc.</string>
+    <string name="dialog_xposed_refresh_title">Actualiser LSPosed</string>
+    <string name="dialog_xposed_refresh_desc">Re-vérifier l\'état du module LSPosed ?</string>
+    <string name="toast_nfc_pid_killed">com.android.nfc pid %s tué</string>
+    <string name="toast_nfc_restarting">com.android.nfc redémarre</string>
+    <string name="toast_nfc_pid_restarted">com.android.nfc pid %s redémarré</string>
+    <string name="toast_nfc_service_refreshed">nfc actualisé</string>
+
+    <string name="restart_app_dialog_msg">L\'application doit redémarrer pour que le module fonctionne correctement. Ce processus sera optimisé dans une future mise à jour.</string>
+    <string name="restart_app_dialog_confirm">Redémarrer l\'app</string>
 </resources>

@@ -179,4 +179,18 @@
     <string name="toast_import_fail_parse">유효하지 않은 JSON 파일</string>
     <string name="toast_import_fail_validation">%d장의 카드 건너뜀 (IDm 무효)</string>
     <string name="toast_import_duplicate">%d장의 카드 건너뜀 (중복)</string>
+
+    <string name="dialog_nfc_enable_title">NFC 활성화</string>
+    <string name="dialog_nfc_enable_desc">root로 NFC 서비스를 활성화할까요? 앱이 일시적으로 응답하지 않을 수 있습니다.</string>
+    <string name="dialog_nfc_restart_title">NFC 재시작</string>
+    <string name="dialog_nfc_restart_desc">root로 NFC 서비스를 재시작할까요?\n\ncom.android.nfc를 종료하고 다시 시작합니다.</string>
+    <string name="dialog_xposed_refresh_title">LSPosed 새로고침</string>
+    <string name="dialog_xposed_refresh_desc">LSPosed 모듈 상태를 다시 확인할까요?</string>
+    <string name="toast_nfc_pid_killed">com.android.nfc pid %s 종료됨</string>
+    <string name="toast_nfc_restarting">com.android.nfc 재시작 중</string>
+    <string name="toast_nfc_pid_restarted">com.android.nfc pid %s 재시작됨</string>
+    <string name="toast_nfc_service_refreshed">NFC 새로고침됨</string>
+
+    <string name="restart_app_dialog_msg">모듈이 올바르게 작동하려면 앱을 다시 시작해야 합니다. 이 프로세스는 추후 업데이트에서 최적화될 예정입니다.</string>
+    <string name="restart_app_dialog_confirm">앱 다시 시작</string>
 </resources>

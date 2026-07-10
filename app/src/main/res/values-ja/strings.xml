@@ -179,4 +179,18 @@
     <string name="toast_import_fail_parse">無効なJSONファイルです</string>
     <string name="toast_import_fail_validation">%d枚のカードをスキップ（IDmが無効）</string>
     <string name="toast_import_duplicate">%d枚のカードをスキップ（重複）</string>
+
+    <string name="dialog_nfc_enable_title">NFCを有効化</string>
+    <string name="dialog_nfc_enable_desc">rootでNFCサービスを有効にしますか？アプリが一時的に応答しなくなる可能性があります。</string>
+    <string name="dialog_nfc_restart_title">NFCを再起動</string>
+    <string name="dialog_nfc_restart_desc">rootでNFCサービスを再起動しますか？\n\ncom.android.nfcを強制終了して再起動します。</string>
+    <string name="dialog_xposed_refresh_title">LSPosedを更新</string>
+    <string name="dialog_xposed_refresh_desc">LSPosedモジュールの状態を再確認しますか？</string>
+    <string name="toast_nfc_pid_killed">com.android.nfc pid %s を強制終了</string>
+    <string name="toast_nfc_restarting">com.android.nfc を再起動中</string>
+    <string name="toast_nfc_pid_restarted">com.android.nfc pid %s を再起動</string>
+    <string name="toast_nfc_service_refreshed">NFCを更新</string>
+
+    <string name="restart_app_dialog_msg">モジュールを正常に動作させるには、アプリの再起動が必要です。このプロセスは今後のアップデートで最適化されます。</string>
+    <string name="restart_app_dialog_confirm">アプリを再起動</string>
 </resources>

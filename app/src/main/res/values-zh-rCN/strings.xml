@@ -180,4 +180,18 @@
     <string name="toast_import_fail_parse">无效的 JSON 文件</string>
     <string name="toast_import_fail_validation">%d 张卡片跳过（IDm 无效）</string>
     <string name="toast_import_duplicate">%d 张卡片跳过（重复）</string>
+
+    <string name="dialog_nfc_enable_title">启用 NFC</string>
+    <string name="dialog_nfc_enable_desc">通过 root 启用 NFC 服务？应用可能会短暂无响应。</string>
+    <string name="dialog_nfc_restart_title">重启 NFC</string>
+    <string name="dialog_nfc_restart_desc">通过 root 重启 NFC 服务？\n\n将终止并重新启动 com.android.nfc。</string>
+    <string name="dialog_xposed_refresh_title">刷新 LSPosed</string>
+    <string name="dialog_xposed_refresh_desc">重新检查 LSPosed 模块状态？</string>
+    <string name="toast_nfc_pid_killed">com.android.nfc 进程 %s 已终止</string>
+    <string name="toast_nfc_restarting">com.android.nfc 正在重启</string>
+    <string name="toast_nfc_pid_restarted">com.android.nfc 进程 %s 已重启</string>
+    <string name="toast_nfc_service_refreshed">NFC 已刷新</string>
+
+    <string name="restart_app_dialog_msg">现在需要重启软件以让模块正常工作。这一流程将在后续更新被优化。</string>
+    <string name="restart_app_dialog_confirm">重启软件</string>
 </resources>
