@@ -199,40 +199,12 @@ fun StatusIndicatorBar(
             PendingAction.XposedRefresh -> stringResource(R.string.dialog_xposed_refresh_desc)
         }
 
-        // Xposed dialog includes a PMm Tool toggle
-        val currentPmm by viewModel.pmmEnabled.collectAsState()
-        var localPmm by remember(action) { mutableStateOf(currentPmm) }
-        val isXposed = action == PendingAction.XposedRefresh
-
         AlertDialog(
             onDismissRequest = { viewModel.cancelAction() },
             title       = { Text(dialogTitle) },
-            text        = {
-                Column {
-                    Text(dialogDesc)
-                    if (isXposed) {
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        Spacer(Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = stringResource(R.string.setting_pmm_title),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Switch(checked = localPmm, onCheckedChange = { localPmm = it })
-                        }
-                    }
-                }
-            },
+            text        = { Text(dialogDesc) },
             confirmButton = {
-                Button(onClick = {
-                    if (isXposed) viewModel.confirmXposedAction(localPmm)
-                    else viewModel.confirmAction()
-                }) {
+                Button(onClick = { viewModel.confirmAction() }) {
                     Text(stringResource(R.string.card_add_confirm))
                 }
             },
@@ -383,14 +355,16 @@ private fun PanelXposed(xposed: StatusDetector.XposedStatus?, pmmEnabled: Boolea
                     label  = stringResource(R.string.status_lsposed),
                     detail = xposed.provider
                 )
-                val pmmDetailRes = if (!pmmEnabled) R.string.status_rf_off
-                    else if (xposed.pmmActive) R.string.status_injected
-                    else R.string.status_not_injected
-                DetailRow(
-                    active = pmmEnabled && xposed.pmmActive,
-                    label  = stringResource(R.string.status_pmmtool),
-                    detail = stringResource(pmmDetailRes)
-                )
+                if (pmmEnabled) {
+                    DetailRow(
+                        active = xposed.pmmActive,
+                        label  = stringResource(R.string.status_pmmtool),
+                        detail = stringResource(
+                            if (xposed.pmmActive) R.string.status_injected
+                            else                  R.string.status_not_injected
+                        )
+                    )
+                }
             }
         }
     }

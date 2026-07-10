@@ -1,5 +1,6 @@
 package org.cf0x.konamiku.util
 
+import android.content.Context
 import android.nfc.NfcAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -18,6 +19,27 @@ object NfcRestart {
         data class Restarted(val oldPid: Int, val newPid: Int) : Result()
     }
 
+    /** Steps emitted by [restart] so callers can show progress toasts.
+     *  Each step is followed by a 500 ms delay before the next operation. */
+    enum class Step {
+        /** Initial PID captured (or null if not running). */
+        CAPTURE_PID,
+        /** pkill sent to com.android.nfc. */
+        KILL_PROCESS,
+        /** svc nfc disable completed. */
+        DISABLE_NFC,
+        /** svc nfc enable completed. */
+        ENABLE_NFC,
+        /** Binder caches cleared. */
+        CLEAR_CACHE,
+        /** NFC adapter reported enabled. */
+        NFC_READY,
+        /** New PID captured after restart. */
+        CHECK_PID,
+        /** Entire sequence finished — [Result] is the return value. */
+        DONE
+    }
+
     /** Gets the PID of com.android.nfc via root. Returns null if not running. */
     fun getPid(): Int? = runCatching {
         val proc = Runtime.getRuntime()
@@ -28,37 +50,63 @@ object NfcRestart {
     }.getOrNull()
 
     /**
-     * Records the current PID, runs pkill, waits, checks new PID,
-     * and returns a [Result] describing what happened.
+     * Unified NFC restart sequence — the single public method for all NFC
+     * restart needs.
+     *
+     * Steps (each followed by 500 ms delay):
+     * 1. Capture old PID           → [Step.CAPTURE_PID]
+     * 2. pkill com.android.nfc     → [Step.KILL_PROCESS]
+     * 3. svc nfc disable           → [Step.DISABLE_NFC]
+     * 4. svc nfc enable            → [Step.ENABLE_NFC]
+     * 5. Clear binder caches       → [Step.CLEAR_CACHE]
+     * 6. Wait for NFC ready        → [Step.NFC_READY]
+     * 7. Capture new PID           → [Step.CHECK_PID]
+     * 8. Return [Result]           → [Step.DONE]
+     *
+     * @param context  Application context for NfcAdapter lookup.
+     * @param onStep   Suspend callback invoked after each step; the 500 ms
+     *                 delay runs **after** this callback returns, so callers
+     *                 can emit a toast (or perform other UI) before the
+     *                 next operation begins.
+     * @return [Result] describing the outcome.
      */
-    suspend fun restart(context: android.content.Context): Result = withContext(Dispatchers.IO) {
+    suspend fun restart(
+        context: Context,
+        onStep: suspend (step: Step, oldPid: Int?, newPid: Int?) -> Unit = { _, _, _ -> }
+    ): Result = withContext(Dispatchers.IO) {
+        // 1. Capture old PID
         val oldPid = getPid()
+        onStep(Step.CAPTURE_PID, oldPid, null)
+        delay(500)
 
+        // 2. Kill the NFC process
         runCatching {
-            // pkill for immediate process death
-            Runtime.getRuntime()
-                .exec(arrayOf("su", "-c", "pkill -f com.android.nfc"))
-                .waitFor()
-
-            // Hard toggle NFC state to force full re-initialization and module loading
-            Runtime.getRuntime()
-                .exec(arrayOf("su", "-c", "svc nfc disable"))
-                .waitFor()
-
-            delay(500)
-
-            Runtime.getRuntime()
-                .exec(arrayOf("su", "-c", "svc nfc enable"))
-                .waitFor()
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "pkill -f com.android.nfc")).waitFor()
         }
+        onStep(Step.KILL_PROCESS, oldPid, null)
+        delay(500)
 
-        // Clear stale binder cache NOW so the wait loop below gets a fresh
-        // adapter instance reflecting the actual NFC state. Doing this after
-        // restart() returns (as the caller used to do) is too late — the loop
-        // would have already timed out using the dead binder.
+        // 3. Disable NFC
+        runCatching {
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "svc nfc disable")).waitFor()
+        }
+        onStep(Step.DISABLE_NFC, oldPid, null)
+        delay(500)
+
+        // 4. Enable NFC
+        runCatching {
+            Runtime.getRuntime().exec(arrayOf("su", "-c", "svc nfc enable")).waitFor()
+        }
+        onStep(Step.ENABLE_NFC, oldPid, null)
+        delay(500)
+
+        // 5. Clear stale binder cache so the wait loop below gets a fresh
+        //    adapter instance reflecting the actual NFC state.
         clearNfcFCache()
+        onStep(Step.CLEAR_CACHE, oldPid, null)
+        delay(500)
 
-        // Wait for service to be ready
+        // 6. Wait for NFC service to be ready
         var retry = 0
         while (retry < 15) {
             val adapter = runCatching { NfcAdapter.getDefaultAdapter(context) }.getOrNull()
@@ -66,17 +114,22 @@ object NfcRestart {
             delay(500)
             retry++
         }
+        onStep(Step.NFC_READY, oldPid, null)
+        delay(500)
 
-        delay(800)
-
+        // 7. Capture new PID
         val newPid = getPid()
+        onStep(Step.CHECK_PID, oldPid, newPid)
 
-        when {
-            oldPid == null                           -> Result.WasDead(newPid)
-            newPid != null && newPid == oldPid       -> Result.KillFailed(oldPid)
-            newPid == null                           -> Result.Killed(oldPid, null)
-            else                                     -> Result.Restarted(oldPid, newPid)
+        // 8. Build and return result
+        val result = when {
+            oldPid == null                     -> Result.WasDead(newPid)
+            newPid != null && newPid == oldPid -> Result.KillFailed(oldPid)
+            newPid == null                     -> Result.Killed(oldPid, null)
+            else                               -> Result.Restarted(oldPid, newPid)
         }
+        onStep(Step.DONE, oldPid, newPid)
+        result
     }
 
     /**

@@ -195,5 +195,7 @@
     <string name="restart_app_dialog_confirm">앱 다시 시작</string>
 
     <string name="setting_pmm_title">PMm 도구</string>
-    <string name="setting_pmm_desc">NFC 칩의 PMm 매개변수를 KONAMI 리더기와 호환되는 값으로 교체합니다. 아케이드 기기에서 카드 에뮬레이션에 필요합니다.</string>
+    <string name="setting_pmm_desc">NFC 칩의 PMm 매개변수를 교체합니다. 특정 카드 리더기에 필요합니다.</string>
+
+    <string name="setting_pmm_restart_msg">변경 사항을 적용하려면 NFC 서비스를 다시 시작하시겠습니까?</string>
 </resources>

@@ -195,5 +195,7 @@
     <string name="restart_app_dialog_confirm">Redémarrer l\'app</string>
 
     <string name="setting_pmm_title">Outil PMm</string>
-    <string name="setting_pmm_desc">Remplace le paramètre PMm de la puce NFC par une valeur compatible avec les lecteurs KONAMI. Nécessaire pour l\'émulation de cartes sur bornes d\'arcade.</string>
+    <string name="setting_pmm_desc">Remplace les paramètres PMm. Requis pour certains lecteurs de cartes.</string>
+
+    <string name="setting_pmm_restart_msg">Redémarrer le service NFC pour appliquer le changement ?</string>
 </resources>

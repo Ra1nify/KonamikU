@@ -93,12 +93,11 @@ import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(dataStore: AppDataStore) {
+fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
     val context         = LocalContext.current
     val scope           = rememberCoroutineScope()
     val jsonManager     = remember { JsonManager(context) }
     val snackbarState   = remember { SnackbarHostState() }
-    val statusViewModel: StatusViewModel = viewModel()
 
     var cards           by remember { mutableStateOf<List<NfcCard>>(emptyList()) }
     var expandedId      by remember { mutableStateOf<String?>(null) }

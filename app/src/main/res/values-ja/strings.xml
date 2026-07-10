@@ -195,5 +195,7 @@
     <string name="restart_app_dialog_confirm">アプリを再起動</string>
 
     <string name="setting_pmm_title">PMm ツール</string>
-    <string name="setting_pmm_desc">NFCチップのPMmパラメータをKONAMIリーダー互換の値に置き換えます。アーケード機でのカードエミュレーションに必要です。</string>
+    <string name="setting_pmm_desc">NFCチップのPMmパラメータを置き換えます。特定のカードリーダーに必要です。</string>
+
+    <string name="setting_pmm_restart_msg">変更を有効にするにはNFCサービスを再起動しますか？</string>
 </resources>

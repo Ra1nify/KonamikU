@@ -100,6 +100,7 @@ import org.cf0x.konamiku.system.UpdateChecker
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
+import org.cf0x.konamiku.util.NfcRestart
 import org.cf0x.konamiku.util.applyLocale
 
 @Composable
@@ -117,6 +118,9 @@ fun SettingScreen(dataStore: AppDataStore) {
     val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
     var devModeForce by remember { mutableStateOf(dataStore.devModeForceEmuSync) }
     var pmmEnabled by remember { mutableStateOf(dataStore.pmmEnabledSync) }
+    var showPmmRestartDialog by remember { mutableStateOf(false) }
+    var pendingPmmValue by remember { mutableStateOf(false) }
+    var showNfcRestartCompleteDialog by remember { mutableStateOf(false) }
     var isExpressive by remember { mutableStateOf(true) }
     var paletteStyle by remember { mutableStateOf(PaletteStyle.TonalSpot) }
 
@@ -258,7 +262,15 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Group 7: PMm Tool ---
         SettingGroup {
-            PmmItem(pmmEnabled = pmmEnabled, onToggle = { v -> pmmEnabled = v; scope.launch { dataStore.savePmmEnabled(v) } })
+            PmmItem(
+                pmmEnabled = pmmEnabled,
+                onToggle = { v ->
+                    if (v != pmmEnabled) {
+                        pendingPmmValue = v
+                        showPmmRestartDialog = true
+                    }
+                }
+            )
         }
 
         // --- Group 8: Debug ---
@@ -281,6 +293,77 @@ fun SettingScreen(dataStore: AppDataStore) {
         }
 
         Spacer(Modifier.height(32.dp))
+    }
+
+    // PMm restart confirmation dialog
+    if (showPmmRestartDialog) {
+        AlertDialog(
+            onDismissRequest = { showPmmRestartDialog = false },
+            title   = { Text(stringResource(R.string.setting_pmm_title)) },
+            text    = { Text(stringResource(R.string.setting_pmm_restart_msg)) },
+            confirmButton = {
+                Button(onClick = {
+                    showPmmRestartDialog = false
+                    pmmEnabled = pendingPmmValue
+                    scope.launch {
+                        dataStore.savePmmEnabled(pendingPmmValue)
+                        NfcRestart.restart(context) { step, oldPid, newPid ->
+                            withContext(Dispatchers.Main) {
+                                when (step) {
+                                    NfcRestart.Step.KILL_PROCESS -> {
+                                        if (oldPid != null) {
+                                            Toast.makeText(context, context.getString(R.string.toast_nfc_pid_killed, oldPid.toString()), Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                    NfcRestart.Step.ENABLE_NFC -> {
+                                        Toast.makeText(context, context.getString(R.string.toast_nfc_service_refreshed), Toast.LENGTH_SHORT).show()
+                                    }
+                                    NfcRestart.Step.CLEAR_CACHE -> {
+                                        Toast.makeText(context, context.getString(R.string.toast_nfc_restarting), Toast.LENGTH_SHORT).show()
+                                    }
+                                    NfcRestart.Step.DONE -> {
+                                        if (newPid != null && newPid != oldPid && oldPid != null) {
+                                            Toast.makeText(context, context.getString(R.string.toast_nfc_pid_restarted, newPid.toString()), Toast.LENGTH_SHORT).show()
+                                        }
+                                        showNfcRestartCompleteDialog = true
+                                    }
+                                    else -> {}
+                                }
+                            }
+                        }
+                    }
+                }) {
+                    Text(stringResource(R.string.card_add_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPmmRestartDialog = false }) {
+                    Text(stringResource(R.string.card_add_cancel))
+                }
+            }
+        )
+    }
+
+    // Restart-app dialog shown after NFC restart completes
+    if (showNfcRestartCompleteDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            title   = { Text(stringResource(R.string.restart_app_dialog_confirm)) },
+            text    = { Text(stringResource(R.string.restart_app_dialog_msg)) },
+            confirmButton = {
+                Button(onClick = {
+                    showNfcRestartCompleteDialog = false
+                    runCatching {
+                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        context.startActivity(intent)
+                        Runtime.getRuntime().exit(0)
+                    }
+                }) {
+                    Text(stringResource(R.string.restart_app_dialog_confirm))
+                }
+            }
+        )
     }
 }
 

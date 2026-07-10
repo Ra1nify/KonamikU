@@ -9,7 +9,6 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -124,28 +123,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     /**
-     * Confirm the Xposed refresh dialog, saving the new PMm Tool state.
-     * If the PMm state changed, also restarts NFC so the module picks up
-     * the change, and updates [XposedState.pmmActive] immediately so the
-     * status indicator reflects the intended state.
-     */
-    fun confirmXposedAction(newPmmEnabled: Boolean) {
-        _pendingAction.value = null
-        val changed = newPmmEnabled != _pmmEnabled.value
-        if (changed) {
-            viewModelScope.launch { dataStore.savePmmEnabled(newPmmEnabled) }
-            // Optimistic UI update — actual injection state will follow after restart
-            XposedState.pmmActive = newPmmEnabled
-        }
-        executeXposedRefresh()
-        if (changed) {
-            // PMm changed → full NFC restart so the module picks it up
-            deactivateActiveCard()
-            executeNfcRestart()
-        }
-    }
-
-    /**
      * Deactivates all active emulated cards: clears the active card ID from
      * DataStore, removes the foreground notification, and clears the NFC
      * binder cache so the EmuCard service picks up the fresh state.
@@ -206,53 +183,35 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun executeNfcRestart() {
-        viewModelScope.launch(Dispatchers.IO) {
-            // 1. Kill the NFC process
-            val oldPid = NfcRestart.getPid()
-            runCatching {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "pkill -f com.android.nfc")).waitFor()
-            }
-            if (oldPid != null) {
-                _toastEvent.emit(str(R.string.toast_nfc_pid_killed, oldPid.toString()))
-            }
-
-            // 2. Toggle NFC off/on consecutively (no delay between them)
-            runCatching {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "svc nfc disable")).waitFor()
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "svc nfc enable")).waitFor()
-            }
-            _toastEvent.emit(str(R.string.toast_nfc_service_refreshed))
-
-            // 3. Clear stale binder cache so the polling below gets a fresh adapter
-            NfcRestart.clearNfcFCache()
-
-            _toastEvent.emit(str(R.string.toast_nfc_restarting))
-
-            // 4. Wait for NFC service to be ready (poll with minimal wait)
-            var retry = 0
-            while (retry < 15) {
-                val adapter = runCatching { NfcAdapter.getDefaultAdapter(context) }.getOrNull()
-                if (adapter?.isEnabled == true) break
-                delay(100) // minimal yield between checks
-                retry++
-            }
-
-            // 5. Report result
-            val newPid = NfcRestart.getPid()
-            if (newPid != null && newPid != oldPid) {
-                _toastEvent.emit(str(R.string.toast_nfc_pid_restarted, newPid.toString()))
-            }
-
-            // 6. Show restart-app dialog for module changes to take effect
-            _showRestartDialog.value = true
-
-            // 7. Refresh UI
-            refreshNfc()
-            runCatching {
-                android.service.quicksettings.TileService.requestListeningState(
-                    context,
-                    ComponentName(context, org.cf0x.konamiku.system.KonamikuTileService::class.java)
-                )
+        viewModelScope.launch {
+            NfcRestart.restart(context) { step, oldPid, newPid ->
+                when (step) {
+                    NfcRestart.Step.KILL_PROCESS -> {
+                        if (oldPid != null) {
+                            _toastEvent.emit(str(R.string.toast_nfc_pid_killed, oldPid.toString()))
+                        }
+                    }
+                    NfcRestart.Step.ENABLE_NFC -> {
+                        _toastEvent.emit(str(R.string.toast_nfc_service_refreshed))
+                    }
+                    NfcRestart.Step.CLEAR_CACHE -> {
+                        _toastEvent.emit(str(R.string.toast_nfc_restarting))
+                    }
+                    NfcRestart.Step.DONE -> {
+                        if (newPid != null && newPid != oldPid && oldPid != null) {
+                            _toastEvent.emit(str(R.string.toast_nfc_pid_restarted, newPid.toString()))
+                        }
+                        _showRestartDialog.value = true
+                        refreshNfc()
+                        runCatching {
+                            android.service.quicksettings.TileService.requestListeningState(
+                                context,
+                                ComponentName(context, org.cf0x.konamiku.system.KonamikuTileService::class.java)
+                            )
+                        }
+                    }
+                    else -> { /* CAPTURE_PID, DISABLE_NFC, NFC_READY, CHECK_PID — no toast needed */ }
+                }
             }
         }
     }

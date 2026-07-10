@@ -1,6 +1,7 @@
 package org.cf0x.konamiku.ui.layout
 
 import android.annotation.SuppressLint
+import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -30,8 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -50,6 +53,7 @@ import org.cf0x.konamiku.ui.screens.MainScreen
 import org.cf0x.konamiku.ui.screens.SettingScreen
 import org.cf0x.konamiku.ui.screens.SetupScreen
 import org.cf0x.konamiku.ui.screens.ToolsScreen
+import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
@@ -60,6 +64,7 @@ fun MainLayout(
     val scope         = rememberCoroutineScope()
     val navMode       by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
     val configuration = LocalConfiguration.current
+    val statusViewModel: StatusViewModel = viewModel(LocalContext.current as ComponentActivity)
     val isWideScreen  = configuration.screenWidthDp >= 600
 
     val showBottomBar = when (navMode) {
@@ -207,7 +212,7 @@ fun MainLayout(
                         fadeOut(tween(250)) + slideOutHorizontally(tween(300)) { -40 }
                     }
                 ) {
-                    composable(Screen.Main.route)     { MainScreen(dataStore = dataStore) }
+                    composable(Screen.Main.route)     { MainScreen(dataStore = dataStore, statusViewModel = statusViewModel) }
                     composable(Screen.Tools.route)    { ToolsScreen() }
                     composable(Screen.Settings.route) { SettingScreen(dataStore = dataStore) }
                 }

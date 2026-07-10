@@ -198,5 +198,7 @@
     <string name="restart_app_dialog_confirm">Restart App</string>
 
     <string name="setting_pmm_title">PMm Tool</string>
-    <string name="setting_pmm_desc">Replaces the NFC chip\'s PMm parameter with a value compatible with KONAMI readers. Required for card emulation with arcade machines.</string>
+    <string name="setting_pmm_desc">Replaces PMm parameters. Required for certain card readers.</string>
+
+    <string name="setting_pmm_restart_msg">Restart NFC service for the change to take effect?</string>
 </resources>
