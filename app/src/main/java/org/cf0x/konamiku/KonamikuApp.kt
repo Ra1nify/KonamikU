@@ -37,7 +37,7 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         } else ""
 
         val effectiveTag = if (systemTag.isNotBlank()) {
-            val matched = AppLocale.entries.firstOrNull { systemTag.startsWith(it.tag) && it.tag.isNotBlank() }
+            val matched = AppLocale.fromSystemTag(systemTag)
             if (matched != null) runBlocking { dataStore.saveAppLocale(matched) }
             systemTag
         } else {

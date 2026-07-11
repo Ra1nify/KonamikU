@@ -60,7 +60,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -123,23 +122,6 @@ fun SettingScreen(dataStore: AppDataStore) {
     var showNfcRestartCompleteDialog by remember { mutableStateOf(false) }
     var isExpressive by remember { mutableStateOf(true) }
     var paletteStyle by remember { mutableStateOf(PaletteStyle.TonalSpot) }
-
-    // Detect system-managed locale (locked only if app locale is not set)
-    val systemLangLocked by produceState(initialValue = false) {
-        if (Build.VERSION.SDK_INT >= 33) {
-            value = runCatching {
-                val lm = context.getSystemService(android.app.LocaleManager::class.java)
-                    ?: return@runCatching false
-                val sysTags = lm.applicationLocales.toLanguageTags()
-                if (sysTags.isBlank()) {
-                    false
-                } else {
-                    val saved = dataStore.appLocale.first()
-                    saved == AppLocale.SYSTEM || saved.tag != sysTags
-                }
-            }.getOrDefault(false)
-        }
-    }
 
     LaunchedEffect(Unit) {
         navMode      = dataStore.navigationMode.first()
@@ -252,7 +234,7 @@ fun SettingScreen(dataStore: AppDataStore) {
 
         // --- Group 5: Language ---
         SettingGroup {
-            LanguageItem(dataStore, appLocale, systemLocked = systemLangLocked)
+            LanguageItem(dataStore, appLocale)
         }
 
         // --- Group 6: System ---
@@ -563,7 +545,7 @@ private fun PaletteStyleItem(current: PaletteStyle, onSelect: (PaletteStyle) -> 
 }
 
 @Composable
-private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLocked: Boolean) {
+private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
     val scope   = rememberCoroutineScope()
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
@@ -572,37 +554,26 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLo
         stringResource(it.labelRes) to it 
     }
 
-    if (systemLocked && expanded) expanded = false
-
-    val contentAlpha = if (systemLocked) 0.38f else 1f
-
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (!systemLocked) Modifier.clickable { expanded = !expanded } else Modifier),
+                .clickable { expanded = !expanded },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Language,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
             Column(Modifier.weight(1f)) {
                 Text(
                     stringResource(R.string.setting_language),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
+                    style = MaterialTheme.typography.bodyLarge
                 )
-                if (systemLocked) {
-                    Text(
-                        stringResource(R.string.setting_language_system_managed),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                    )
-                } else if (!expanded) {
+                if (!expanded) {
                     Text(
                         options.firstOrNull { it.second == appLocale }?.first ?: stringResource(R.string.setting_language_en),
                         style = MaterialTheme.typography.bodySmall,
@@ -613,13 +584,13 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale, systemLo
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
         }
 
         AnimatedVisibility(
-            visible = expanded && !systemLocked,
+            visible = expanded,
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {

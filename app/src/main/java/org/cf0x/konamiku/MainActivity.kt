@@ -13,7 +13,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
+import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
+import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.data.ColorSource
 import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.ui.layout.MainLayout
@@ -78,9 +80,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // HCE card emulation requires the NFC chip in idle/passive mode.
-        // Reader mode would force the chip into active polling, preventing
-        // the emulated card from responding to external readers.
+        if (Build.VERSION.SDK_INT >= 33) {
+            runCatching {
+                val lm = getSystemService(android.app.LocaleManager::class.java) ?: return@runCatching
+                val sysTags = lm.applicationLocales.toLanguageTags()
+                if (sysTags.isNotBlank()) {
+                    val matched = AppLocale.fromSystemTag(sysTags)
+                    if (matched != null) runBlocking { dataStore.saveAppLocale(matched) }
+                }
+            }
+        }
     }
 
     override fun onPause() {

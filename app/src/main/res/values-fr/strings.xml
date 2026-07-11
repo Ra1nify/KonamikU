@@ -28,7 +28,7 @@
     <string name="toast_card_scanned">%1$s scannée !</string>
     <string name="mode_normal">Global</string>
     <string name="mode_compat">Compat</string>
-    <string name="mode_native">Natf</string>
+    <string name="mode_native">Natif</string>
 
     <string name="notif_channel_name">Émulation de carte</string>
     <string name="notif_channel_desc">Statut d\'émulation NFC KonamikU</string>
@@ -81,7 +81,8 @@
     <string name="setting_language">Langue de l\'appli</string>
     <string name="setting_language_system">Par défaut du système</string>
     <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
+    <string name="setting_language_zh_hk">繁體中文（香港）</string>
     <string name="setting_language_ja">日本語</string>
     <string name="setting_language_ko">한국어</string>
     <string name="setting_language_fr">Français</string>
@@ -99,7 +100,7 @@
     <string name="toast_nfc_restart_failed">Échec du redémarrage du service NFC (pid:%s)</string>
     <string name="toast_nfc_restarted">Service NFC redémarré (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">Actualisation du statut du module…</string>
-    <string name="toast_mode_locked">Module inactif · Mode Natf uniquement</string>
+    <string name="toast_mode_locked">Module inactif · Mode Natif uniquement</string>
     <string name="setting_dev_force_emu">Appareil HCE-F natif</string>
     <string name="setting_dev_force_emu_desc">Déverrouille tous les modes d\'émulation sur les appareils prenant en charge HCE-F nativement.</string>
 
@@ -186,10 +187,10 @@
     <string name="dialog_nfc_restart_desc">Redémarrer le service NFC via root ?\n\nCela tuera et redémarrera com.android.nfc.</string>
     <string name="dialog_xposed_refresh_title">Actualiser LSPosed</string>
     <string name="dialog_xposed_refresh_desc">Re-vérifier l\'état du module LSPosed ?</string>
-    <string name="toast_nfc_pid_killed">com.android.nfc pid %s tué</string>
+    <string name="toast_nfc_pid_killed">com.android.nfc pid %s terminé</string>
     <string name="toast_nfc_restarting">com.android.nfc redémarre</string>
     <string name="toast_nfc_pid_restarted">com.android.nfc pid %s redémarré</string>
-    <string name="toast_nfc_service_refreshed">nfc actualisé</string>
+    <string name="toast_nfc_service_refreshed">NFC actualisé</string>
 
     <string name="restart_app_dialog_msg">L\'application doit redémarrer pour que le module fonctionne correctement. Ce processus sera optimisé dans une future mise à jour.</string>
     <string name="restart_app_dialog_confirm">Redémarrer l\'app</string>

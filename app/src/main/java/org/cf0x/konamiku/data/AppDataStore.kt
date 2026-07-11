@@ -35,6 +35,7 @@ enum class AppLocale(val tag: String, val labelRes: Int) {
     SYSTEM("", R.string.setting_language_system),
     ZH_CN("zh-CN", R.string.setting_language_zh),
     ZH_TW("zh-TW", R.string.setting_language_zh_tw),
+    ZH_HK("zh-HK", R.string.setting_language_zh_hk),
     JA("ja", R.string.setting_language_ja),
     KO("ko", R.string.setting_language_ko),
     FR("fr", R.string.setting_language_fr),
@@ -44,10 +45,25 @@ enum class AppLocale(val tag: String, val labelRes: Int) {
         SYSTEM -> java.util.Locale.getDefault()
         ZH_CN  -> java.util.Locale.CHINA
         ZH_TW  -> java.util.Locale.TAIWAN
+        ZH_HK  -> java.util.Locale("zh", "HK")
         JA     -> java.util.Locale.JAPAN
         KO     -> java.util.Locale.KOREA
         FR     -> java.util.Locale.FRANCE
         EN_US  -> java.util.Locale.US
+    }
+
+    companion object {
+        /** Match a system BCP-47 tag to the best AppLocale using Locale-level comparison. */
+        fun fromSystemTag(tag: String): AppLocale? {
+            if (tag.isBlank()) return null
+            val sysLocale = java.util.Locale.forLanguageTag(tag)
+            return entries.firstOrNull { entry ->
+                if (entry.tag.isBlank()) return@firstOrNull false
+                val e = entry.toLocale()
+                e.language == sysLocale.language &&
+                (sysLocale.country.isBlank() || e.country == sysLocale.country)
+            }
+        }
     }
 }
 

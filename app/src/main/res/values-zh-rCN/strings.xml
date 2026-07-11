@@ -76,13 +76,14 @@
     <string name="setting_palette_style_rainbow">Rainbow</string>
     <string name="setting_nfc_default">默认支付应用</string>
     <string name="setting_nfc_default_desc">点击以管理系统默认付款应用。</string>
-    <string name="status_xposed_needs_restart">模块已激活 — 请重启 NFC 相关进程以生效。</string>
+    <string name="status_xposed_needs_restart">模块已激活 — 请重启 NFC 进程以生效。</string>
 
     <string name="setting_language_system_managed">由系统设置管理</string>
     <string name="setting_language">界面语言</string>
     <string name="setting_language_system">系统默认</string>
     <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
+    <string name="setting_language_zh_hk">繁體中文（香港）</string>
     <string name="setting_language_ja">日本語</string>
     <string name="setting_language_ko">한국어</string>
     <string name="setting_language_fr">Français</string>
@@ -151,7 +152,7 @@
     <string name="setting_update_latency">测试延迟</string>
     <string name="setting_update_latency_testing">测试中...</string>
     <string name="setting_update_new_title">发现新版本</string>
-    <string name="setting_update_new_msg">KonamikU %s 已可用。打开浏览器下载？</string>
+    <string name="setting_update_new_msg">KonamikU %s 现已可用。打开浏览器下载？</string>
     <string name="setting_update_no_update">已是最新版本</string>
     <string name="setting_update_download">下载</string>
     <string name="setting_update_later">稍后</string>

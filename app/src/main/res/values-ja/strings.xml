@@ -81,7 +81,8 @@
     <string name="setting_language">アプリ言語</string>
     <string name="setting_language_system">システムデフォルト</string>
     <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
+    <string name="setting_language_zh_hk">繁體中文（香港）</string>
     <string name="setting_language_ja">日本語</string>
     <string name="setting_language_ko">한국어</string>
     <string name="setting_language_fr">Français</string>
@@ -99,7 +100,7 @@
     <string name="toast_nfc_restart_failed">NFCサービスの再起動に失敗しました (pid:%s)</string>
     <string name="toast_nfc_restarted">NFCサービスが再起動されました (pid:%1$s→%2$s)</string>
     <string name="toast_xposed_refreshing">モジュールステータスを更新中…</string>
-    <string name="toast_mode_locked">モジュール未読込 · Nativeモードのみ</string>
+    <string name="toast_mode_locked">モジュール未ロード · Nativeモードのみ</string>
     <string name="setting_dev_force_emu">ネイティブ HCE-F 端末</string>
     <string name="setting_dev_force_emu_desc">ネイティブ HCE-F 対応端末で全エミュレーションモードを有効化します。</string>
 

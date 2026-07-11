@@ -81,7 +81,8 @@
     <string name="setting_language">介面語言</string>
     <string name="setting_language_system">系統預設</string>
     <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文</string>
+    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
+    <string name="setting_language_zh_hk">繁體中文（香港）</string>
     <string name="setting_language_ja">日本語</string>
     <string name="setting_language_ko">한국어</string>
     <string name="setting_language_fr">Français</string>
@@ -120,7 +121,7 @@
     <string name="tools_err_kid_length">須正好為16位</string>
     <string name="tools_err_kid_chars">發現無效字元</string>
     <string name="tools_err_generic">轉換失敗</string>
-    <string name="greeting">冇好</string>
+    <string name="greeting">你好</string>
 
     <string name="oobe_welcome_title">歡迎使用 KonamikU</string>
     <string name="oobe_welcome_subtitle">NFC 卡片模擬工具</string>
