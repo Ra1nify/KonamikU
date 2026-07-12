@@ -60,7 +60,7 @@
     <string name="setting_color_source">主题色</string>
     <string name="setting_color_system">系统取色</string>
     <string name="setting_color_custom">自定义</string>
-    <string name="setting_theme_mode">深色模式</string>
+    <string name="setting_theme_mode">主题模式</string>
     <string name="setting_theme_system">跟随系统</string>
     <string name="setting_theme_light">浅色</string>
     <string name="setting_theme_dark">深色</string>
@@ -81,13 +81,6 @@
     <string name="setting_language_system_managed">由系统设置管理</string>
     <string name="setting_language">界面语言</string>
     <string name="setting_language_system">系统默认</string>
-    <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
-    <string name="setting_language_zh_hk">繁體中文（香港）</string>
-    <string name="setting_language_ja">日本語</string>
-    <string name="setting_language_ko">한국어</string>
-    <string name="setting_language_fr">Français</string>
-    <string name="setting_language_en">English</string>
 
     <string name="status_root">Root 状态</string>
     <string name="status_root_unknown_provider">来源未知</string>

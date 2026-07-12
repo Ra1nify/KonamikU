@@ -61,7 +61,7 @@
     <string name="setting_color_source">Theme Color</string>
     <string name="setting_color_system">System Accent</string>
     <string name="setting_color_custom">Custom Pick</string>
-    <string name="setting_theme_mode">Dark Mode Preference</string>
+    <string name="setting_theme_mode">Theme Mode</string>
     <string name="setting_theme_system">Follow System</string>
     <string name="setting_theme_light">Light</string>
     <string name="setting_theme_dark">Dark</string>
@@ -82,13 +82,13 @@
     <string name="setting_language_system_managed">Managed by system settings</string>
     <string name="setting_language">App Language</string>
     <string name="setting_language_system">System Default</string>
-    <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
-    <string name="setting_language_zh_hk">繁體中文（香港）</string>
-    <string name="setting_language_ja">日本語</string>
-    <string name="setting_language_ko">한국어</string>
-    <string name="setting_language_fr">Français</string>
-    <string name="setting_language_en">English</string>
+    <string name="setting_language_zh" translatable="false">简体中文</string>
+    <string name="setting_language_zh_tw" translatable="false">繁體中文（台灣）</string>
+    <string name="setting_language_zh_hk" translatable="false">繁體中文（香港）</string>
+    <string name="setting_language_ja" translatable="false">日本語</string>
+    <string name="setting_language_ko" translatable="false">한국어</string>
+    <string name="setting_language_fr" translatable="false">Français</string>
+    <string name="setting_language_en" translatable="false">English</string>
 
     <string name="status_root">Root Status</string>
     <string name="status_root_unknown_provider">Unknown provider</string>

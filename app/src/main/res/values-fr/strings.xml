@@ -59,7 +59,7 @@
     <string name="setting_color_source">Couleur du thème</string>
     <string name="setting_color_system">Accent système</string>
     <string name="setting_color_custom">Personnalisé</string>
-    <string name="setting_theme_mode">Préférence mode sombre</string>
+    <string name="setting_theme_mode">Mode thème</string>
     <string name="setting_theme_system">Suivre le système</string>
     <string name="setting_theme_light">Clair</string>
     <string name="setting_theme_dark">Sombre</string>
@@ -80,13 +80,6 @@
     <string name="setting_language_system_managed">Géré par les paramètres système</string>
     <string name="setting_language">Langue de l\'appli</string>
     <string name="setting_language_system">Par défaut du système</string>
-    <string name="setting_language_zh">简体中文</string>
-    <string name="setting_language_zh_tw">繁體中文（台灣）</string>
-    <string name="setting_language_zh_hk">繁體中文（香港）</string>
-    <string name="setting_language_ja">日本語</string>
-    <string name="setting_language_ko">한국어</string>
-    <string name="setting_language_fr">Français</string>
-    <string name="setting_language_en">English</string>
 
     <string name="status_root">Statut Root</string>
     <string name="status_root_unknown_provider">Fournisseur inconnu</string>
