@@ -1,0 +1,33 @@
+{
+  "version_name": "260630",
+  "date": "2026-06-19",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-initial.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260651.json",
+  "commits": [
+    {
+      "hash": "d285d9e6d52b71e49d8f3ac10225896b0161c99b",
+      "title": "better i18n, and using submodule",
+      "body": ""
+    },
+    {
+      "hash": "\ne6679c422b02e03a4a4f3939cb8eda743aa6ae20",
+      "title": "seamless lang switch & initial oobe support",
+      "body": ""
+    },
+    {
+      "hash": "\n3dff58a6cd8ceae0b9aa00d56f67aa9b7eefb13e",
+      "title": "more of oobe, and better detect",
+      "body": ""
+    },
+    {
+      "hash": "\n80c76f1fc8d194bcb887cc2caf75950a7645d5a1",
+      "title": " inital version check",
+      "body": ""
+    },
+    {
+      "hash": "\n000673b3b48811e3b50e8e969295a7c02c474967",
+      "title": "more of update check",
+      "body": ""
+    }
+  ]
+}

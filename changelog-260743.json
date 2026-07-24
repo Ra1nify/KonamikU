@@ -1,0 +1,43 @@
+{
+  "version_name": "260743",
+  "date": "2026-07-24",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260730.json",
+  "next_changelog": null,
+  "commits": [
+    {
+      "hash": "784570ebfd6b80c0bbb8380eb3c1714ccb8b9d43",
+      "title": "better logic for status bar long press",
+      "body": ""
+    },
+    {
+      "hash": "\nb5a430d98a27c96ecd608accc0ca7cc2bc532b24",
+      "title": "rename the hidden api",
+      "body": "hidden api is just Native_Support_Felica, e.g device sold in japan\n"
+    },
+    {
+      "hash": "\n1f61488840d9dafaaf2a1fd7c265c91521ded4e4",
+      "title": "decoupling pmm tools to xposed long press alert",
+      "body": ""
+    },
+    {
+      "hash": "\n58767d029801d08655698e071dff601bd8dcf5cd",
+      "title": "better pmm config",
+      "body": ""
+    },
+    {
+      "hash": "\nbe7d48a851cd8a862a0b0970fb8d9339fb9546e0",
+      "title": "better language choose logic and l10n",
+      "body": ""
+    },
+    {
+      "hash": "\n1cd46bc2d17221ee60b2981c0ea8f3ab1242759a",
+      "title": "fix i18n",
+      "body": ""
+    },
+    {
+      "hash": "\n53fe140764d04154be633359eba4094dd61c64c6",
+      "title": "new icon, and add extra emulate logic",
+      "body": ""
+    }
+  ]
+}

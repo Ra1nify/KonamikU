@@ -1,0 +1,123 @@
+{
+  "version_name": "yep-idk",
+  "date": "2026-06-17",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-test1.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-initial.json",
+  "commits": [
+    {
+      "hash": "5470455548fb7d544bd15cdd24c152736381ca81",
+      "title": "i18nify",
+      "body": ""
+    },
+    {
+      "hash": "\n9d719e00b34f335d0d3d1be4d527a41551f46678",
+      "title": "Support 02FE native",
+      "body": "inspired form https://github.com/juchan1220/eAMEMu_RN\n"
+    },
+    {
+      "hash": "\na00dc4acceeeff20bd69427baf2725559644f0af",
+      "title": "still wip",
+      "body": ""
+    },
+    {
+      "hash": "\ne0f518d5fd58c2b9ae066067eda5db1bbfea0ac9",
+      "title": "rm unused src",
+      "body": ""
+    },
+    {
+      "hash": "\nf0a9020a8544bc02f10c6aa548ff4119273c9eba",
+      "title": "support manual update, refactor converter GUI",
+      "body": ""
+    },
+    {
+      "hash": "\n3bedb8114fc490ac1286f4e8bd642980c6f235ef",
+      "title": "Finally?",
+      "body": ""
+    },
+    {
+      "hash": "\nfaf33186aa0bf71a656a7cacb345dd4054be90b2",
+      "title": "new icon, bring root detect back,more long press",
+      "body": ""
+    },
+    {
+      "hash": "\n9b3e8e07285c1748ef9257da5e0b7d83280b86b0",
+      "title": "refactor the NFC Restart and root detect",
+      "body": ""
+    },
+    {
+      "hash": "\n9ca244c345402f5bed8ca12f07f5227ba356e2b4",
+      "title": "update versioncode and xposed description",
+      "body": ""
+    },
+    {
+      "hash": "\nad86b3978f76c737a07d8f13a53741fdf4797de8",
+      "title": "fix something..",
+      "body": ""
+    },
+    {
+      "hash": "\nd8898fcf0c79c5dc2a90fb40a06291cc8bd4447f",
+      "title": "better logic when inactive",
+      "body": ""
+    },
+    {
+      "hash": "\n2c0cab85f1e4b4ce1178124e3b8b37cf0c1a9288",
+      "title": "using r8",
+      "body": ""
+    },
+    {
+      "hash": "\n23d885c0dcd675fa08156e1bade08c6ba0a9d482",
+      "title": "done?",
+      "body": ""
+    },
+    {
+      "hash": "\n853173ba6bb276e879728290a65f9b9f6226c943",
+      "title": "add switch when notified",
+      "body": ""
+    },
+    {
+      "hash": "\n8da7707d3914e4b3cb9a5d4bdb0d8cccd8c36c1d",
+      "title": "fix",
+      "body": ""
+    },
+    {
+      "hash": "\ne5408be4270add59d6feb1c642e80b01b56ffd6b",
+      "title": "betterLogic",
+      "body": ""
+    },
+    {
+      "hash": "\nc5aa30cf751fce44c4b523fa9e1de10e3b49fdb7",
+      "title": "finally revert....",
+      "body": ""
+    },
+    {
+      "hash": "\naf69f0086173fc138804d58b8bf77ae888d5e1fd",
+      "title": "refresh",
+      "body": ""
+    },
+    {
+      "hash": "\n48bf776508b8146fe4e1eb48ad27cb3b6749c482",
+      "title": "rm default nfc switch",
+      "body": ""
+    },
+    {
+      "hash": "\nba60bf4953835902f403013b5b8680427b08da01",
+      "title": "upgrade to md3e",
+      "body": ""
+    },
+    {
+      "hash": "\n54fb6cbddecc546d171601fcf76c7385b423be9b",
+      "title": "md3/md3e switch",
+      "body": ""
+    },
+    {
+      "hash": "\n9a228dbd8659ce65c8805a3c7be1fd23a99acc2a",
+      "title": "more md3/md3e",
+      "body": ""
+    },
+    {
+      "hash": "\neb385c521ac078f6a9e8df1dd4d65c8296cdd12c",
+      "title": "idk",
+      "body": ""
+    }
+  ]
+}

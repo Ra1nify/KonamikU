@@ -1,0 +1,13 @@
+{
+  "version_name": "hello",
+  "date": "2026-02-09",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-bonjour.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-test0.json",
+  "commits": [
+    {
+      "hash": null,
+      "title": null,
+      "body": null
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "version_name": "bonjour",
+  "date": "2026-05-09",
+  "previous_changelog": null,
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-hello.json",
+  "commits": [
+    {
+      "hash": "7abe6a8e117848e1bb71d5d12b0d57286701b6e1",
+      "title": "Initial commit",
+      "body": ""
+    },
+    {
+      "hash": "\nb215e4a77d37d26a97affcd18c166d0d54b6aabb",
+      "title": "via upload",
+      "body": "still wip\n"
+    },
+    {
+      "hash": "\n66949fc1d5333c6f62f8177699e32464d2e07e83",
+      "title": "support set as default payment app",
+      "body": "idk if really required, might be removed.. maybe?\n"
+    },
+    {
+      "hash": "\nf93d88dc31e3e9a333deee6d715b47b7c0818154",
+      "title": "bump a toast when scanned.",
+      "body": ""
+    },
+    {
+      "hash": "\n5d4cce85f34d70f8ff228a1cda60ffa754468acf",
+      "title": "rm unused res",
+      "body": ""
+    },
+    {
+      "hash": "\n1d7c114cbf9d13810dd133feac9665ae2171aaf3",
+      "title": "optimize via ide",
+      "body": ""
+    },
+    {
+      "hash": "\n5470455548fb7d544bd15cdd24c152736381ca81",
+      "title": "i18nify",
+      "body": ""
+    },
+    {
+      "hash": "\n9d719e00b34f335d0d3d1be4d527a41551f46678",
+      "title": "Support 02FE native",
+      "body": "inspired form https://github.com/juchan1220/eAMEMu_RN\n"
+    },
+    {
+      "hash": "\na00dc4acceeeff20bd69427baf2725559644f0af",
+      "title": "still wip",
+      "body": ""
+    },
+    {
+      "hash": "\ne0f518d5fd58c2b9ae066067eda5db1bbfea0ac9",
+      "title": "rm unused src",
+      "body": ""
+    },
+    {
+      "hash": "\nf0a9020a8544bc02f10c6aa548ff4119273c9eba",
+      "title": "support manual update, refactor converter GUI",
+      "body": ""
+    }
+  ]
+}

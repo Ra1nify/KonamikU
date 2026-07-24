@@ -1,0 +1,43 @@
+{
+  "version_name": "initial",
+  "date": "2026-06-17",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-yep-idk.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260630.json",
+  "commits": [
+    {
+      "hash": "70f42fa490693bbeb3189709312da39f40d49cc2",
+      "title": "finally nfc fixed",
+      "body": ""
+    },
+    {
+      "hash": "\nf14a84a1e83ee40c306c9dba5f38fb592093ae0b",
+      "title": "better theme",
+      "body": ""
+    },
+    {
+      "hash": "\nc722a478a77a18493cc177f15f04f740f2c82171",
+      "title": "refresh",
+      "body": ""
+    },
+    {
+      "hash": "\neac097094c3f7ef5fa2ec0479117c10a1620f62c",
+      "title": "fix an err",
+      "body": ""
+    },
+    {
+      "hash": "\n91244ccc8de4feefefaa03a1109f41b9ae844af8",
+      "title": "major update",
+      "body": ""
+    },
+    {
+      "hash": "\nde52347e4743b68ddd878008f94897615b0492b8",
+      "title": "upgrade i18n",
+      "body": ""
+    },
+    {
+      "hash": "\n225a7541fa1c10359043b23588872734858dab0c",
+      "title": "fix a minor err",
+      "body": ""
+    }
+  ]
+}

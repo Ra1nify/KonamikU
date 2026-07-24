@@ -1,0 +1,33 @@
+{
+  "version_name": "260710",
+  "date": "2026-07-03",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260651.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260722.json",
+  "commits": [
+    {
+      "hash": "8e22156914ba851e042b93da86e6d41a6565747c",
+      "title": "using absolute link to compat with xposed repo",
+      "body": ""
+    },
+    {
+      "hash": "\n6f32afac60a8bc87f7576e74a0db1e635405fc18",
+      "title": "add WAKE_LOCK, fix some err",
+      "body": "to be honest, its so awkward......\nwhen i playing maimai DX jp\n"
+    },
+    {
+      "hash": "\n8e25a38723ebadf1342ae7da780eca83d33a2c3b",
+      "title": "auto shrink",
+      "body": ""
+    },
+    {
+      "hash": "\nd044b6979d34403a611e2f4ad006d89fb30a9e59",
+      "title": "add a test feature,  for spec device works without xposed",
+      "body": ""
+    },
+    {
+      "hash": "\n708a676630d0805d68864d71667fa85184ca52f7",
+      "title": "major update",
+      "body": "0. support auto update check\n1. DataStore only now, and better logic for lang/update mode\n2. better nfc\n3. other minor fix\n4. support UnitTest(?)\n"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version_name": "260730",
+  "date": "2026-07-09",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260722.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260743.json",
+  "commits": [
+    {
+      "hash": "809d603c32df89b2a04730ae376fb6839a05c0fe",
+      "title": "upgrading to libxposed 102, using new api",
+      "body": "btw refresh m3e\n"
+    },
+    {
+      "hash": "\nb3885434b07882af689f3dec7f76c3d2c77fe556",
+      "title": "auto shrink",
+      "body": ""
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "version_name": "260722",
+  "date": "2026-07-03",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260710.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260730.json",
+  "commits": [
+    {
+      "hash": "dcea8c1eedf19a507ea0cc184ffdebdbd5546bc5",
+      "title": "FIX",
+      "body": ""
+    }
+  ]
+}

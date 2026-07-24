@@ -1,0 +1,38 @@
+{
+  "version_name": "260651",
+  "date": "2026-06-19",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260630.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260710.json",
+  "commits": [
+    {
+      "hash": "4786fbd774e35eb4d63e662e9e6f712990fd1863",
+      "title": "better update",
+      "body": ""
+    },
+    {
+      "hash": "\nfbb3d1792c55ad4505bb9c0a61a3d277c0690baf",
+      "title": "wtf...",
+      "body": "...ftw\n"
+    },
+    {
+      "hash": "\nc7f8ff616bc67e29a131cc7d035fde6aea946854",
+      "title": "harder.",
+      "body": "softer.\n"
+    },
+    {
+      "hash": "\nf5f12de5705ba004797c139649332c719a96bc51",
+      "title": "switch to info branch, update readme",
+      "body": ""
+    },
+    {
+      "hash": "\ned556a97cdf75cec8cbdd25b45249b2d455ae61b",
+      "title": "better i18n, support import/export, fix minor err",
+      "body": ""
+    },
+    {
+      "hash": "\n56b015364d58e1e830bcc11b5a9c9b8afcda5a16",
+      "title": "fix sync",
+      "body": ""
+    }
+  ]
+}

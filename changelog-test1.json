@@ -1,0 +1,23 @@
+{
+  "version_name": "test1",
+  "date": "2026-05-05",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-test0.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-yep-idk.json",
+  "commits": [
+    {
+      "hash": "f93d88dc31e3e9a333deee6d715b47b7c0818154",
+      "title": "bump a toast when scanned.",
+      "body": ""
+    },
+    {
+      "hash": "\n5d4cce85f34d70f8ff228a1cda60ffa754468acf",
+      "title": "rm unused res",
+      "body": ""
+    },
+    {
+      "hash": "\n1d7c114cbf9d13810dd133feac9665ae2171aaf3",
+      "title": "optimize via ide",
+      "body": ""
+    }
+  ]
+}

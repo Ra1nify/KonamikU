@@ -1,0 +1,18 @@
+{
+  "version_name": "test0",
+  "date": "2026-05-04",
+  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-hello.json",
+  "next_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-test1.json",
+  "commits": [
+    {
+      "hash": "b215e4a77d37d26a97affcd18c166d0d54b6aabb",
+      "title": "via upload",
+      "body": "still wip\n"
+    },
+    {
+      "hash": "\n66949fc1d5333c6f62f8177699e32464d2e07e83",
+      "title": "support set as default payment app",
+      "body": "idk if really required, might be removed.. maybe?\n"
+    }
+  ]
+}
