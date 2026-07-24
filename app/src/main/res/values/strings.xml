@@ -79,6 +79,10 @@
     <string name="setting_nfc_default_desc">Manage which app handles standard NFC payments.</string>
     <string name="status_xposed_needs_restart">Module active — restart NFC process to apply.</string>
 
+    <string name="setting_background_emu">Background Emulation</string>
+    <string name="setting_background_emu_desc">Keep simulating when app is in background or screen is off. Disable to simulate only while the app is open.</string>
+    <string name="setting_background_emu_warn">May cause NFC service conflicts with other apps. Only enable if you need lock-screen emulation.</string>
+
     <string name="setting_language_system_managed">Managed by system settings</string>
     <string name="setting_language">App Language</string>
     <string name="setting_language_system">System Default</string>

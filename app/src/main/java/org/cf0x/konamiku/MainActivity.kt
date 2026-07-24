@@ -1,8 +1,10 @@
 package org.cf0x.konamiku
 
+import android.content.ComponentName
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.cardemulation.NfcFCardEmulation
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -13,11 +15,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.data.ColorSource
 import org.cf0x.konamiku.data.ThemeMode
+import org.cf0x.konamiku.notification.LiveUpdateManager
 import org.cf0x.konamiku.ui.layout.MainLayout
 import org.cf0x.konamiku.ui.theme.KonamikuTheme
 
@@ -94,6 +98,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
+        // 每次 onPause 实时读取开关值，确保用户刚改的设置即时生效
+        if (!runBlocking { dataStore.backgroundEmulation.first() }) {
+            stopEmulation()
+        }
         runCatching { nfcAdapter?.disableReaderMode(this) }
+    }
+
+    /** 同 MainScreen.deactivateCard()：断路由 + 清激活状态 + 取消通知 */
+    private fun stopEmulation() {
+        val activeId = runBlocking { dataStore.activeCardId.first() } ?: return
+
+        // 1. 禁用 HCE-F 路由
+        runCatching {
+            nfcAdapter?.let { NfcFCardEmulation.getInstance(it) }?.disableService(this)
+        }
+
+        // 2. 清除激活状态（MainScreen 会响应并更新 UI）
+        runBlocking { dataStore.saveActiveCardId(null) }
+
+        // 3. 取消通知栏
+        LiveUpdateManager.cancel(this)
     }
 }

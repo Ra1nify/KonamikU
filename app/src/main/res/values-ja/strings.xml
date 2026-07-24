@@ -192,4 +192,8 @@
     <string name="setting_pmm_desc">NFCチップのPMmパラメータを置き換えます。特定のカードリーダーに必要です。</string>
 
     <string name="setting_pmm_restart_msg">変更を有効にするにはNFCサービスを再起動しますか？</string>
+
+    <string name="setting_background_emu">バックグラウンドエミュレーション</string>
+    <string name="setting_background_emu_desc">バックグラウンドやロック画面でもカードをエミュレートし続けます。オフにするとアプリ起動中のみシミュレートします。</string>
+    <string name="setting_background_emu_warn">他のNFCアプリと競合する可能性があります。ロック画面でのエミュレーションが必要な場合のみ有効にしてください。</string>
 </resources>

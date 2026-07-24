@@ -192,4 +192,8 @@
     <string name="setting_pmm_desc">NFC 칩의 PMm 매개변수를 교체합니다. 특정 카드 리더기에 필요합니다.</string>
 
     <string name="setting_pmm_restart_msg">변경 사항을 적용하려면 NFC 서비스를 다시 시작하시겠습니까?</string>
+
+    <string name="setting_background_emu">백그라운드 에뮬레이션</string>
+    <string name="setting_background_emu_desc">백그라운드나 잠금 화면에서도 카드 에뮬레이션을 계속합니다. 끄면 앱이 실행 중일 때만 시뮬레이션합니다.</string>
+    <string name="setting_background_emu_warn">다른 NFC 앱과 서비스 충돌이 발생할 수 있습니다. 잠금 화면 에뮬레이션이 필요한 경우에만 켜십시오.</string>
 </resources>

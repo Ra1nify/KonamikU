@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Architecture
 import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Language
@@ -117,6 +118,7 @@ fun SettingScreen(dataStore: AppDataStore) {
     val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
     var devModeForce by remember { mutableStateOf(dataStore.devModeForceEmuSync) }
     var pmmEnabled by remember { mutableStateOf(dataStore.pmmEnabledSync) }
+    var backgroundEmu by remember { mutableStateOf(false) }
     var showPmmRestartDialog by remember { mutableStateOf(false) }
     var pendingPmmValue by remember { mutableStateOf(false) }
     var showNfcRestartCompleteDialog by remember { mutableStateOf(false) }
@@ -130,6 +132,7 @@ fun SettingScreen(dataStore: AppDataStore) {
         savedColor   = dataStore.presetColor.first()
         devModeForce = dataStore.devModeForceEmu.first()
         pmmEnabled = dataStore.pmmEnabled.first()
+        backgroundEmu = dataStore.backgroundEmulation.first()
         isExpressive = dataStore.themeExpressive.first()
         paletteStyle = dataStore.paletteStyle.first()
         loaded       = true
@@ -242,7 +245,18 @@ fun SettingScreen(dataStore: AppDataStore) {
             NfcSettingsItem(context)
         }
 
-        // --- Group 7: PMm Tool ---
+        // --- Group 7: Emulation Scope ---
+        SettingGroup {
+            BackgroundEmuItem(
+                backgroundEmu = backgroundEmu,
+                onToggle = { v ->
+                    backgroundEmu = v
+                    scope.launch { dataStore.saveBackgroundEmulation(v) }
+                }
+            )
+        }
+
+        // --- Group 8: PMm Tool ---
         SettingGroup {
             PmmItem(
                 pmmEnabled = pmmEnabled,
@@ -255,7 +269,7 @@ fun SettingScreen(dataStore: AppDataStore) {
             )
         }
 
-        // --- Group 8: Debug ---
+        // --- Group 9: Debug ---
         SettingGroup {
             DebugSection(
                 dataStore = dataStore,
@@ -264,12 +278,12 @@ fun SettingScreen(dataStore: AppDataStore) {
             )
         }
 
-        // --- Group 8: Export / Import ---
+        // --- Group 10: Export / Import ---
         SettingGroup {
             ExportImportSection(context)
         }
 
-        // --- Group 9: Update ---
+        // --- Group 11: Update ---
         SettingGroup {
             UpdateSection(dataStore = dataStore, context = context, scope = scope)
         }
@@ -415,14 +429,14 @@ private fun AboutItem(context: android.content.Context) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Surface(
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(68.dp),
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Icon(
-                        painter = painterResource(R.mipmap.ic_launcher_round),
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.padding(6.dp)
+                        modifier = Modifier.padding(0.dp)
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1167,7 +1181,7 @@ private fun OobeRerunItem(dataStore: AppDataStore) {
             onDismissRequest = { showDialog = false },
             icon = {
                 Icon(
-                    painter = painterResource(R.mipmap.ic_launcher_round),
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
                     contentDescription = null,
                     modifier = Modifier.size(32.dp)
                 )
@@ -1272,7 +1286,7 @@ private fun DevModeItem(devMode: Boolean, onToggle: (Boolean) -> Unit) {
 private fun PmmItem(pmmEnabled: Boolean, onToggle: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            imageVector = Icons.Outlined.Architecture,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(20.dp)
@@ -1282,6 +1296,37 @@ private fun PmmItem(pmmEnabled: Boolean, onToggle: (Boolean) -> Unit) {
             Text(stringResource(R.string.setting_pmm_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Switch(checked = pmmEnabled, onCheckedChange = onToggle)
+    }
+}
+
+@Composable
+private fun BackgroundEmuItem(backgroundEmu: Boolean, onToggle: (Boolean) -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AccountBalanceWallet,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.setting_background_emu), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.setting_background_emu_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+            Switch(checked = backgroundEmu, onCheckedChange = onToggle)
+        }
+        if (backgroundEmu) {
+            Text(
+                stringResource(R.string.setting_background_emu_warn),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 30.dp, top = 4.dp)
+            )
+        }
     }
 }
 

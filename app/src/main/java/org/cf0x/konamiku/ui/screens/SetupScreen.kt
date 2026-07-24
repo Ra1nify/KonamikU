@@ -255,7 +255,7 @@ private fun WelcomePage(greetings: List<Pair<AppLocale, String>>) {
             color = MaterialTheme.colorScheme.primaryContainer
         ) {
             Icon(
-                painter = painterResource(R.mipmap.ic_launcher_round),
+                painter = painterResource(R.drawable.ic_launcher_foreground),
                 contentDescription = null,
                 modifier = Modifier.padding(20.dp),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -550,7 +550,7 @@ private fun FinishPage(visible: Boolean, effectiveLocale: AppLocale?) {
             color = MaterialTheme.colorScheme.primary
         ) {
             Icon(
-                painter = painterResource(R.mipmap.ic_launcher_round),
+                painter = painterResource(R.drawable.ic_launcher_foreground),
                 contentDescription = null,
                 modifier = Modifier.padding(24.dp),
                 tint = MaterialTheme.colorScheme.onPrimary

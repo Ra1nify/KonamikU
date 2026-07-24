@@ -73,6 +73,8 @@ class AppDataStore(private val context: Context) {
         private set
     var pmmEnabledSync = true
         private set
+    var backgroundEmulationSync = false
+        private set
 
     private object Keys {
         val NAV_MODE           = stringPreferencesKey("navigation_mode")
@@ -93,6 +95,7 @@ class AppDataStore(private val context: Context) {
         val UPDATE_LAST_CHECK  = longPreferencesKey("update_last_check")
         val UPDATE_INTERVAL    = stringPreferencesKey("update_interval")
         val UPDATE_MODE        = stringPreferencesKey("update_mode")
+        val BACKGROUND_EMU     = booleanPreferencesKey("background_emu")
     }
 
     val navigationMode: Flow<NavigationMode> = context.dataStore.data.map { p ->
@@ -167,6 +170,8 @@ class AppDataStore(private val context: Context) {
             .also { if (it == UpdateMode.GITHUB && p[Keys.UPDATE_MODE] != null && p[Keys.UPDATE_MODE] != UpdateMode.GITHUB.name) Log.w("AppDataStore", "Unknown UPDATE_MODE: ${p[Keys.UPDATE_MODE]}") }
     }
 
+    val backgroundEmulation: Flow<Boolean> = context.dataStore.data.map { it[Keys.BACKGROUND_EMU] ?: false }
+
     suspend fun saveNavigationMode(m: NavigationMode) = context.dataStore.edit { it[Keys.NAV_MODE] = m.name }
     suspend fun saveThemeMode(m: ThemeMode) = context.dataStore.edit { it[Keys.THEME_MODE] = m.name }
     suspend fun saveColorSource(s: ColorSource) = context.dataStore.edit { it[Keys.COLOR_SOURCE] = s.name }
@@ -202,4 +207,9 @@ class AppDataStore(private val context: Context) {
     suspend fun saveUpdateLastCheck(v: Long) = context.dataStore.edit { it[Keys.UPDATE_LAST_CHECK] = v }
     suspend fun saveUpdateInterval(v: UpdateInterval) = context.dataStore.edit { it[Keys.UPDATE_INTERVAL] = v.name }
     suspend fun saveUpdateMode(v: UpdateMode) = context.dataStore.edit { it[Keys.UPDATE_MODE] = v.name }
+
+    suspend fun saveBackgroundEmulation(v: Boolean) = context.dataStore.edit {
+        it[Keys.BACKGROUND_EMU] = v
+        backgroundEmulationSync = v
+    }
 }

@@ -107,6 +107,7 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
     val activeCardId    by dataStore.activeCardId.collectAsState(initial = null)
     val emuMode         by dataStore.emuMode.collectAsState(initial = EmuMode.NORMAL)
     val devModeForceEmu by dataStore.devModeForceEmu.collectAsState(initial = false)
+    val backgroundEmu by dataStore.backgroundEmulation.collectAsState(initial = false)
 
     val xposedState  by XposedState.activationStateFlow.collectAsState()
     val pmmActive    by XposedState.pmmActiveFlow.collectAsState()
@@ -161,14 +162,16 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
     LaunchedEffect(emuMode, activeCardId) {
         if (activeCardId != null) {
             val card = cards.find { it.id == activeCardId } ?: return@LaunchedEffect
-            LiveUpdateManager.postActive(context, card.name, card.emuMode)
+            if (backgroundEmu) {
+                LiveUpdateManager.postActive(context, card.name, card.emuMode)
+            }
         }
     }
 
     // Auto-activate from QS tile / external intent
     fun activateCard(card: NfcCard) {
         scope.launch {
-            if (Build.VERSION.SDK_INT >= 33 &&
+            if (backgroundEmu && Build.VERSION.SDK_INT >= 33 &&
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
                 notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -180,7 +183,9 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
             val activity = context as? ComponentActivity
             if (activity == null) {
                 dataStore.saveActiveCardId(card.id)
-                LiveUpdateManager.postActive(context, card.name, mode)
+                if (backgroundEmu) {
+                    LiveUpdateManager.postActive(context, card.name, mode)
+                }
                 return@launch
             }
             runCatching {
@@ -208,7 +213,9 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
                 }
             }
             dataStore.saveActiveCardId(card.id)
-            LiveUpdateManager.postActive(context, card.name, mode)
+            if (backgroundEmu) {
+                LiveUpdateManager.postActive(context, card.name, mode)
+            }
         }
     }
 

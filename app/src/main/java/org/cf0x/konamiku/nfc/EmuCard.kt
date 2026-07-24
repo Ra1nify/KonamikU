@@ -3,8 +3,6 @@ package org.cf0x.konamiku.nfc
 import android.content.Intent
 import android.nfc.cardemulation.HostNfcFService
 import android.os.Bundle
-import android.os.PowerManager
-import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -19,35 +17,26 @@ class EmuCard : HostNfcFService() {
         const val EXTRA_AUTO_ACTIVATE = "org.cf0x.konamiku.EXTRA_AUTO_ACTIVATE"
         const val EXTRA_AUTO_MODE     = "org.cf0x.konamiku.EXTRA_AUTO_MODE"
 
-        private const val WAKE_LOCK_TAG    = "KonamikU::EmuCard"
-        private const val WAKE_LOCK_TIMEOUT_MS = 10 * 60 * 1000L
+        /** Toggled by MainActivity to restrict emulation to foreground only. */
+        @Volatile
+        var foregroundEnabled = true
     }
 
     private var felicaCard: FelicaCard? = null
-    private var initFailed = false
-
-    /** Whether we've attempted card initialization since service start. */
-    private var initAttempted = false
-
-    private lateinit var wakeLock: PowerManager.WakeLock
-    private var lastPacketElapsedMs: Long = 0L
 
     override fun onCreate() {
         super.onCreate()
-        val pm = getSystemService(PowerManager::class.java)
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
-        acquireWakeLock()
+        felicaCard = tryInitCard()
     }
 
     override fun processNfcFPacket(commandPacket: ByteArray, extras: Bundle?): ByteArray? {
-        // Lazy init: initialize card on first packet instead of blocking onCreate
-        if (!initAttempted) {
-            initAttempted = true
-            felicaCard = tryInitCard()
-            initFailed = felicaCard == null
+        val card = felicaCard ?: return null
+
+        // Foreground-only gate: return null so system handles it (or drops it)
+        if (!foregroundEnabled) {
+            return null
         }
 
-        val card = felicaCard ?: return null
         // NATIVE mode: pass through to the real NFC controller
         if (card.emuMode == EmuMode.NATIVE) {
             return null
@@ -59,9 +48,6 @@ class EmuCard : HostNfcFService() {
             return null
         }
 
-        // Refresh wake lock on each active packet
-        refreshWakeLock()
-
         return when (commandPacket[1].toInt() and 0xFF) {
             0x06 -> handleRead(commandPacket)
             0x08 -> handleWrite(commandPacket)
@@ -69,7 +55,7 @@ class EmuCard : HostNfcFService() {
         }
     }
 
-    // ── Card init (lazy, runs on the calling thread) ──
+    // ── Card init ──
 
     private fun tryInitCard(): FelicaCard? = runCatching {
         val active = runBlocking(Dispatchers.IO) {
@@ -83,25 +69,6 @@ class EmuCard : HostNfcFService() {
     }.getOrElse { e ->
         Log.e(TAG, "Failed to init emulation card: ${e.message}")
         null
-    }
-
-    // ── Wake lock management ──
-
-    private fun acquireWakeLock() {
-        if (!::wakeLock.isInitialized) return
-        runCatching {
-            wakeLock.acquire(WAKE_LOCK_TIMEOUT_MS)
-        }.onFailure { Log.w(TAG, "WakeLock acquire failed: ${it.message}") }
-    }
-
-    private fun refreshWakeLock() {
-        if (!::wakeLock.isInitialized) return
-        val now = SystemClock.elapsedRealtime()
-        // Only refresh if more than 30s have passed to avoid excessive calls
-        if (now - lastPacketElapsedMs > 30_000L) {
-            acquireWakeLock()
-            lastPacketElapsedMs = now
-        }
     }
 
     // ── FeliCa command handlers ──
@@ -168,12 +135,4 @@ class EmuCard : HostNfcFService() {
     override fun onDeactivated(reason: Int) {
         Log.d(TAG, "onDeactivated reason=$reason")
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (::wakeLock.isInitialized && wakeLock.isHeld) {
-            runCatching { wakeLock.release() }
-        }
-    }
 }
-

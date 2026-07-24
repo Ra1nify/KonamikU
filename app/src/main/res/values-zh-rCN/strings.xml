@@ -193,4 +193,8 @@
     <string name="setting_pmm_desc">替换PMm参数，对于某些读卡器是必需项</string>
 
     <string name="setting_pmm_restart_msg">需要重启NFC服务以生效</string>
+
+    <string name="setting_background_emu">后台模拟</string>
+    <string name="setting_background_emu_desc">允许在后台或锁屏时继续模拟卡片。关闭后仅在前台运行时模拟。</string>
+    <string name="setting_background_emu_warn">可能与其他 NFC 应用产生服务冲突。仅在需要锁屏模拟时开启。</string>
 </resources>

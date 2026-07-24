@@ -192,4 +192,8 @@
     <string name="setting_pmm_desc">Remplace les paramètres PMm. Requis pour certains lecteurs de cartes.</string>
 
     <string name="setting_pmm_restart_msg">Redémarrer le service NFC pour appliquer le changement ?</string>
+
+    <string name="setting_background_emu">Émulation en arrière-plan</string>
+    <string name="setting_background_emu_desc">Continuer l\'émulation en arrière-plan ou écran verrouillé. Désactiver pour n\'émuler que lorsque l\'application est ouverte.</string>
+    <string name="setting_background_emu_warn">Peut causer des conflits avec d\'autres applications NFC. N\'activer que si l\'émulation sur écran verrouillé est nécessaire.</string>
 </resources>

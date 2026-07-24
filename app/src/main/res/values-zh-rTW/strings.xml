@@ -192,4 +192,8 @@
     <string name="setting_pmm_desc">替換PMm參數，對於某些讀卡器是必需項</string>
 
     <string name="setting_pmm_restart_msg">需要重新啟動NFC服務以生效</string>
+
+    <string name="setting_background_emu">背景模擬</string>
+    <string name="setting_background_emu_desc">允許在背景或鎖屏時繼續模擬卡片。關閉後僅在前臺運行時模擬。</string>
+    <string name="setting_background_emu_warn">可能與其他 NFC 應用產生服務衝突。僅在需要鎖屏模擬時開啟。</string>
 </resources>
