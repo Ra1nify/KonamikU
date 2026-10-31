@@ -710,22 +710,23 @@ private fun DebugSection(
 // ────── Update section ──────
 
 /**
- * Maps a structured update failure to a user-facing message.
+ * Pre-resolved error messages, one per [UpdateFailure].
  *
- * The point is that the user can tell "my network" from "the server is broken"
- * — telling them "network error" for a malformed manifest sends them chasing
- * a problem they cannot fix.
+ * Built inside composition because `stringResource` is only callable from a
+ * @Composable — the update check runs in a coroutine, where it cannot be
+ * invoked. Looking the message up by enum keeps the mapping in one place.
  */
 @Composable
-private fun updateErrorMessage(kind: UpdateFailure?): String = when (kind) {
-    UpdateFailure.NO_URL    -> stringResource(R.string.setting_update_err_nourl)
-    UpdateFailure.NETWORK   -> stringResource(R.string.setting_update_err_network)
-    UpdateFailure.BLOCKED   -> stringResource(R.string.setting_update_err_blocked)
-    UpdateFailure.NOT_FOUND -> stringResource(R.string.setting_update_err_not_found)
-    UpdateFailure.MALFORMED,
-    UpdateFailure.INVALID   -> stringResource(R.string.setting_update_err_invalid)
-    UpdateFailure.HTTP, null -> stringResource(R.string.setting_update_err_network)
-}
+private fun updateErrorMessages(): Map<UpdateFailure?, String> = mapOf(
+    UpdateFailure.NO_URL     to stringResource(R.string.setting_update_err_nourl),
+    UpdateFailure.NETWORK    to stringResource(R.string.setting_update_err_network),
+    UpdateFailure.BLOCKED    to stringResource(R.string.setting_update_err_blocked),
+    UpdateFailure.NOT_FOUND  to stringResource(R.string.setting_update_err_not_found),
+    UpdateFailure.MALFORMED  to stringResource(R.string.setting_update_err_invalid),
+    UpdateFailure.INVALID    to stringResource(R.string.setting_update_err_invalid),
+    UpdateFailure.HTTP       to stringResource(R.string.setting_update_err_network),
+    null                     to stringResource(R.string.setting_update_err_network)
+)
 
 @Composable
 private fun UpdateSection(
@@ -740,6 +741,9 @@ private fun UpdateSection(
     var resultUrl by remember { mutableStateOf("") }
     var resultIsError by remember { mutableStateOf(false) }
     var checking by remember { mutableStateOf(false) }
+
+    // Resolved here (composition scope) so the coroutine below can read it.
+    val errorMessages = updateErrorMessages()
 
     val customBase by dataStore.updateCustomBase.collectAsState(initial = "")
     val githubBase by dataStore.updateGithubBase.collectAsState(initial = "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/update.json")
@@ -931,7 +935,8 @@ private fun UpdateSection(
                             .changelogMirrorPrefix
                         if (state.errorKind != null) {
                             resultIsError = true
-                            resultMsg = updateErrorMessage(state.errorKind)
+                            resultMsg = errorMessages[state.errorKind]
+                                ?: context.getString(R.string.setting_update_err_network)
                             resultUrl = ""
                             // Never leave a stale changelog on screen after a
                             // failure — it reads as "everything is fine".
