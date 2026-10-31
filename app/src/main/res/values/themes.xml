@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Konamiku" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      Application theme. Inherits AppCompat because Theme.SplashScreen (and
+      any AppCompat-dependent widget) requires an AppCompat parent.
+    -->
+    <style name="Theme.Konamiku" parent="Theme.AppCompat.DayNight.NoActionBar" />
+
+    <!--
+      Launch theme, swapped for Theme.Konamiku by installSplashScreen().
+
+      On Android 12+ the platform reads the windowSplashScreen* attributes
+      directly. Below 12 the same style is inflated by core-splashscreen's
+      compat implementation, which follows the same attribute set but renders
+      through a plain themed window (see values-v31 for the only divergence:
+      the icon mask).
+
+      The background matches the adaptive-icon background so there is no
+      visible colour break between launcher, splash, and app.
+    -->
+    <style name="Theme.Konamiku.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
+        <!-- Below 12 this tints the icon's circular backdrop; on 12+ it is ignored. -->
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.Konamiku</item>
+    </style>
+
 </resources>

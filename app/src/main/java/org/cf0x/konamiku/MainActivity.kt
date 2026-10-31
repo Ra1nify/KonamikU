@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -31,8 +32,17 @@ class MainActivity : ComponentActivity() {
     private var nfcAdapter: NfcAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Installed before super.onCreate: it swaps in Theme.Konamiku via
+        // postSplashScreenTheme once the splash is dismissed.
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Keep the splash until the window has laid out, so a cold start never
+        // flashes a blank frame between the splash icon and the Compose UI.
+        var firstFrameDrawn = false
+        splash.setKeepOnScreenCondition { !firstFrameDrawn }
+        window.decorView.post { firstFrameDrawn = true }
 
         dataStore    = AppDataStore(applicationContext)
         nfcAdapter   = NfcAdapter.getDefaultAdapter(this)

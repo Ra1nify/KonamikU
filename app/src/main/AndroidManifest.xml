@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- In-app update: install the downloaded APK via PackageInstaller. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <uses-feature android:name="android.hardware.nfc" android:required="true" />
     <uses-feature android:name="android.hardware.nfc.hcef" android:required="true" />
@@ -27,6 +31,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:configChanges="locale|layoutDirection|screenLayout"
+            android:theme="@style/Theme.Konamiku.Starting"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -93,6 +98,21 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="org.cf0x.konamiku.ACTION_NFC_HOOKED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Foreground download + install of the update APK -->
+        <service
+            android:name=".system.UpdateDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Receives the PackageInstaller commit result -->
+        <receiver
+            android:name=".system.UpdateInstallReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.cf0x.konamiku.ACTION_INSTALL_RESULT" />
             </intent-filter>
         </receiver>
 

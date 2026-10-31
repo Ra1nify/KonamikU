@@ -170,6 +170,20 @@
     <string name="setting_update_err_not_found">Update information not found. The server has not published it yet.</string>
     <string name="setting_update_err_invalid">The update information is malformed. This is a server-side problem, please report it.</string>
     <string name="setting_update_err_nourl">No update URL configured.</string>
+    <string name="update_title">KonamikU update</string>
+    <string name="update_downloading">Downloading… %1$d%%</string>
+    <string name="update_downloading_retry">Mirror unavailable, retrying direct… %1$d%%</string>
+    <string name="update_installing">Installing…</string>
+    <string name="update_cancel">Cancel</string>
+    <string name="update_retry">Retry</string>
+    <string name="update_open_browser">Open in browser</string>
+    <string name="update_dismiss">Dismiss</string>    <string name="update_install_failed">Update failed</string>
+    <string name="update_install_failed_desc">The package could not be installed.</string>
+        <string name="update_err_timeout">Download stalled for 30 seconds. Switch the update source, or open the page in a browser.</string>
+<string name="update_err_download">Download failed. Check your network or switch the update source.</string>
+    <string name="update_err_permission">Allow KonamikU to install unknown apps, then try again.</string>
+    <string name="update_err_install">Installation was rejected by the system.</string>
+    <string name="notif_channel_update">App updates</string>
     <string name="setting_update_interval_off">Off</string>
     <string name="setting_update_interval_30min">30 minutes</string>
     <string name="setting_update_interval_1h">1 hour</string>

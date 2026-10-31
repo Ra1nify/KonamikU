@@ -153,7 +153,20 @@
     <string name="setting_update_err_blocked">更新來源拒絕了請求（限流），請稍後重試或切換更新來源。</string>
     <string name="setting_update_err_not_found">找不到更新資訊，伺服器端尚未發布。</string>
     <string name="setting_update_err_invalid">更新資訊格式錯誤，這是伺服器端問題，請回報。</string>
-    <string name="setting_update_err_nourl">尚未設定更新位址。</string><string name="setting_update_interval_off">關閉</string>
+    <string name="setting_update_err_nourl">尚未設定更新位址。</string>    <string name="update_title">KonamikU 更新</string>
+    <string name="update_downloading">正在下載… %1$d%%</string>
+    <string name="update_downloading_retry">鏡像不可用，正在直連重試… %1$d%%</string>
+    <string name="update_installing">正在安裝…</string>
+    <string name="update_cancel">取消</string>
+    <string name="update_retry">重試</string>
+    <string name="update_open_browser">瀏覽器開啟</string>
+    <string name="update_dismiss">關閉</string>    <string name="update_install_failed">更新失敗</string>
+    <string name="update_install_failed_desc">無法安裝該安裝包。</string>
+        <string name="update_err_timeout">下載已 30 秒無進展。可切換更新來源，或改用瀏覽器開啟。</string>
+<string name="update_err_download">下載失敗，請檢查網路或切換更新來源。</string>
+    <string name="update_err_permission">請允許 KonamikU 安裝未知來源應用後重試。</string>
+    <string name="update_err_install">系統拒絕了安裝。</string>
+    <string name="notif_channel_update">應用更新</string><string name="setting_update_interval_off">關閉</string>
     <string name="setting_update_interval_30min">30 分鐘</string>
     <string name="setting_update_interval_1h">1 小時</string>
     <string name="setting_update_interval_2h">2 小時</string>

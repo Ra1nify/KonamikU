@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Splash icon for the pre-Android-12 compat path.
+
+  The splash API masks `windowSplashScreenAnimatedIcon` into a 2/3-sized
+  circle inscribed in the 108dp viewport, so the adaptive icon's foreground
+  (which fills the full canvas) would be clipped. Insets are applied here
+  instead so the artwork keeps its intended margins on both paths.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <inset
+            android:drawable="@drawable/ic_launcher_foreground"
+            android:inset="18%" />
+    </item>
+</layer-list>

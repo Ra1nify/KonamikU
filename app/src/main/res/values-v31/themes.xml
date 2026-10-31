@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Android 12+ override.
+
+      A style re-declared in a qualified folder replaces the base definition
+      outright (there is no inheritance across folders), so the parent and the
+      unchanged attributes are repeated here.
+
+      The platform splash masks its icon to a circle of two-thirds the window
+      size. ic_splash_icon already carries that margin (18% inset), and this
+      artwork is itself circular — putting a circular backdrop behind a
+      circular icon produces a visible halo, so the backdrop is suppressed.
+    -->
+    <style name="Theme.Konamiku.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="postSplashScreenTheme">@style/Theme.Konamiku</item>
+    </style>
+
+</resources>

@@ -69,6 +69,25 @@ object UpdateManager {
         /** Prefix that must be applied to absolute changelog URLs, or "" for none. */
         val changelogMirrorPrefix: String
             get() = if (customUrl.isBlank() && mode == UpdateMode.PROXY) mirrorPrefix else ""
+
+        /**
+         * The URL a download should start from, given the manifest's
+         * `download_url`.
+         *
+         * Mirrors are applied on the client (the manifest stays minimal), but
+         * a custom URL means the user runs their own server, so we never
+         * wrap it.
+         */
+        fun resolveDownloadUrl(downloadUrl: String): String {
+            val direct = downloadUrl.trim()
+            if (direct.isBlank()) return direct
+            val prefix = changelogMirrorPrefix
+            return if (prefix.isBlank()) direct
+                   else "${prefix.trimEnd('/')}/${direct.trimStart('/')}"
+        }
+
+        /** The unmirrored URL, used as a one-shot fallback when the mirror fails. */
+        fun directDownloadUrl(downloadUrl: String): String = downloadUrl.trim()
     }
 
     /**

@@ -98,6 +98,8 @@ import org.cf0x.konamiku.data.UpdateInterval
 import org.cf0x.konamiku.data.UpdateFailure
 import org.cf0x.konamiku.data.UpdateMode
 import org.cf0x.konamiku.system.UpdateChecker
+import org.cf0x.konamiku.system.UpdateInstaller
+import org.cf0x.konamiku.system.UpdateDownloadService
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
 import org.cf0x.konamiku.ui.components.SegmentSwitch
@@ -745,6 +747,11 @@ private fun UpdateSection(
     // Resolved here (composition scope) so the coroutine below can read it.
     val errorMessages = updateErrorMessages()
 
+    // Live download state published by UpdateDownloadService.
+    val downloadState by UpdateDownloadService.state.collectAsState()
+    // Remembered so "retry" can rebuild the same request after a failure.
+    var lastDownload by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+
     val customBase by dataStore.updateCustomBase.collectAsState(initial = "")
     val githubBase by dataStore.updateGithubBase.collectAsState(initial = "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/update.json")
     val mirrorBase by dataStore.updateMirrorBase.collectAsState(initial = "https://gh-proxy.com/")
@@ -769,6 +776,77 @@ private fun UpdateSection(
         UpdateInterval.DAY_3  to stringResource(R.string.setting_update_interval_3d),
         UpdateInterval.DAY_7  to stringResource(R.string.setting_update_interval_7d),
     )
+
+    // Download progress: shown while the foreground service transfers.
+    if (downloadState.phase == UpdateDownloadService.Phase.DOWNLOADING) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.update_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.update_downloading, downloadState.percent))
+                    Spacer(Modifier.height(12.dp))
+                    LinearProgressIndicator(
+                        progress = { downloadState.percent / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { UpdateDownloadService.cancel(context) }) {
+                    Text(stringResource(R.string.update_cancel))
+                }
+            }
+        )
+    } else if (downloadState.phase == UpdateDownloadService.Phase.INSTALLING) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.update_title)) },
+            text = { Text(stringResource(R.string.update_installing)) },
+            confirmButton = {
+                TextButton(onClick = { UpdateDownloadService.cancel(context) }) {
+                    Text(stringResource(R.string.update_cancel))
+                }
+            }
+        )
+    }
+
+    // Failure: let the user retry, dismiss, or fall back to a browser.
+    if (downloadState.phase == UpdateDownloadService.Phase.FAILED) {
+        AlertDialog(
+            onDismissRequest = { UpdateDownloadService.consumeFailure() },
+            title = { Text(stringResource(R.string.update_install_failed)) },
+            text = { Text(downloadState.message ?: stringResource(R.string.update_install_failed_desc)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val req = lastDownload
+                    UpdateDownloadService.consumeFailure()
+                    if (req != null) {
+                        UpdateDownloadService.start(context, req.first, req.second, req.third)
+                    }
+                }) { Text(stringResource(R.string.update_retry)) }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        val url = downloadState.sourceUrl
+                        UpdateDownloadService.consumeFailure()
+                        if (!url.isNullOrBlank()) {
+                            runCatching {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                            }
+                        }
+                    }) { Text(stringResource(R.string.update_open_browser)) }
+                    TextButton(onClick = { UpdateDownloadService.consumeFailure() }) {
+                        Text(stringResource(R.string.update_dismiss))
+                    }
+                }
+            }
+        )
+    }
 
     // Changelog paging state
     var currentChangelog by remember { mutableStateOf<Changelog?>(null) }
@@ -891,10 +969,21 @@ private fun UpdateSection(
                             if (resultUrl.isNotBlank()) {
                                 TextButton(onClick = {
                                     showResultDialog = false
-                                    runCatching {
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_VIEW, Uri.parse(resultUrl))
-                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    scope.launch {
+                                        val endpoints = UpdateManager.resolveEndpoints(dataStore)
+                                        if (!UpdateInstaller.canInstall(context)) {
+                                            // Bounce the user to system settings to grant installs.
+                                            UpdateInstaller.requestInstallPermission(context)
+                                            return@launch
+                                        }
+                                        val mirrored = endpoints.resolveDownloadUrl(resultUrl)
+                                        val direct   = endpoints.directDownloadUrl(resultUrl)
+                                        lastDownload = Triple(mirrored, direct, resultMsg)
+                                        UpdateDownloadService.start(
+                                            context = context,
+                                            url = mirrored,
+                                            fallbackUrl = direct,
+                                            version = resultMsg
                                         )
                                     }
                                 }) { Text(stringResource(R.string.setting_update_download)) }
