@@ -149,7 +149,11 @@
     <string name="setting_update_no_update">已是最新版本</string>
     <string name="setting_update_download">下載</string>
     <string name="setting_update_later">稍後</string>
-    <string name="setting_update_interval_off">關閉</string>
+        <string name="setting_update_err_network">網路不可達，請檢查網路，或在設定裡切換更新來源。</string>
+    <string name="setting_update_err_blocked">更新來源拒絕了請求（限流），請稍後重試或切換更新來源。</string>
+    <string name="setting_update_err_not_found">找不到更新資訊，伺服器端尚未發布。</string>
+    <string name="setting_update_err_invalid">更新資訊格式錯誤，這是伺服器端問題，請回報。</string>
+    <string name="setting_update_err_nourl">尚未設定更新位址。</string><string name="setting_update_interval_off">關閉</string>
     <string name="setting_update_interval_30min">30 分鐘</string>
     <string name="setting_update_interval_1h">1 小時</string>
     <string name="setting_update_interval_2h">2 小時</string>

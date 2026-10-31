@@ -32,16 +32,37 @@ jobs:
           if [ -n "$TAG_INPUT" ]; then TAG="$TAG_INPUT"
           elif [ "${GITHUB_REF#refs/tags/}" != "${GITHUB_REF}" ]; then TAG="${GITHUB_REF#refs/tags/}"
           else TAG=$(git tag --sort=-creatordate | head -1); fi
-          [ -z "$TAG" ] && TAG="HEAD"
+
+          if [ -z "$TAG" ] || [ "$TAG" = "HEAD" ]; then
+            echo "::error::No tag resolved. Pass a tag via workflow_dispatch input."
+            exit 1
+          fi
+
+          # version_code must be a positive integer — build.gradle.kts derives it
+          # from yyMM+major+minor, and clients compare it numerically.
+          if ! [[ "$TAG" =~ ^[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' is not numeric; clients cannot compare it as version_code. Aborting."
+            exit 1
+          fi
+
           echo "version_code=$TAG" >> "$GITHUB_OUTPUT"
           echo "current_tag=$TAG"   >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: $TAG"
 
       - name: Generate per-tag changelogs
         run: |
           mkdir -p /tmp/_info
           REPO="${GITHUB_REPOSITORY}"
           BASE="https://raw.githubusercontent.com/${REPO}/info"
-          TAGS=$(git for-each-ref --sort=committerdate refs/tags --format='%(refname:short)')
+          # Only numeric tags take part in the changelog chain; anything else
+          # would become a dead node users can page into.
+          TAGS=$(git for-each-ref --sort=committerdate refs/tags --format='%(refname:short)' \
+                 | grep -E '^[0-9]+$' || true)
+
+          if [ -z "$TAGS" ]; then
+            echo "::error::No numeric tags found — refusing to publish an empty changelog chain."
+            exit 1
+          fi
 
           PREV=""
           for TAG in $TAGS; do
@@ -52,8 +73,11 @@ jobs:
               RANGE="${PREV}..${TAG}"
               echo "--- Changelog for $TAG (since $PREV) ---"
               PREV_NEXT="${BASE}/changelog-${TAG}.json"
-              jq ".next_changelog = \"${PREV_NEXT}\"" "/tmp/_info/changelog-${PREV}.json" > "/tmp/_info/changelog-${PREV}.tmp" && \
-                mv "/tmp/_info/changelog-${PREV}.tmp" "/tmp/_info/changelog-${PREV}.json"
+              jq ".next_changelog = \"${PREV_NEXT}\"" "/tmp/_info/changelog-${PREV}.json" > "/tmp/_info/changelog-${PREV}.tmp" || {
+                echo "::error::Failed to back-link next_changelog for $PREV -> $TAG"
+                exit 1
+              }
+              mv "/tmp/_info/changelog-${PREV}.tmp" "/tmp/_info/changelog-${PREV}.json"
             fi
 
             # NUL-delimited commit extraction
@@ -93,13 +117,66 @@ jobs:
             --arg tag "$TAG" \
             --arg repo "${REPO}" \
             '{
-              version_code: (try ($tag | tonumber) catch 0),
+              version_code: ($tag | tonumber),
               version_name: $tag,
               download_url: "https://github.com/\($repo)/releases/download/\($tag)/app-release.apk",
               changelog_url: "https://raw.githubusercontent.com/\($repo)/info/changelog-\($tag).json",
               latest_changelog: "https://raw.githubusercontent.com/\($repo)/info/changelog-\($tag).json"
             }' > /tmp/_info/update.json
-          echo "Generated /tmp/_info/"
+          echo "Generated update.json:"
+          cat /tmp/_info/update.json
+
+      - name: Verify generated artifacts
+        run: |
+          TAG="${{ steps.versions.outputs.current_tag }}"
+          FAIL=0
+
+          # 1. Required fields present and version_code is a positive number.
+          for f in version_code version_name download_url changelog_url latest_changelog; do
+            v=$(jq -r --arg k "$f" '.[$k] // empty' /tmp/_info/update.json)
+            if [ -z "$v" ]; then
+              echo "::error::update.json is missing field '$f'"
+              FAIL=1
+            fi
+          done
+          CODE=$(jq -r '.version_code' /tmp/_info/update.json)
+          if ! [[ "$CODE" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::update.json version_code '$CODE' is not a positive integer"
+            FAIL=1
+          fi
+
+          # 2. The referenced changelog must exist in the generated set.
+          if [ ! -f "/tmp/_info/changelog-${TAG}.json" ]; then
+            echo "::error::changelog-${TAG}.json was not generated"
+            FAIL=1
+          fi
+
+          # 3. The APK must actually be downloadable (asset name drift is silent otherwise).
+          DL=$(jq -r '.download_url' /tmp/_info/update.json)
+          if ! curl -fsIL --retry 2 --max-time 30 -o /dev/null "$DL"; then
+            echo "::error::download_url is not reachable: $DL"
+            echo "::error::Check that the release asset is named exactly 'app-release.apk'."
+            FAIL=1
+          fi
+
+          # 4. Every chain link must point at a file we generated.
+          for f in /tmp/_info/changelog-*.json; do
+            for dir in previous_changelog next_changelog; do
+              link=$(jq -r --arg k "$dir" '.[$k] // empty' "$f")
+              [ -z "$link" ] && continue
+              base=$(basename "$link")
+              if [ ! -f "/tmp/_info/$base" ]; then
+                echo "::error::$(basename "$f") -> $dir points at missing $base"
+                FAIL=1
+              fi
+            done
+          done
+
+          if [ "$FAIL" -ne 0 ]; then
+            echo "::error::Artifact verification failed — info branch NOT updated."
+            exit 1
+          fi
+          echo "All artifacts verified."
 
       - name: Push to info branch
         run: |
@@ -119,3 +196,19 @@ jobs:
           else
             echo "No changes, skipping commit"
           fi
+
+      - name: Publish summary
+        if: always()
+        run: |
+          {
+            echo "## Update info"
+            if [ -f /tmp/_info/update.json ]; then
+              echo '```json'
+              cat /tmp/_info/update.json
+              echo '```'
+              echo ""
+              echo "Changelog files generated: $(ls /tmp/_info/changelog-*.json 2>/dev/null | wc -l)"
+            else
+              echo "**update.json was not generated** — see logs above."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

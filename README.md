@@ -37,7 +37,7 @@ Extend NFC Capabilities
 | Cards | Tools | 
 |-------|-------|
 | Manage your emulated cards | ID converter & utilities |
-|![cards.png](https://raw.githubusercontent.com/C-F0x/KonamikU/refs/heads/main/misc/Cards.png)|![tools.png](https://raw.githubusercontent.com/C-F0x/KonamikU/refs/heads/main/misc/Tools.png)|
+|![cards.png](https://raw.githubusercontent.com/Ra1nify/KonamikU/refs/heads/main/misc/Cards.png)|![tools.png](https://raw.githubusercontent.com/Ra1nify/KonamikU/refs/heads/main/misc/Tools.png)|
 ---
 
 ## Requirements

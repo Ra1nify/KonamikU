@@ -95,6 +95,7 @@ import org.cf0x.konamiku.data.ThemeMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.NfcCard
 import org.cf0x.konamiku.data.UpdateInterval
+import org.cf0x.konamiku.data.UpdateFailure
 import org.cf0x.konamiku.data.UpdateMode
 import org.cf0x.konamiku.system.UpdateChecker
 import org.cf0x.konamiku.system.UpdateManager
@@ -409,7 +410,7 @@ private fun AboutItem(context: android.content.Context) {
     val openGitHub: () -> Unit = {
         runCatching {
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/C-F0x/KonamikU"))
+                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ra1nify/KonamikU"))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
         }
@@ -450,7 +451,7 @@ private fun AboutItem(context: android.content.Context) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "C-F0x@Github",
+                        text = "Ra1nify@Github",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -708,6 +709,24 @@ private fun DebugSection(
 
 // ────── Update section ──────
 
+/**
+ * Maps a structured update failure to a user-facing message.
+ *
+ * The point is that the user can tell "my network" from "the server is broken"
+ * — telling them "network error" for a malformed manifest sends them chasing
+ * a problem they cannot fix.
+ */
+@Composable
+private fun updateErrorMessage(kind: UpdateFailure?): String = when (kind) {
+    UpdateFailure.NO_URL    -> stringResource(R.string.setting_update_err_nourl)
+    UpdateFailure.NETWORK   -> stringResource(R.string.setting_update_err_network)
+    UpdateFailure.BLOCKED   -> stringResource(R.string.setting_update_err_blocked)
+    UpdateFailure.NOT_FOUND -> stringResource(R.string.setting_update_err_not_found)
+    UpdateFailure.MALFORMED,
+    UpdateFailure.INVALID   -> stringResource(R.string.setting_update_err_invalid)
+    UpdateFailure.HTTP, null -> stringResource(R.string.setting_update_err_network)
+}
+
 @Composable
 private fun UpdateSection(
     dataStore: AppDataStore,
@@ -723,7 +742,7 @@ private fun UpdateSection(
     var checking by remember { mutableStateOf(false) }
 
     val customBase by dataStore.updateCustomBase.collectAsState(initial = "")
-    val githubBase by dataStore.updateGithubBase.collectAsState(initial = "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json")
+    val githubBase by dataStore.updateGithubBase.collectAsState(initial = "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/update.json")
     val mirrorBase by dataStore.updateMirrorBase.collectAsState(initial = "https://gh-proxy.com/")
     val updateMode by dataStore.updateMode.collectAsState(initial = UpdateMode.GITHUB)
     val interval by dataStore.updateInterval.collectAsState(initial = UpdateInterval.OFF)
@@ -910,10 +929,12 @@ private fun UpdateSection(
                         latestMirrorPrefix = UpdateManager
                             .resolveEndpoints(dataStore)
                             .changelogMirrorPrefix
-                        if (state.error != null) {
+                        if (state.errorKind != null) {
                             resultIsError = true
-                            resultMsg = state.error
+                            resultMsg = updateErrorMessage(state.errorKind)
                             resultUrl = ""
+                            // Never leave a stale changelog on screen after a
+                            // failure — it reads as "everything is fine".
                             currentChangelog = null
                             currentChangelogUrl = null
                         } else if (state.hasUpdate) {
@@ -1075,7 +1096,7 @@ private fun UpdateSection(
 
                     // Build URLs once from DataStore (same resolution as Check Now / Worker)
                     val gitHubUrl = githubBase.ifBlank {
-                        "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
+                        "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/update.json"
                     }
                     val mirrorPrefix = mirrorBase.ifBlank { "https://gh-proxy.com/" }
                     val proxiedUrl = "${mirrorPrefix.trimEnd('/')}/${gitHubUrl.trimStart('/')}"

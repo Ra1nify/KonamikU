@@ -39,7 +39,7 @@ object UpdateManager {
 
     /** Repo that hosts update.json on the `info` branch (fallback when unset). */
     private const val DEFAULT_UPDATE_URL =
-        "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
+        "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/update.json"
 
     /** Default gh-proxy prefix, used when [AppDataStore.updateMirrorBase] is blank. */
     private const val DEFAULT_MIRROR_PREFIX = "https://gh-proxy.com/"
@@ -191,8 +191,8 @@ object UpdateManager {
                 showUpdateNotification(context, state.latestVersion ?: "")
             }
             dataStore.saveUpdateLastCheck(System.currentTimeMillis())
-        } else if (state.error != null) {
-            Log.w(TAG, "Update check error: ${state.error}")
+        } else if (state.errorKind != null || state.error != null) {
+            Log.w(TAG, "Update check error: kind=${state.errorKind} detail=${state.error}")
         } else {
             Log.i(TAG, "No update available")
             dataStore.saveUpdateLastCheck(System.currentTimeMillis())

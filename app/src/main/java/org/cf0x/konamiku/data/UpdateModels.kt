@@ -31,6 +31,27 @@ data class Changelog(
     val commits: List<CommitEntry> = emptyList()
 )
 
+/**
+ * Why an update check failed. Kept distinct so the UI can tell a network
+ * problem (retrying may help) from a publishing problem (it will not).
+ */
+enum class UpdateFailure {
+    /** No URL could be resolved at all — configuration problem. */
+    NO_URL,
+    /** DNS failure, connection timeout, socket error, offline. */
+    NETWORK,
+    /** HTTP 401/403/429 — mirror is rate-limiting or rejecting us. */
+    BLOCKED,
+    /** HTTP 404/410 — update.json or the info branch is gone. Server-side. */
+    NOT_FOUND,
+    /** Any other unexpected HTTP status. */
+    HTTP,
+    /** Body is not valid JSON / does not match [UpdateInfo]. Server-side. */
+    MALFORMED,
+    /** Parsed fine but unusable (e.g. version_code <= 0). Server-side. */
+    INVALID
+}
+
 /** Client-side cached update state */
 data class UpdateState(
     val hasUpdate: Boolean = false,
@@ -39,7 +60,10 @@ data class UpdateState(
     val downloadUrl: String = "",
     val changelogUrl: String = "",
     val changelog: Changelog? = null,
-    val error: String? = null
+    /** Human-readable detail; may be empty when [errorKind] carries the meaning. */
+    val error: String? = null,
+    /** Structured failure reason, so the UI can pick the right message. */
+    val errorKind: UpdateFailure? = null
 )
 
 /** Shared Json instance: lenient, ignores unknown keys */

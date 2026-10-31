@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.cf0x.konamiku.BuildConfig
 import org.cf0x.konamiku.data.Changelog
+import org.cf0x.konamiku.data.UpdateFailure
 import org.cf0x.konamiku.data.UpdateInfo
 import org.cf0x.konamiku.data.UpdateState
 import org.cf0x.konamiku.data.updateJson
@@ -17,7 +18,7 @@ import java.net.URL
  *
  * URL rules:
  *   githubUrl — full URL to update.json on github, e.g.
- *       "https://raw.githubusercontent.com/C-F0x/KonamikU/main/updates/update.json"
+ *       "https://raw.githubusercontent.com/Ra1nify/KonamikU/main/updates/update.json"
  *   mirrorPrefix — prepended to githubUrl as proxy, e.g.
  *       "https://gh-proxy.com/" → final: "https://ghproxy.com/https://github.com/..."
  *   customUrl — fully independent URL, no mirror applied
@@ -28,7 +29,21 @@ import java.net.URL
  */
 object UpdateChecker {
 
-    private const val TIMEOUT_MS = 3_000L
+    private const val TAG = "KonamikU-Update"
+
+    /**
+     * 3s was too tight for gh-proxy round-trips on mainland networks, which
+     * produced spurious "network failed" reports. 8s still fails fast enough
+     * to keep the dialog responsive.
+     */
+    private const val TIMEOUT_MS = 8_000L
+
+    /**
+     * Error kinds surfaced to the UI. They are deliberately distinct so the
+     * user can tell a network problem (retry) from a publishing problem
+     * (never resolves on their side).
+     */
+    typealias Failure = UpdateFailure
 
     /**
      * Run an update check using the best available URL.
@@ -39,40 +54,50 @@ object UpdateChecker {
         mirrorPrefix: String = "",
         customUrl: String = ""
     ): UpdateState = withContext(Dispatchers.IO) {
-        try {
-            val url = resolveUrl(githubUrl, mirrorPrefix, customUrl)
-                ?: return@withContext UpdateState(error = "No URL configured")
-            val jsonText = fetchString(url) ?: return@withContext UpdateState(error = "Network request failed")
-            val info = updateJson.decodeFromString<UpdateInfo>(jsonText)
+        val url = resolveUrl(githubUrl, mirrorPrefix, customUrl)
+            ?: return@withContext UpdateState(errorKind = Failure.NO_URL)
 
-            val currentCode = BuildConfig.VERSION_CODE.toLong()
-
-            // Always fetch changelog (for display even when up-to-date)
-            val clUrl = if (info.latest_changelog.isNotBlank()) info.latest_changelog
-                       else info.changelog_url
-            val changelogUrl = if (mirrorPrefix.isNotBlank() && customUrl.isBlank()) {
-                "${mirrorPrefix.trimEnd('/')}/${clUrl.trimStart('/')}"
-            } else clUrl
-            val changelog = fetchChangelog(changelogUrl)
-
-            if (info.version_code <= currentCode) {
-                return@withContext UpdateState(
-                    hasUpdate = false,
-                    changelog = changelog
-                )
-            }
-
-            UpdateState(
-                hasUpdate     = true,
-                latestVersion = info.version_name,
-                latestCode    = info.version_code,
-                downloadUrl   = info.download_url,
-                changelogUrl  = clUrl,
-                changelog     = changelog
-            )
-        } catch (e: Exception) {
-            UpdateState(error = e.message ?: "Unknown error")
+        val jsonText = when (val r = fetchString(url)) {
+            is Fetch.Ok -> r.body
+            is Fetch.Fail -> return@withContext UpdateState(errorKind = r.kind)
         }
+
+        val info = runCatching { updateJson.decodeFromString<UpdateInfo>(jsonText) }
+            .getOrElse { return@withContext UpdateState(errorKind = Failure.MALFORMED) }
+
+        // A released build always has a positive version_code. Zero or negative
+        // means the publishing pipeline produced a broken file — never report
+        // that as "up to date", or the failure becomes invisible forever.
+        if (info.version_code <= 0L) {
+            Log.e(TAG, "update.json has invalid version_code=${info.version_code} (url=$url)")
+            return@withContext UpdateState(errorKind = Failure.INVALID)
+        }
+
+        val currentCode = BuildConfig.VERSION_CODE.toLong()
+
+        // Always fetch changelog (for display even when up-to-date)
+        val clUrl = if (info.latest_changelog.isNotBlank()) info.latest_changelog
+                   else info.changelog_url
+        val changelogUrl = if (mirrorPrefix.isNotBlank() && customUrl.isBlank()) {
+            "${mirrorPrefix.trimEnd('/')}/${clUrl.trimStart('/')}"
+        } else clUrl
+        val changelog = fetchChangelog(changelogUrl)
+
+        if (info.version_code <= currentCode) {
+            return@withContext UpdateState(
+                hasUpdate = false,
+                changelog = changelog
+            )
+        }
+
+        UpdateState(
+            hasUpdate     = true,
+            latestVersion = info.version_name,
+            latestCode    = info.version_code,
+            downloadUrl   = info.download_url,
+            changelogUrl  = clUrl,
+            changelog     = changelog
+        )
     }
 
     /**
@@ -123,33 +148,55 @@ object UpdateChecker {
 
     // ── Internal helpers ──
 
-    private fun fetchString(url: String): String? {
-        val conn = URL(url).openConnection() as HttpURLConnection
-        conn.connectTimeout = TIMEOUT_MS.toInt()
-        conn.readTimeout = TIMEOUT_MS.toInt()
+    /** Result of a raw fetch, keeping the failure reason instead of collapsing to null. */
+    private sealed class Fetch {
+        data class Ok(val body: String) : Fetch()
+        data class Fail(val kind: Failure) : Fetch()
+    }
+
+    private fun fetchString(url: String): Fetch {
+        var conn: HttpURLConnection? = null
         return try {
+            conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = TIMEOUT_MS.toInt()
+            conn.readTimeout = TIMEOUT_MS.toInt()
             conn.connect()
-            if (conn.responseCode == 200) {
-                val text = conn.inputStream.bufferedReader().use { it.readText() }
-                Log.i("KonamikU", "fetchString OK [$url] -> ${text.take(500)}")
-                text
-            } else {
-                Log.w("KonamikU", "fetchString HTTP ${conn.responseCode} [$url]")
-                null
+            val code = conn.responseCode
+            when {
+                code == 200 -> {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    Log.i(TAG, "fetchString OK [$url] -> ${text.take(500)}")
+                    Fetch.Ok(text)
+                }
+                code == 404 || code == 410 -> {
+                    Log.e(TAG, "fetchString HTTP $code [$url] — update manifest is missing")
+                    Fetch.Fail(Failure.NOT_FOUND)
+                }
+                code == 401 || code == 403 || code == 429 -> {
+                    Log.w(TAG, "fetchString HTTP $code [$url] — blocked or rate-limited")
+                    Fetch.Fail(Failure.BLOCKED)
+                }
+                else -> {
+                    Log.w(TAG, "fetchString HTTP $code [$url]")
+                    Fetch.Fail(Failure.HTTP)
+                }
             }
         } catch (e: Exception) {
-            Log.e("KonamikU", "fetchString failed [$url]: ${e.message}")
-            null
+            Log.e(TAG, "fetchString failed [$url]: ${e.javaClass.simpleName}: ${e.message}")
+            Fetch.Fail(Failure.NETWORK)
         } finally {
-            conn.disconnect()
+            conn?.disconnect()
         }
     }
 
     /** Fetch and parse a changelog from a full URL (mirror applied externally). */
     suspend fun fetchChangelog(url: String): Changelog? = withContext(Dispatchers.IO) {
-        try {
-            val text = fetchString(url) ?: return@withContext null
-            updateJson.decodeFromString<Changelog>(text)
-        } catch (_: Exception) { null }
+        val text = when (val r = fetchString(url)) {
+            is Fetch.Ok -> r.body
+            is Fetch.Fail -> return@withContext null
+        }
+        runCatching { updateJson.decodeFromString<Changelog>(text) }
+            .onFailure { Log.w(TAG, "Changelog parse failed [$url]: ${it.message}") }
+            .getOrNull()
     }
 }

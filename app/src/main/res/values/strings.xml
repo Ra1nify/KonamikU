@@ -165,6 +165,11 @@
     <string name="setting_update_no_update">You\'re up to date</string>
     <string name="setting_update_download">Download</string>
     <string name="setting_update_later">Later</string>
+    <string name="setting_update_err_network">Network unreachable. Check your connection, or switch the update source in Settings.</string>
+    <string name="setting_update_err_blocked">The update source refused the request (rate-limited). Try again later, or switch the update source.</string>
+    <string name="setting_update_err_not_found">Update information not found. The server has not published it yet.</string>
+    <string name="setting_update_err_invalid">The update information is malformed. This is a server-side problem, please report it.</string>
+    <string name="setting_update_err_nourl">No update URL configured.</string>
     <string name="setting_update_interval_off">Off</string>
     <string name="setting_update_interval_30min">30 minutes</string>
     <string name="setting_update_interval_1h">1 hour</string>
