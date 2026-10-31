@@ -1,46 +1,46 @@
 [versions]
-agp                     = "9.3.0"
-appcompat = "1.7.1"
-coreRole = "1.1.0"
-kotlin                  = "2.3.21"
-kotlinxSerialization    = "1.11.0"
-composeBom              = "2026.05.01"
+agp                     = "9.5.0"
+appcompat               = "1.8.0"
+coreRole                = "1.1.0"
+kotlin                  = "2.4.21"
+kotlinxSerialization    = "1.12.0"
+composeBom              = "2026.09.00"
 activityCompose         = "1.13.0"
-navigationCompose       = "2.9.8"
-lifecycleViewmodel      = "2.10.0"
-lifecycleRuntime        = "2.10.0"
-lifecycleRuntimeCompose = "2.10.0"
-coreKtx                 = "1.18.0"
-datastore               = "1.2.1"
-materialKolor           = "4.1.1"
-workRuntime             = "2.10.0"
+navigationCompose       = "2.10.2"
+lifecycleViewmodel      = "2.11.0"
+lifecycleRuntime        = "2.11.0"
+lifecycleRuntimeCompose = "2.11.0"
+coreKtx                 = "1.19.1"
+datastore               = "1.3.0"
+materialKolor           = "5.0.1"
+workRuntime             = "2.12.0"
 libxposedApi            = "102.0.0"
 libxposedService        = "102.0.0"
-material3 = "1.4.0"
-hiddenapibypass = "4.3"
+material3               = "1.4.0"
+hiddenapibypass         = "6.2"
 
 [libraries]
-androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-androidx-core-ktx               = { group = "androidx.core",                name = "core-ktx",                        version.ref = "coreKtx" }
-androidx-activity-compose       = { group = "androidx.activity",             name = "activity-compose",                version.ref = "activityCompose" }
-androidx-core-role = { module = "androidx.core:core-role", version.ref = "coreRole" }
-androidx-navigation-compose     = { group = "androidx.navigation",           name = "navigation-compose",              version.ref = "navigationCompose" }
-androidx-lifecycle-viewmodel    = { group = "androidx.lifecycle",            name = "lifecycle-viewmodel-compose",     version.ref = "lifecycleViewmodel" }
-androidx-lifecycle-runtime      = { group = "androidx.lifecycle",            name = "lifecycle-runtime-ktx",           version.ref = "lifecycleRuntime" }
-androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle",         name = "lifecycle-runtime-compose",       version.ref = "lifecycleRuntimeCompose" }
-androidx-datastore              = { group = "androidx.datastore",            name = "datastore-preferences",           version.ref = "datastore" }
-androidx-compose-bom            = { group = "androidx.compose",              name = "compose-bom",                     version.ref = "composeBom" }
-androidx-compose-ui             = { group = "androidx.compose.ui",           name = "ui" }
-androidx-compose-ui-graphics    = { group = "androidx.compose.ui",           name = "ui-graphics" }
-androidx-compose-material3      = { group = "androidx.compose.material3",    name = "material3", version = "1.5.0-alpha20" }
-androidx-compose-material-icons = { group = "androidx.compose.material",     name = "material-icons-extended" }
-kotlinx-serialization-json      = { group = "org.jetbrains.kotlinx",         name = "kotlinx-serialization-json",      version.ref = "kotlinxSerialization" }
-material-kolor                  = { group = "com.materialkolor",              name = "material-kolor",                  version.ref = "materialKolor" }
-androidx-work-runtime-ktx        = { group = "androidx.work",                 name = "work-runtime-ktx",                version.ref = "workRuntime" }
-libxposed-api                   = { group = "io.github.libxposed",           name = "api",                             version.ref = "libxposedApi" }
-libxposed-service               = { group = "io.github.libxposed",           name = "service",                         version.ref = "libxposedService" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenapibypass" }
+androidx-appcompat              = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-core-ktx              = { group = "androidx.core",                name = "core-ktx",                        version.ref = "coreKtx" }
+androidx-activity-compose      = { group = "androidx.activity",             name = "activity-compose",                version.ref = "activityCompose" }
+androidx-core-role             = { module = "androidx.core:core-role",     version.ref = "coreRole" }
+androidx-navigation-compose    = { group = "androidx.navigation",           name = "navigation-compose",              version.ref = "navigationCompose" }
+androidx-lifecycle-viewmodel   = { group = "androidx.lifecycle",            name = "lifecycle-viewmodel-compose",     version.ref = "lifecycleViewmodel" }
+androidx-lifecycle-runtime     = { group = "androidx.lifecycle",            name = "lifecycle-runtime-ktx",           version.ref = "lifecycleRuntime" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle",        name = "lifecycle-runtime-compose",       version.ref = "lifecycleRuntimeCompose" }
+androidx-datastore             = { group = "androidx.datastore",            name = "datastore-preferences",           version.ref = "datastore" }
+androidx-compose-bom           = { group = "androidx.compose",              name = "compose-bom",                     version.ref = "composeBom" }
+androidx-compose-ui            = { group = "androidx.compose.ui",           name = "ui" }
+androidx-compose-ui-graphics   = { group = "androidx.compose.ui",           name = "ui-graphics" }
+androidx-compose-material3     = { group = "androidx.compose.material3",    name = "material3" }
+androidx-compose-material-icons = { group = "androidx.compose.material",    name = "material-icons-extended" }
+kotlinx-serialization-json     = { group = "org.jetbrains.kotlinx",         name = "kotlinx-serialization-json",      version.ref = "kotlinxSerialization" }
+material-kolor                 = { group = "com.materialkolor",              name = "material-kolor",                  version.ref = "materialKolor" }
+androidx-work-runtime-ktx       = { group = "androidx.work",                 name = "work-runtime-ktx",                version.ref = "workRuntime" }
+libxposed-api                  = { group = "io.github.libxposed",           name = "api",                             version.ref = "libxposedApi" }
+libxposed-service              = { group = "io.github.libxposed",           name = "service",                         version.ref = "libxposedService" }
+androidx-material3             = { group = "androidx.compose.material3",    name = "material3",                       version.ref = "material3" }
+hiddenapibypass                = { group = "org.lsposed.hiddenapibypass",    name = "hiddenapibypass",                 version.ref = "hiddenapibypass" }
 
 [plugins]
 android-application     = { id = "com.android.application",              version.ref = "agp" }

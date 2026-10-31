@@ -70,6 +70,11 @@ android {
         compose = true
         buildConfig  = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
     externalNativeBuild {
         cmake {
             path = file("src/main/jni/CMakeLists.txt")
@@ -108,4 +113,5 @@ dependencies {
     implementation(libs.hiddenapibypass)
 
     testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
 }
