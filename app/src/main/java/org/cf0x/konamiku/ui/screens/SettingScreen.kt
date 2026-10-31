@@ -905,13 +905,11 @@ private fun UpdateSection(
                             showNotification = false,
                             force = true
                         )
-                        // Keep mirror prefix for changelog pagination
-                        val usedMirror = when {
-                            customBase.isNotBlank() -> ""
-                            updateMode == UpdateMode.PROXY -> mirrorBase.ifBlank { "https://gh-proxy.com/" }
-                            else                    -> ""
-                        }
-                        latestMirrorPrefix = usedMirror
+                        // Keep the same mirror prefix the check itself used,
+                        // so "previous/next" pagination stays on the same route.
+                        latestMirrorPrefix = UpdateManager
+                            .resolveEndpoints(dataStore)
+                            .changelogMirrorPrefix
                         if (state.error != null) {
                             resultIsError = true
                             resultMsg = state.error
@@ -1081,6 +1079,9 @@ private fun UpdateSection(
                     }
                     val mirrorPrefix = mirrorBase.ifBlank { "https://gh-proxy.com/" }
                     val proxiedUrl = "${mirrorPrefix.trimEnd('/')}/${gitHubUrl.trimStart('/')}"
+                    // GitHub rows are tested without the mirror; the proxy row with it.
+                    val directUrl = if (customBase.isNotBlank()) customBase else gitHubUrl
+                    val proxyUrl = if (customBase.isNotBlank()) customBase else proxiedUrl
 
                     // Render each mode row
                     listOf(
@@ -1144,8 +1145,8 @@ private fun UpdateSection(
                             onClick = {
                                 testingLatency = true; cooldown = 5
                                 scope.launch {
-                                    val gh = UpdateChecker.testAndValidate(gitHubUrl)
-                                    val pr = UpdateChecker.testAndValidate(proxiedUrl)
+                                    val gh = UpdateChecker.testAndValidate(directUrl)
+                                    val pr = UpdateChecker.testAndValidate(proxyUrl)
                                     latencyGitHub = gh?.first ?: -1; validGitHub = gh?.second ?: false
                                     latencyProxy  = pr?.first ?: -1; validProxy  = pr?.second ?: false
                                     testingLatency = false

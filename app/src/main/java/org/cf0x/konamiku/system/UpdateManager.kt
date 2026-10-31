@@ -16,6 +16,7 @@ import org.cf0x.konamiku.MainActivity
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.UpdateInterval
+import org.cf0x.konamiku.data.UpdateMode
 import org.cf0x.konamiku.data.UpdateState
 import java.util.concurrent.TimeUnit
 
@@ -35,6 +36,64 @@ object UpdateManager {
     private const val TAG = "KonamikU-UpdateMgr"
     private const val UNIQUE_WORK_NAME = "konamiku_update_check"
     const val NOTIF_ID_UPDATE = 2001
+
+    /** Repo that hosts update.json on the `info` branch (fallback when unset). */
+    private const val DEFAULT_UPDATE_URL =
+        "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json"
+
+    /** Default gh-proxy prefix, used when [AppDataStore.updateMirrorBase] is blank. */
+    private const val DEFAULT_MIRROR_PREFIX = "https://gh-proxy.com/"
+
+    /**
+     * Resolved update endpoints shared by the actual check and by the
+     * settings-screen latency tester, so both always agree.
+     */
+    data class UpdateEndpoints(
+        /** Full URL of update.json without any proxy applied. */
+        val githubUrl: String,
+        /** Prefix prepended when [mode] is [UpdateMode.PROXY] (may be blank). */
+        val mirrorPrefix: String,
+        /** Fully independent URL; when non-blank it wins over everything. */
+        val customUrl: String,
+        val mode: UpdateMode
+    ) {
+        /** The URL that will actually be requested for update.json. */
+        val effectiveUrl: String
+            get() = when {
+                customUrl.isNotBlank() -> customUrl
+                mode == UpdateMode.PROXY && mirrorPrefix.isNotBlank() ->
+                    "${mirrorPrefix.trimEnd('/')}/${githubUrl.trimStart('/')}"
+                else -> githubUrl
+            }
+
+        /** Prefix that must be applied to absolute changelog URLs, or "" for none. */
+        val changelogMirrorPrefix: String
+            get() = if (customUrl.isBlank() && mode == UpdateMode.PROXY) mirrorPrefix else ""
+    }
+
+    /**
+     * Reads the update configuration from DataStore and resolves endpoints.
+     *
+     * [UpdateMode] is the authority here: GITHUB never touches the mirror,
+     * PROXY always prepends it, and a non-blank [customUrl] overrides both.
+     */
+    suspend fun resolveEndpoints(dataStore: AppDataStore): UpdateEndpoints {
+        val githubUrl = runCatching { dataStore.updateGithubBase.first() }
+            .getOrDefault("").ifBlank { DEFAULT_UPDATE_URL }
+        val mirrorPrefix = runCatching { dataStore.updateMirrorBase.first() }
+            .getOrDefault("").ifBlank { DEFAULT_MIRROR_PREFIX }
+        val customUrl = runCatching { dataStore.updateCustomBase.first() }
+            .getOrDefault("")
+        val mode = runCatching { dataStore.updateMode.first() }
+            .getOrDefault(UpdateMode.GITHUB)
+
+        return UpdateEndpoints(
+            githubUrl = githubUrl,
+            mirrorPrefix = mirrorPrefix,
+            customUrl = customUrl,
+            mode = mode
+        )
+    }
 
     // ── Scheduling ────────────────────────────────────────────────────────
 
@@ -114,19 +173,15 @@ object UpdateManager {
             }
         }
 
-        // 2. Resolve URLs (same logic as SettingScreen / legacy callers)
-        val githubUrl = runCatching { dataStore.updateGithubBase.first() }.getOrDefault("")
-            .ifBlank { "https://raw.githubusercontent.com/C-F0x/KonamikU/info/update.json" }
-        val mirrorUrl = runCatching { dataStore.updateMirrorBase.first() }.getOrDefault("")
-            .ifBlank { "https://gh-proxy.com/" }
-        val customUrl = runCatching { dataStore.updateCustomBase.first() }.getOrDefault("")
+        // 2. Resolve URLs — UpdateMode decides whether the mirror is used
+        val endpoints = resolveEndpoints(dataStore)
 
         // 3. Execute HTTP check
-        Log.i(TAG, "Running update check…")
+        Log.i(TAG, "Running update check… mode=${endpoints.mode} url=${endpoints.effectiveUrl}")
         val state = UpdateChecker.check(
-            githubUrl = githubUrl,
-            mirrorPrefix = mirrorUrl,
-            customUrl = customUrl
+            githubUrl = endpoints.githubUrl,
+            mirrorPrefix = endpoints.changelogMirrorPrefix,
+            customUrl = endpoints.customUrl
         )
 
         // 4. Persist timestamp & notify

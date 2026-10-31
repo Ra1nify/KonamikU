@@ -21,6 +21,10 @@ import java.net.URL
  *   mirrorPrefix — prepended to githubUrl as proxy, e.g.
  *       "https://gh-proxy.com/" → final: "https://ghproxy.com/https://github.com/..."
  *   customUrl — fully independent URL, no mirror applied
+ *
+ * Callers decide whether a mirror applies at all (see
+ * [UpdateManager.resolveEndpoints]); passing a blank [mirrorPrefix] means a
+ * direct request.
  */
 object UpdateChecker {
 
