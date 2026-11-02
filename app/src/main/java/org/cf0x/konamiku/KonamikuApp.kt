@@ -15,6 +15,7 @@ import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.util.applyLocale
+import org.cf0x.konamiku.xposed.KonamikuModule
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
