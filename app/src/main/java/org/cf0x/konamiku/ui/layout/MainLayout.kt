@@ -24,8 +24,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -43,7 +41,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import org.cf0x.konamiku.R
 import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.NavigationMode
@@ -55,13 +52,15 @@ import org.cf0x.konamiku.ui.screens.SetupScreen
 import org.cf0x.konamiku.ui.screens.ToolsScreen
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
 
+/** How long taps are swallowed while a screen transition plays. */
+private const val NAV_DEBOUNCE_MS = 400L
+
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun MainLayout(
     dataStore: AppDataStore,
     navController: NavHostController = rememberNavController()
 ) {
-    val scope         = rememberCoroutineScope()
     val navMode       by dataStore.navigationMode.collectAsState(initial = NavigationMode.AUTO)
     val configuration = LocalConfiguration.current
     val statusViewModel: StatusViewModel = viewModel(LocalContext.current as ComponentActivity)
@@ -97,17 +96,30 @@ fun MainLayout(
         return
     }
 
-    var navLocked by rememberSaveable { mutableStateOf(false) }
+    // Transient, deliberately NOT rememberSaveable.
+    //
+    // This flag is only meant to swallow taps during the 400 ms navigation
+    // animation. Saving it meant a rotation inside that window restored
+    // `true` on the new instance while the coroutine that clears it had been
+    // cancelled with the old scope - navigation stayed locked forever, and the
+    // pointerInput below kept consuming every touch. `remember` resets it on
+    // recreation, which is exactly the desired behaviour for a short-lived
+    // debounce.
+    var navLocked by remember { mutableStateOf(false) }
+
+    // If the scope dies mid-animation the flag would otherwise stay set.
+    LaunchedEffect(navLocked) {
+        if (navLocked) {
+            delay(NAV_DEBOUNCE_MS)
+            navLocked = false
+        }
+    }
 
     fun navigate(screen: Screen) {
         if (navLocked) return
         if (currentDestination?.route == screen.route) return
 
         navLocked = true
-        scope.launch {
-            delay(400)
-            navLocked = false
-        }
         navController.navigate(screen.route) {
             popUpTo(navController.graph.id) {
                 inclusive = true

@@ -26,6 +26,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
@@ -105,14 +107,25 @@ fun SetupScreen(dataStore: AppDataStore) {
     // Auto-navigate after transition
     LaunchedEffect(startFinish) {
         if (startFinish) {
-            delay(1400)
-            // Persist locale selection
+            // Persist FIRST, before the animation. The effect below this point
+            // (delay + finishAffinity + restart) survives a cancellation only
+            // partially — a rotation or backgrounding during the delay used to
+            // drop the write entirely, sending the user back to page 1 on every
+            // subsequent launch. NonCancellable guarantees the two writes land
+            // even if the composition goes away mid-flight.
+            withContext(NonCancellable) {
+                if (pendingLocale != null && !systemLangLocked) {
+                    dataStore.saveAppLocale(pendingLocale!!)
+                }
+                dataStore.saveSetupVersion(BuildConfig.VERSION_CODE.toLong())
+            }
+
             if (pendingLocale != null && !systemLangLocked) {
-                dataStore.saveAppLocale(pendingLocale!!)
                 context.applyLocale(pendingLocale!!.tag)
             }
-            // Mark OOBE as finished
-            dataStore.saveSetupVersion(BuildConfig.VERSION_CODE.toLong())
+
+            delay(1400)
+
             // Restart Activity to enter main screen
             (context as? Activity)?.let { act ->
                 act.finishAffinity()

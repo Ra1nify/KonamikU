@@ -9,4 +9,6 @@ local.properties
 app/release
 version.properties
 
-version.properties
+# Local analysis scratch space (pulled .so dumps, probe projects)
+_nfcso/
+_mcp_probe/

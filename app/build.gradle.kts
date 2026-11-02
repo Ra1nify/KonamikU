@@ -9,14 +9,18 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val versionProps = Properties()
-val propFile = project.rootProject.file("version.properties")
-if (propFile.exists()) {
-    propFile.inputStream().use { versionProps.load(it) }
+// Version components live in local.properties (git-ignored) as:
+//   ver.major = 1
+//   ver.minor = 0
+// Reading local.properties keeps them out of the repository while still
+// letting every local build agree on the same numbers.
+val localProps = Properties().apply {
+    val f = project.rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
-val vMajor = (project.findProperty("verMajor") ?: versionProps.getProperty("ver_Major") ?: "0").toString()
-val vMinor = (project.findProperty("verMinor") ?: versionProps.getProperty("ver_Minor") ?: "0").toString()
+val vMajor = localProps.getProperty("ver.major")?.trim().orEmpty().ifBlank { "0" }
+val vMinor = localProps.getProperty("ver.minor")?.trim().orEmpty().ifBlank { "0" }
 
 val dateTag = SimpleDateFormat("yyMM").format(Date())
 val dateDotTag = SimpleDateFormat("yy.MM").format(Date())

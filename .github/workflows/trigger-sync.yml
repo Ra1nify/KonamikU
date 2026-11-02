@@ -38,7 +38,11 @@ jobs:
         run: |
           TARGET="Xposed-Modules-Repo/org.cf0x.konamiku"
 
-          LATEST=$(gh api repos/C-F0x/konamiku/releases/latest)
+          # Read from the repository this workflow runs in, not a hardcoded
+          # name. The old value pointed at the pre-rename owner and only
+          # worked because GitHub 301-redirects renamed repositories - which
+          # stops working the moment that name is reused or deleted.
+          LATEST=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest")
           TAG=$(echo "$LATEST" | jq -r '.tag_name')
           TITLE=$(echo "$LATEST" | jq -r '.name // .tag_name')
           BODY=$(echo "$LATEST" | jq -r '.body // ""')
