@@ -69,13 +69,6 @@ enum class AppLocale(val tag: String, val labelRes: Int) {
 
 class AppDataStore(private val context: Context) {
 
-    var devModeForceEmuSync = false
-        private set
-    var pmmEnabledSync = true
-        private set
-    var backgroundEmulationSync = false
-        private set
-
     private object Keys {
         val NAV_MODE           = stringPreferencesKey("navigation_mode")
         val THEME_MODE         = stringPreferencesKey("theme_mode")
@@ -186,16 +179,16 @@ class AppDataStore(private val context: Context) {
 
     val pmmEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.PMM_ENABLED] ?: true }
 
-    suspend fun savePmmEnabled(v: Boolean) = context.dataStore.edit {
-        it[Keys.PMM_ENABLED] = v
-        pmmEnabledSync = v
+    suspend fun savePmmEnabled(v: Boolean) {
+        context.dataStore.edit { it[Keys.PMM_ENABLED] = v }
+        // Outside edit{}: that lambda runs inside DataStore's IO actor and can
+        // be retried, so a side effect placed there would fire more than once
+        // and could run while the write itself still failed.
         org.cf0x.konamiku.system.PmmConfigProvider.pmmEnabled = v
     }
 
-    suspend fun saveDevModeForceEmu(v: Boolean) = context.dataStore.edit {
-        it[Keys.DEV_FORCE_EMU] = v
-        devModeForceEmuSync = v
-    }
+    suspend fun saveDevModeForceEmu(v: Boolean) =
+        context.dataStore.edit { it[Keys.DEV_FORCE_EMU] = v }
 
     suspend fun saveThemeExpressive(v: Boolean) = context.dataStore.edit { it[Keys.THEME_EXPRESSIVE] = v }
 
@@ -208,8 +201,6 @@ class AppDataStore(private val context: Context) {
     suspend fun saveUpdateInterval(v: UpdateInterval) = context.dataStore.edit { it[Keys.UPDATE_INTERVAL] = v.name }
     suspend fun saveUpdateMode(v: UpdateMode) = context.dataStore.edit { it[Keys.UPDATE_MODE] = v.name }
 
-    suspend fun saveBackgroundEmulation(v: Boolean) = context.dataStore.edit {
-        it[Keys.BACKGROUND_EMU] = v
-        backgroundEmulationSync = v
-    }
+    suspend fun saveBackgroundEmulation(v: Boolean) =
+        context.dataStore.edit { it[Keys.BACKGROUND_EMU] = v }
 }
