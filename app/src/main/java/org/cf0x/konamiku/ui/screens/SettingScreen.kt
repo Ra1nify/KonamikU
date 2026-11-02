@@ -80,7 +80,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.util.UUID
@@ -119,8 +118,10 @@ fun SettingScreen(dataStore: AppDataStore) {
     var colorSource  by remember { mutableStateOf(if (supportsMonet) ColorSource.MONET else ColorSource.PRESET) }
     var savedColor   by remember { mutableStateOf(Color(0xFF6750A4)) }
     val appLocale    by dataStore.appLocale.collectAsState(initial = AppLocale.SYSTEM)
-    var devModeForce by remember { mutableStateOf(dataStore.devModeForceEmuSync) }
-    var pmmEnabled by remember { mutableStateOf(dataStore.pmmEnabledSync) }
+    // Seeded with the same defaults the flows use; the LaunchedEffect below
+    // replaces them with the persisted values before anything is shown.
+    var devModeForce by remember { mutableStateOf(false) }
+    var pmmEnabled by remember { mutableStateOf(true) }
     var backgroundEmu by remember { mutableStateOf(false) }
     var showPmmRestartDialog by remember { mutableStateOf(false) }
     var pendingPmmValue by remember { mutableStateOf(false) }
@@ -624,8 +625,14 @@ private fun LanguageItem(dataStore: AppDataStore, appLocale: AppLocale) {
                     Button(onClick = {
                         expanded = false
                         if (pending == appLocale) return@Button
-                        runBlocking { dataStore.saveAppLocale(pending) }
-                        context.applyLocale(pending.tag)
+                        // Persist first, then apply: the locale switch rebuilds
+                        // the Activity on some versions, so the write must land
+                        // before that happens. Doing it in a coroutine keeps the
+                        // disk write off the main thread while preserving order.
+                        scope.launch {
+                            dataStore.saveAppLocale(pending)
+                            context.applyLocale(pending.tag)
+                        }
                     }) { Text(stringResource(R.string.card_add_confirm)) }
                 }
             }
@@ -818,28 +825,37 @@ private fun UpdateSection(
             title = { Text(stringResource(R.string.update_install_failed)) },
             text = { Text(downloadState.message ?: stringResource(R.string.update_install_failed_desc)) },
             confirmButton = {
-                TextButton(onClick = {
-                    val req = lastDownload
-                    UpdateDownloadService.consumeFailure()
-                    if (req != null) {
+                // Retry needs the request that failed. It is only null when the
+                // failure was raised by a service run this screen did not start
+                // (e.g. after a process restart); offering an inert button was
+                // worse than not offering one.
+                TextButton(
+                    enabled = lastDownload != null,
+                    onClick = {
+                        val req = lastDownload ?: return@TextButton
+                        UpdateDownloadService.consumeFailure()
                         UpdateDownloadService.start(context, req.first, req.second, req.third)
                     }
-                }) { Text(stringResource(R.string.update_retry)) }
+                ) { Text(stringResource(R.string.update_retry)) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = {
-                        val url = downloadState.sourceUrl
-                        UpdateDownloadService.consumeFailure()
-                        if (!url.isNullOrBlank()) {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                )
+                    TextButton(
+                        // Only meaningful when the manifest recorded a URL.
+                        enabled = !downloadState.sourceUrl.isNullOrBlank(),
+                        onClick = {
+                            val url = downloadState.sourceUrl
+                            UpdateDownloadService.consumeFailure()
+                            if (!url.isNullOrBlank()) {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    )
+                                }
                             }
                         }
-                    }) { Text(stringResource(R.string.update_open_browser)) }
+                    ) { Text(stringResource(R.string.update_open_browser)) }
                     TextButton(onClick = { UpdateDownloadService.consumeFailure() }) {
                         Text(stringResource(R.string.update_dismiss))
                     }

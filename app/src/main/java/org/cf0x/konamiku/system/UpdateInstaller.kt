@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.util.Log
-import androidx.core.content.FileProvider
 import java.io.File
 
 /**
@@ -23,9 +22,6 @@ import java.io.File
 object UpdateInstaller {
 
     const val TAG = "KonamikU-Installer"
-
-    /** Extra carrying the human-readable reason inside the result broadcast. */
-    const val EXTRA_STATUS_MESSAGE = "status_message"
 
     /** Broadcast action that [UpdateInstallReceiver] listens for. */
     const val ACTION_INSTALL_RESULT = "org.cf0x.konamiku.ACTION_INSTALL_RESULT"
@@ -106,11 +102,4 @@ object UpdateInstaller {
         runCatching { File(path).delete() }
             .onFailure { Log.w(TAG, "Cannot delete $path: ${it.message}") }
     }
-
-    /**
-     * Content URI for [path], exposed through the cache-path provider.
-     * Kept for callers that want to hand the APK to an external installer.
-     */
-    fun contentUriFor(context: Context, path: String): Uri =
-        FileProvider.getUriForFile(context, "${context.packageName}.updates", File(path))
 }

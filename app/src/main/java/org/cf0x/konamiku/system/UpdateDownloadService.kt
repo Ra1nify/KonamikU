@@ -80,6 +80,18 @@ class UpdateDownloadService : Service() {
         /** Read by the settings screen to drive the progress and failure dialogs. */
         val state = MutableStateFlow(State())
 
+        /**
+         * True while an Activity is visible. Failures are surfaced by the
+         * in-app dialog when this is set, so the notification is only posted
+         * when the user is elsewhere and would otherwise miss them.
+         */
+        @Volatile
+        private var uiVisible = false
+
+        fun setUiVisible(visible: Boolean) {
+            uiVisible = visible
+        }
+
         /** Clears a terminal failure so the dialog does not reappear on recompose. */
         fun consumeFailure() {
             state.update { if (it.phase == Phase.FAILED) it.copy(phase = Phase.IDLE) else it }
@@ -102,6 +114,12 @@ class UpdateDownloadService : Service() {
 
         /** Posts a failure notification that survives the service being stopped. */
         fun notifyInstallFailure(context: Context, message: String?) {
+            // The in-app dialog already explains this when the Activity is up;
+            // duplicating it as a notification just adds noise.
+            if (uiVisible) {
+                Log.d(TAG, "UI visible, skipping failure notification")
+                return
+            }
             ensureChannel(context)
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_warning)
@@ -137,20 +155,17 @@ class UpdateDownloadService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
 
-    /** Timestamp of the last successfully read chunk, for the stall watchdog. */
-    @Volatile
-    private var lastDataAt: Long = 0L
-
-    /** Why the last attempt failed; read by [fail] to pick a message. */
-    @Volatile
-    private var lastFailure: FailureKind? = null
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_CANCEL -> {
                 Log.i(TAG, "Cancelled by user")
+                // Reset first: the settings screen renders its progress dialog
+                // from this state and cannot dismiss it itself, so a cancel that
+                // left the phase at DOWNLOADING kept the dialog on screen with
+                // no way out short of killing the process.
+                state.update { State() }
                 stopSelf()
                 return START_NOT_STICKY
             }
@@ -174,22 +189,23 @@ class UpdateDownloadService : Service() {
     private suspend fun run(url: String, fallbackUrl: String, version: String) {
         val dest = File(cacheDir, "update-${version.ifBlank { "latest" }}.apk")
         runCatching { if (dest.exists()) dest.delete() }
-        lastDataAt = System.currentTimeMillis()
-        lastFailure = null
 
-        val ok = download(url, dest)
-            || (fallbackUrl.isNotBlank() && fallbackUrl != url && run {
-                // Mirror unreachable (or truncated): retry once against the
-                // direct GitHub link before surfacing the failure.
-                Log.w(TAG, "Primary URL failed, retrying fallback: $fallbackUrl")
-                updateProgress(getString(R.string.update_downloading_retry, 0), 0, true)
-                download(fallbackUrl, dest)
-            })
+        // Failure reasons stay on the stack: a second tap on "retry" starts a
+        // new coroutine while the old one may still be unwinding, and a shared
+        // field would let the two clobber each other's result.
+        var failure = download(url, dest)
+        if (failure != null && fallbackUrl.isNotBlank() && fallbackUrl != url) {
+            // Mirror unreachable (or truncated): retry once against the
+            // direct GitHub link before surfacing the failure.
+            Log.w(TAG, "Primary URL failed ($failure), retrying fallback: $fallbackUrl")
+            updateProgress(getString(R.string.update_downloading_retry, 0), 0, true)
+            failure = download(fallbackUrl, dest)
+        }
 
-        if (!ok) {
-            Log.e(TAG, "Download failed: $lastFailure")
+        if (failure != null) {
+            Log.e(TAG, "Download failed: $failure")
             // Publish a failure the UI can act on (retry / dismiss / browser).
-            fail(lastFailure ?: FailureKind.NETWORK, url, dest)
+            fail(failure, url, dest)
             return
         }
 
@@ -200,14 +216,21 @@ class UpdateDownloadService : Service() {
             return
         }
 
+        // Publish INSTALLING before handing over: the settings screen shows a
+        // different dialog for this phase, and the notification alone was not
+        // enough to drive it.
         updateProgress(getString(R.string.update_installing), 0, true)
+        state.update { it.copy(phase = Phase.INSTALLING, percent = 100) }
+
         val committed = UpdateInstaller.install(this, dest.absolutePath)
         if (!committed) {
             UpdateInstaller.cleanup(this, dest.absolutePath)
             fail(FailureKind.INSTALL, url, dest)
             return
         }
-        // The process is normally replaced on success; stop regardless.
+        // The process is normally replaced on success; stop regardless. Reset
+        // the state so a dialog left on INSTALLING cannot survive the handover.
+        state.update { State() }
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
         stopSelf()
     }
@@ -237,8 +260,8 @@ class UpdateDownloadService : Service() {
         FailureKind.NETWORK   -> getString(R.string.update_err_download)
     }
 
-    /** @return true when the whole file arrived and the length matches. */
-    private fun download(url: String, dest: File): Boolean {
+    /** @return null on success, or the reason the transfer was abandoned. */
+    private fun download(url: String, dest: File): FailureKind? {
         var conn: HttpURLConnection? = null
         return try {
             conn = (URL(url).openConnection() as HttpURLConnection).apply {
@@ -251,9 +274,8 @@ class UpdateDownloadService : Service() {
             val code = conn.responseCode
             if (code != 200) {
                 Log.w(TAG, "HTTP $code for $url")
-                lastFailure = if (code == 404 || code == 410) FailureKind.NOT_FOUND
-                               else FailureKind.HTTP
-                return false
+                return if (code == 404 || code == 410) FailureKind.NOT_FOUND
+                       else FailureKind.HTTP
             }
 
             val total = conn.contentLengthLong.takeIf { it > 0L }
@@ -276,20 +298,18 @@ class UpdateDownloadService : Service() {
                                 "Progress stalled: ${now - lastProgressAt}ms since ${lastPercent}% " +
                                     "($written bytes)"
                             )
-                            lastFailure = FailureKind.TIMEOUT
                             runCatching { dest.delete() }
-                            return false
+                            return FailureKind.TIMEOUT
                         }
                         if (now - startedAt > TOTAL_TIMEOUT_MS) {
                             Log.e(TAG, "Overall timeout after ${TOTAL_TIMEOUT_MS}ms")
-                            lastFailure = FailureKind.TIMEOUT
                             runCatching { dest.delete() }
-                            return false
+                            return FailureKind.TIMEOUT
                         }
 
                         val n = input.read(buffer)
                         if (n <= 0) break
-                        lastDataAt = System.currentTimeMillis()
+                        val arrivedAt = System.currentTimeMillis()
                         out.write(buffer, 0, n)
                         written += n
 
@@ -298,10 +318,10 @@ class UpdateDownloadService : Service() {
                         // percentage to watch, so byte arrival is the fallback.
                         val percent = total?.let { ((written * 100) / it).toInt() } ?: -1
                         if (total == null) {
-                            lastProgressAt = lastDataAt
+                            lastProgressAt = arrivedAt
                         } else if (percent != lastPercent) {
                             lastPercent = percent
-                            lastProgressAt = lastDataAt
+                            lastProgressAt = arrivedAt
                             updateProgress(
                                 getString(R.string.update_downloading, percent),
                                 percent,
@@ -315,16 +335,15 @@ class UpdateDownloadService : Service() {
 
             if (total != null && written != total) {
                 Log.e(TAG, "Truncated: $written of $total bytes")
-                lastFailure = FailureKind.TIMEOUT
                 runCatching { dest.delete() }
-                return false
+                return FailureKind.TIMEOUT
             }
             Log.i(TAG, "Downloaded $written bytes to ${dest.name}")
-            true
+            null
         } catch (e: Exception) {
             Log.e(TAG, "Download error: ${e.javaClass.simpleName}: ${e.message}")
             runCatching { dest.delete() }
-            false
+            FailureKind.NETWORK
         } finally {
             conn?.disconnect()
         }
