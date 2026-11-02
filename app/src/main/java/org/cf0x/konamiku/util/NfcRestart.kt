@@ -2,21 +2,49 @@ package org.cf0x.konamiku.util
 
 import android.content.Context
 import android.nfc.NfcAdapter
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 object NfcRestart {
 
+    private const val TAG = "KonamikU-NfcRestart"
+
     sealed class Result {
+        /**
+         * Whether the HCE-F proxy answered a probe after the caches were
+         * dropped. False means the restart finished but this process still
+         * cannot reach the service, which is the one case that genuinely needs
+         * an app restart.
+         */
+        abstract val proxyReachable: Boolean
+
         /** com.android.nfc was already dead before pkill */
-        data class WasDead(val newPid: Int?)            : Result()
+        data class WasDead(
+            val newPid: Int?,
+            override val proxyReachable: Boolean = false
+        ) : Result()
+
         /** pkill ran but PID didn't change — kill failed */
-        data class KillFailed(val pid: Int)             : Result()
+        data class KillFailed(
+            val pid: Int,
+            override val proxyReachable: Boolean = false
+        ) : Result()
+
         /** pkill succeeded; system may need to restart NFC */
-        data class Killed(val oldPid: Int, val newPid: Int?) : Result()
+        data class Killed(
+            val oldPid: Int,
+            val newPid: Int?,
+            override val proxyReachable: Boolean = false
+        ) : Result()
+
         /** NFC restarted cleanly — new PID differs from old */
-        data class Restarted(val oldPid: Int, val newPid: Int) : Result()
+        data class Restarted(
+            val oldPid: Int,
+            val newPid: Int,
+            override val proxyReachable: Boolean = false
+        ) : Result()
     }
 
     /** Steps emitted by [restart] so callers can show progress toasts.
@@ -100,8 +128,9 @@ object NfcRestart {
         onStep(Step.ENABLE_NFC, oldPid, null)
         delay(500)
 
-        // 5. Clear stale binder cache so the wait loop below gets a fresh
-        //    adapter instance reflecting the actual NFC state.
+        // 5. Drop the binder caches our process still holds from the old NFC
+        //    service. The wait loop below needs a working adapter, and every
+        //    card-emulation call goes through the static proxies cleared here.
         clearNfcFCache()
         onStep(Step.CLEAR_CACHE, oldPid, null)
         delay(500)
@@ -117,57 +146,112 @@ object NfcRestart {
         onStep(Step.NFC_READY, oldPid, null)
         delay(500)
 
+        // 7. Probe the HCE-F proxy once. Clearing dropped a proxy that would
+        //    otherwise stay dead; this distinguishes "the restart looked
+        //    finished" from "the app can talk to the service again". One retry
+        //    covers the case where the first call lands while the rebind is
+        //    still in flight.
+        val proxyOk = canReachNfcFService(context) || canReachNfcFService(context)
+        Log.i(TAG, "HCE-F proxy reachable after restart: $proxyOk")
+
         // 7. Capture new PID
         val newPid = getPid()
         onStep(Step.CHECK_PID, oldPid, newPid)
 
         // 8. Build and return result
         val result = when {
-            oldPid == null                     -> Result.WasDead(newPid)
-            newPid != null && newPid == oldPid -> Result.KillFailed(oldPid)
-            newPid == null                     -> Result.Killed(oldPid, null)
-            else                               -> Result.Restarted(oldPid, newPid)
+            oldPid == null                     -> Result.WasDead(newPid, proxyOk)
+            newPid != null && newPid == oldPid -> Result.KillFailed(oldPid, proxyOk)
+            newPid == null                     -> Result.Killed(oldPid, null, proxyOk)
+            else                               -> Result.Restarted(oldPid, newPid, proxyOk)
         }
         onStep(Step.DONE, oldPid, newPid)
         result
     }
 
     /**
-     * Clears the static cache in NfcFCardEmulation, CardEmulation, and NfcAdapter via reflection.
-     * This forces the app to re-obtain the service binder and prevents DeadObjectException.
+     * Drops the binder caches that survive a NFC process restart.
+     *
+     * After `pkill com.android.nfc` the framework rebinds its own proxies, but
+     * three things in *our* process still point at the dead binder:
+     *
+     *   NfcFCardEmulation.sCardEmus  HashMap<Context, NfcFCardEmulation>
+     *   CardEmulation.sCardEmus      same shape
+     *   *.sService                   the static INfc*CardEmulation proxy
+     *
+     * getInstance() only constructs a new manager when sCardEmus has no entry
+     * for the context, so a cached manager survives forever - it keeps handing
+     * back an object whose calls go through a dead sService. Clearing the map
+     * alone is not enough either: sService is static and shared, so it has to
+     * be nulled for the next call to take the recoverService() path and rebind.
+     *
+     * The field names are verified against AOSP: sCardEmus/sService have been
+     * present since Android 13 with this exact shape, and they are still there
+     * on Android 17 (checked against framework-nfc.jar from the device). The
+     * previous implementation cleared sServiceCache/sAdapter, which do not
+     * exist on any recent release - every attempt logged "No field" and the
+     * caches were never actually dropped, which is why a full app restart
+     * appeared to be required.
+     *
+     * @return true when at least one cache was dropped.
      */
-    fun clearNfcFCache() {
-        android.util.Log.i("KonamikU", "Clearing NFC binder caches…")
+    fun clearNfcFCache(): Boolean {
+        Log.i(TAG, "Clearing NFC binder caches…")
+        var cleared = false
 
-        // Each reflective access is individually caught so one failure
-        // doesn't prevent the others from being attempted.
-        fun clearCache(clsName: String, fieldName: String) {
+        fun clearMap(clsName: String, fieldName: String) {
             runCatching {
-                val cls = Class.forName(clsName)
-                val field = cls.getDeclaredField(fieldName)
+                val field = Class.forName(clsName).getDeclaredField(fieldName)
                 field.isAccessible = true
-                (field.get(null) as? MutableMap<*, *>)?.clear()
-            }.onFailure { e ->
-                android.util.Log.w("KonamikU", "clearCache $clsName.$fieldName: ${e.message}")
-            }
+                val map = field.get(null) as? MutableMap<*, *> ?: return@runCatching
+                val size = map.size
+                map.clear()
+                Log.i(TAG, "  $clsName.$fieldName cleared ($size entries)")
+            }.onSuccess { cleared = true }
+                .onFailure { Log.w(TAG, "  clearMap $clsName.$fieldName: ${it.message}") }
         }
 
-        fun setNull(clsName: String, fieldName: String) {
+        fun clearStatic(clsName: String, fieldName: String) {
             runCatching {
-                val cls = Class.forName(clsName)
-                val field = cls.getDeclaredField(fieldName)
+                val field = Class.forName(clsName).getDeclaredField(fieldName)
                 field.isAccessible = true
                 field.set(null, null)
-            }.onFailure { e ->
-                android.util.Log.w("KonamikU", "setNull $clsName.$fieldName: ${e.message}")
-            }
+                Log.i(TAG, "  $clsName.$fieldName nulled")
+            }.onSuccess { cleared = true }
+                .onFailure { Log.w(TAG, "  clearStatic $clsName.$fieldName: ${it.message}") }
         }
 
-        clearCache("android.nfc.cardemulation.NfcFCardEmulation", "sServiceCache")
-        clearCache("android.nfc.cardemulation.CardEmulation", "sServiceCache")
-        clearCache("android.nfc.NfcAdapter", "sServiceCache")
-        setNull("android.nfc.NfcAdapter", "sAdapter")
+        clearMap("android.nfc.cardemulation.NfcFCardEmulation", "sCardEmus")
+        clearMap("android.nfc.cardemulation.CardEmulation", "sCardEmus")
 
-        android.util.Log.i("KonamikU", "NFC binder caches cleared")
+        // The static proxies: nulling them is what forces a rebind, because
+        // every API call dereferences them and recoverService() repopulates
+        // them on the resulting RemoteException.
+        clearStatic("android.nfc.cardemulation.NfcFCardEmulation", "sService")
+        clearStatic("android.nfc.cardemulation.CardEmulation", "sService")
+        clearStatic("android.nfc.NfcAdapter", "sNfcFCardEmulationService")
+        clearStatic("android.nfc.NfcAdapter", "sCardEmulationService")
+
+        Log.i(TAG, "NFC binder caches cleared (cleared=$cleared)")
+        return cleared
     }
+
+    /**
+     * Probes whether the HCE-F proxy is live again after [clearNfcFCache].
+     *
+     * Rebinding is lazy - it happens on the first call that touches the proxy -
+     * so a successful clear is not by itself proof that the app can talk to the
+     * restored NFC service. This issues one cheap call and reports whether it
+     * came back without throwing.
+     */
+    fun canReachNfcFService(context: Context): Boolean = runCatching {
+        val adapter = NfcAdapter.getDefaultAdapter(context) ?: return false
+        val emulation = android.nfc.cardemulation.NfcFCardEmulation.getInstance(adapter)
+            ?: return false
+        // getMaxNumOfRegisterableSystemCodes() is a plain binder round-trip and
+        // has no side effects; -1 means the framework reported a failure.
+        emulation.maxNumOfRegisterableSystemCodes != -1
+    }.onFailure {
+        Log.w(TAG, "HCE-F proxy still unreachable after cache clear: ${it.message}")
+    }.getOrDefault(false)
 }

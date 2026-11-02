@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.nfc.NfcAdapter
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,6 +35,10 @@ sealed class PendingAction {
 }
 
 class StatusViewModel(application: Application) : AndroidViewModel(application) {
+
+    private companion object {
+        private const val TAG = "KonamikU-StatusVM"
+    }
 
     private val context: Context get() = getApplication<Application>().applicationContext
     private val dataStore = AppDataStore(context)
@@ -179,7 +184,7 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun executeNfcRestart() {
         viewModelScope.launch {
-            NfcRestart.restart(context) { step, oldPid, newPid ->
+            val result = NfcRestart.restart(context) { step, oldPid, newPid ->
                 when (step) {
                     NfcRestart.Step.KILL_PROCESS -> {
                         if (oldPid != null) {
@@ -196,7 +201,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                         if (newPid != null && newPid != oldPid && oldPid != null) {
                             _toastEvent.emit(str(R.string.toast_nfc_pid_restarted, newPid.toString()))
                         }
-                        _showRestartDialog.value = true
                         refreshNfc()
                         runCatching {
                             android.service.quicksettings.TileService.requestListeningState(
@@ -207,6 +211,15 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                     }
                     else -> { /* CAPTURE_PID, DISABLE_NFC, NFC_READY, CHECK_PID — no toast needed */ }
                 }
+            }
+
+            // Only ask for an app restart when the proxy probe failed. Dropping
+            // the binder caches is normally enough to rebind in-process, and
+            // prompting unconditionally was the reason every NFC restart ended
+            // with a restart prompt.
+            if (!result.proxyReachable) {
+                Log.w(TAG, "HCE-F proxy unreachable after restart ($result) — asking for app restart")
+                _showRestartDialog.value = true
             }
         }
     }

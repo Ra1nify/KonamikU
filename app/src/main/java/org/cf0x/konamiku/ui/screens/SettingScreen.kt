@@ -307,7 +307,7 @@ fun SettingScreen(dataStore: AppDataStore) {
                     pmmEnabled = pendingPmmValue
                     scope.launch {
                         dataStore.savePmmEnabled(pendingPmmValue)
-                        NfcRestart.restart(context) { step, oldPid, newPid ->
+                        val result = NfcRestart.restart(context) { step, oldPid, newPid ->
                             withContext(Dispatchers.Main) {
                                 when (step) {
                                     NfcRestart.Step.KILL_PROCESS -> {
@@ -325,11 +325,17 @@ fun SettingScreen(dataStore: AppDataStore) {
                                         if (newPid != null && newPid != oldPid && oldPid != null) {
                                             Toast.makeText(context, context.getString(R.string.toast_nfc_pid_restarted, newPid.toString()), Toast.LENGTH_SHORT).show()
                                         }
-                                        showNfcRestartCompleteDialog = true
                                     }
                                     else -> {}
                                 }
                             }
+                        }
+
+                        // Restarting the app is only needed when dropping the
+                        // binder caches did not restore the proxy; asking every
+                        // time made an in-process rebind look impossible.
+                        if (!result.proxyReachable) {
+                            showNfcRestartCompleteDialog = true
                         }
                     }
                 }) {
