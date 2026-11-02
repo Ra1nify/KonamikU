@@ -21,8 +21,10 @@ class KonamikuModule : XposedModule() {
         }
     }
 
+    /** Current hook state; published to the app via the hooked broadcast. */
     @Volatile
-    private var pmmLoaded = false
+    var pmmState: PmmState = PmmState.NOT_ATTEMPTED
+        private set
 
     /** True once libpmm.so was loaded and the hook was attempted at least once. */
     @Volatile
@@ -69,10 +71,11 @@ class KonamikuModule : XposedModule() {
             hook(cls.getDeclaredMethod("isValidSystemCode", String::class.java)).intercept { chain ->
                 val arg = chain.args.firstOrNull() as? String
                 Log.i("KonamikU", "isValidSystemCode($arg) -> true (hooked)")
-                val wasLoaded = pmmLoaded
+                val before = pmmState
                 ensurePmm(param)
-                if (pmmLoaded != wasLoaded) {
-                    sendHookedBroadcast(nfcContext(), pmmLoaded)
+                // Report only on a state transition, not on every card tap.
+                if (pmmState != before) {
+                    sendHookedBroadcast(nfcContext(), pmmState == PmmState.INSTALLED)
                 }
                 true
             }
@@ -101,7 +104,7 @@ class KonamikuModule : XposedModule() {
                 hook(cls.getDeclaredMethod("onCreate")).intercept { chain ->
                     val res = chain.proceed()
                     ensurePmm(param)
-                    sendHookedBroadcast(chain.thisObject as? Context, pmmLoaded)
+                    sendHookedBroadcast(chain.thisObject as? Context, pmmState == PmmState.INSTALLED)
                     res
                 }
                 true
@@ -117,7 +120,7 @@ class KonamikuModule : XposedModule() {
                 hook(android.app.Application::class.java.getDeclaredMethod("onCreate")).intercept { chain ->
                     val res = chain.proceed()
                     ensurePmm(param)
-                    sendHookedBroadcast(chain.thisObject as? Context, pmmLoaded)
+                    sendHookedBroadcast(chain.thisObject as? Context, pmmState == PmmState.INSTALLED)
                     res
                 }
             }
@@ -125,32 +128,59 @@ class KonamikuModule : XposedModule() {
     }
 
     /**
+     * Hook state as reported by libpmm.so. Values mirror the PMM_STATE_*
+     * constants in bridge.c; changing either side requires changing both.
+     *
+     * These are deliberately not collapsed into a boolean: WAITING_NCI clears
+     * itself on the next tag contact, NO_SYMBOL never will, and the UI has to
+     * say which one the user is looking at.
+     */
+    enum class PmmState(val code: Int) {
+        /** libpmm.so has not been loaded yet. */
+        NOT_ATTEMPTED(0),
+        /** Hook is live. */
+        INSTALLED(1),
+        /** Loader has no NCI stack mapped yet; retries resolve this. */
+        WAITING_NCI(2),
+        /** Both known libraries were searched and neither exports the symbol. */
+        NO_SYMBOL(3),
+        /** Symbol resolved but DobbyHook refused. */
+        HOOK_FAILED(4);
+
+        companion object {
+            fun fromCode(code: Int): PmmState =
+                entries.firstOrNull { it.code == code } ?: NOT_ATTEMPTED
+        }
+    }
+
+    /**
      * Makes sure libpmm.so is loaded and its hook is installed, retrying the
      * hook on later calls when the first attempt found the NCI stack missing.
      *
-     * Safe and cheap to call repeatedly: once [pmmLoaded] is true this returns
-     * immediately, and after a failed attempt it only re-resolves the symbol.
+     * Safe and cheap to call repeatedly: once INSTALLED this returns
+     * immediately, and after a temporary miss it only re-resolves the symbol.
      */
     private fun ensurePmm(param: PackageLoadedParam) {
-        if (pmmLoaded) return
+        if (pmmState == PmmState.INSTALLED) return
 
-        pmmLoaded = if (!pmmInjected) {
+        pmmState = if (!pmmInjected) {
             pmmInjected = true
             val enabled = isPmmEnabled()
             Log.i("KonamikU", "ensurePmm: pmmEnabled=$enabled")
             if (enabled) {
-                // The library loading and the hook install are separate
-                // outcomes: loading may succeed while the target symbol is not
-                // yet resolvable, in which case later calls retry the hook.
+                // Library loading and hook install are separate outcomes:
+                // loading may succeed while the symbol is not yet resolvable.
                 injectPmmtool(param)
                 tryInstallPmmHook()
             } else {
                 Log.i("KonamikU", "pmmtool disabled by user config")
-                false
+                PmmState.NOT_ATTEMPTED
             }
         } else {
-            tryInstallPmmHook().also {
-                if (it) Log.i("KonamikU", "pmmtool hook went live on retry")
+            tryInstallPmmHook().also { state ->
+                if (state == PmmState.INSTALLED) {
+                    Log.i("KonamikU", "pmmtool hook went live on retry")
+                }
             }
         }
     }
@@ -160,6 +190,7 @@ class KonamikuModule : XposedModule() {
             android.content.Intent("org.cf0x.konamiku.ACTION_NFC_HOOKED")
                 .setPackage("org.cf0x.konamiku")
                 .putExtra("pmmtool_active", pmmOk)
+                .putExtra("pmmtool_state", pmmState.code)
         )
     }
 
@@ -236,16 +267,12 @@ class KonamikuModule : XposedModule() {
             Log.i("KonamikU", "pmmtool library loaded via System.load: $fullPath")
         }
 
-        // The load itself is what this function reports, exactly as the
-        // original did. Hook state is queried separately: letting that query
-        // decide the result conflated "JNI method missing" with "library did
-        // not load", and retries would then never re-resolve the symbol.
-        runCatching { nativePmmHooked() == 1 }.onSuccess { hooked ->
-            if (hooked) {
-                Log.i("KonamikU", "pmmtool hook installed")
-            } else {
-                Log.w("KonamikU", "pmmtool loaded but hook not installed yet (will retry)")
-            }
+        // The load itself is what this function reports. Hook state is queried
+        // separately: letting that query decide the result conflated "JNI
+        // method missing" with "library did not load", and retries would then
+        // never re-resolve the symbol.
+        runCatching { nativePmmHooked() }.onSuccess { code ->
+            Log.i("KonamikU", "pmmtool state after load: ${PmmState.fromCode(code)}")
         }.onFailure { e ->
             Log.e(
                 "KonamikU",
@@ -257,14 +284,14 @@ class KonamikuModule : XposedModule() {
     }
 
     /**
-     * Retries the hook once the library should be loaded, returning whether it
-     * is now live. Called on each card activation, so a device that only maps
-     * the NCI stack on first use still ends up hooked.
+     * Retries the hook once the library should be loaded. Called on each card
+     * activation, so a device that only maps the NCI stack on first use still
+     * ends up hooked; WAITING_NCI is the normal answer until then.
      */
-    private fun tryInstallPmmHook(): Boolean = runCatching {
-        nativePmmHooked() == 1
-    }.getOrDefault(false)
+    private fun tryInstallPmmHook(): PmmState = runCatching {
+        PmmState.fromCode(nativePmmHooked())
+    }.getOrDefault(PmmState.NOT_ATTEMPTED)
 
-    /** Implemented in bridge.c; returns 1 when DobbyHook succeeded. */
+    /** Implemented in bridge.c; returns a PMM_STATE_* code. */
     private external fun nativePmmHooked(): Int
 }

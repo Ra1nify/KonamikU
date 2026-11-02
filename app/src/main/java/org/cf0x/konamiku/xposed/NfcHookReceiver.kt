@@ -23,8 +23,16 @@ class NfcHookReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_NFC_HOOKED) return
 
-        val pmmOk = intent.getBooleanExtra("pmmtool_active", false)
-        Log.i("KonamikU", "NFC hook ping — pmmtool=$pmmOk")
+        // Older module builds sent only the boolean; fall back to it when the
+        // richer state is absent so an upgraded app still reads an older hook.
+        val state = if (intent.hasExtra(EXTRA_PMM_STATE)) {
+            KonamikuModule.PmmState.fromCode(intent.getIntExtra(EXTRA_PMM_STATE, 0))
+        } else if (intent.getBooleanExtra("pmmtool_active", false)) {
+            KonamikuModule.PmmState.INSTALLED
+        } else {
+            KonamikuModule.PmmState.NOT_ATTEMPTED
+        }
+        Log.i("KonamikU", "NFC hook ping — pmm=$state")
 
         // This action cannot be authenticated (the sender is com.android.nfc,
         // a different uid and certificate), so the ping is only honoured once
@@ -36,14 +44,18 @@ class NfcHookReceiver : BroadcastReceiver() {
             return
         }
 
-        XposedState.pmmActive = pmmOk
+        XposedState.pmmState = state
         XposedState.activationState = XposedActivationState.ACTIVE
 
         context.getSharedPreferences("KonamikU_xposed", Context.MODE_PRIVATE)
-            .edit().putBoolean("pmmtool_active", pmmOk).apply()
+            .edit()
+            .putBoolean("pmmtool_active", state == KonamikuModule.PmmState.INSTALLED)
+            .putInt("pmmtool_state", state.code)
+            .apply()
     }
 
     companion object {
         const val ACTION_NFC_HOOKED = "org.cf0x.konamiku.ACTION_NFC_HOOKED"
+        const val EXTRA_PMM_STATE = "pmmtool_state"
     }
 }

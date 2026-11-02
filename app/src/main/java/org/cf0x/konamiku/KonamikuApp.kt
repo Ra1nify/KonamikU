@@ -92,8 +92,17 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
         }.onFailure { Log.w(TAG, "Cannot read framework identity: ${it.message}") }
 
         runCatching {
-            XposedState.pmmActive = getSharedPreferences("KonamikU_xposed", MODE_PRIVATE)
-                .getBoolean("pmmtool_active", false)
+            // Restore the last reported state so the panel is correct before
+            // the next ping arrives. Older builds wrote only the boolean, so
+            // both forms are honoured.
+            val prefs = getSharedPreferences("KonamikuU_xposed", MODE_PRIVATE)
+            XposedState.pmmState = when {
+                prefs.contains("pmmtool_state") ->
+                    KonamikuModule.PmmState.fromCode(prefs.getInt("pmmtool_state", 0))
+                prefs.getBoolean("pmmtool_active", false) ->
+                    KonamikuModule.PmmState.INSTALLED
+                else -> KonamikuModule.PmmState.NOT_ATTEMPTED
+            }
         }
 
         val hooked = runCatching<Boolean> {

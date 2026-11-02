@@ -13,6 +13,17 @@ object XposedState {
     private val _pmmActive        = MutableStateFlow(false)
 
     /**
+     * Why the PMm hook is or is not live.
+     *
+     * Kept separate from [pmmActive] because the reasons need different
+     * answers from the user: WAITING_NCI resolves on the next tag contact,
+     * NO_SYMBOL never will, and both used to render as a flat "not injected".
+     */
+    private val _pmmState = MutableStateFlow(KonamikuModule.PmmState.NOT_ATTEMPTED)
+
+    val pmmStateFlow: StateFlow<KonamikuModule.PmmState> = _pmmState.asStateFlow()
+
+    /**
      * Set once the Xposed framework itself reports our module as loaded into
      * com.android.nfc (see KonamikuApp.onServiceBind). The broadcast-based ping
      * from the NFC process is only honoured after this is true, because that
@@ -47,11 +58,20 @@ object XposedState {
         get() = _pmmActive.value
         set(v) { _pmmActive.value = v }
 
+    /** Current PMm hook state. Setting it also updates [pmmActive]. */
+    var pmmState: KonamikuModule.PmmState
+        get() = _pmmState.value
+        set(v) {
+            _pmmState.value = v
+            _pmmActive.value = v == KonamikuModule.PmmState.INSTALLED
+        }
+
     fun reset() {
         frameworkConfirmed      = false
         _activationState.value  = XposedActivationState.INACTIVE
         _frameworkName.value    = ""
         _frameworkVersion.value = ""
         _pmmActive.value        = false
+        _pmmState.value         = KonamikuModule.PmmState.NOT_ATTEMPTED
     }
 }

@@ -231,13 +231,15 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                 XposedState.activationStateFlow,
                 XposedState.pmmActiveFlow,
                 XposedState.frameworkNameFlow,
-                XposedState.frameworkVersionFlow
-            ) { state, pmm, name, version ->
+                XposedState.frameworkVersionFlow,
+                XposedState.pmmStateFlow
+            ) { state, pmm, name, version, pmmState ->
                 StatusDetector.XposedStatus(
                     active       = state == XposedActivationState.ACTIVE,
                     needsRestart = state == XposedActivationState.NEEDS_RESTART,
                     provider     = "$name $version".trim(),
-                    pmmActive    = pmm
+                    pmmActive    = pmm,
+                    pmmState     = pmmState
                 )
             }.collect { xposedStatus ->
                 _status.update { current ->

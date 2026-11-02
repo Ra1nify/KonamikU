@@ -58,6 +58,7 @@ import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.system.StatusDetector.RootProvider
 import org.cf0x.konamiku.ui.viewmodels.PendingAction
 import org.cf0x.konamiku.ui.viewmodels.StatusViewModel
+import org.cf0x.konamiku.xposed.KonamikuModule
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
@@ -356,16 +357,78 @@ private fun PanelXposed(xposed: StatusDetector.XposedStatus?, pmmEnabled: Boolea
                     detail = xposed.provider
                 )
                 if (pmmEnabled) {
-                    DetailRow(
-                        active = xposed.pmmActive,
-                        label  = stringResource(R.string.status_pmmtool),
-                        detail = stringResource(
-                            if (xposed.pmmActive) R.string.status_injected
-                            else                  R.string.status_not_injected
-                        )
-                    )
+                    PmmRow(xposed.pmmState)
                 }
             }
+        }
+    }
+}
+
+/**
+ * One row per PMm state.
+ *
+ * "Not installed" used to be a single flat case, which hid the only thing worth
+ * knowing: WAITING_NCI resolves itself on the next tag tap, while NO_SYMBOL and
+ * HOOK_FAILED never will. Each state gets its own label, colour and - where the
+ * user can act - a one-line hint.
+ */
+@Composable
+private fun PmmRow(state: KonamikuModule.PmmState) {
+    val (active, labelRes, hintRes) = when (state) {
+        KonamikuModule.PmmState.INSTALLED ->
+            Triple(true, R.string.status_pmm_installed, null)
+
+        KonamikuModule.PmmState.WAITING_NCI ->
+            Triple(false, R.string.status_pmm_waiting, R.string.status_pmm_waiting_hint)
+
+        KonamikuModule.PmmState.NO_SYMBOL ->
+            Triple(false, R.string.status_pmm_no_symbol, R.string.status_pmm_no_symbol_hint)
+
+        KonamikuModule.PmmState.HOOK_FAILED ->
+            Triple(false, R.string.status_pmm_hook_failed, R.string.status_pmm_hook_failed_hint)
+
+        KonamikuModule.PmmState.NOT_ATTEMPTED ->
+            Triple(false, R.string.status_pmm_idle, R.string.status_pmm_idle_hint)
+    }
+
+    // Waiting is expected, not broken: mark it with the tertiary colour rather
+    // than the error colour so a routine first launch does not look like a fault.
+    val tone = when {
+        active                                              -> MaterialTheme.colorScheme.primary
+        state == KonamikuModule.PmmState.WAITING_NCI        -> MaterialTheme.colorScheme.tertiary
+        state == KonamikuModule.PmmState.NOT_ATTEMPTED      -> MaterialTheme.colorScheme.outline
+        else                                                -> MaterialTheme.colorScheme.error
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text  = if (active) "✓" else if (state == KonamikuModule.PmmState.WAITING_NCI) "…" else "✗",
+                color = tone,
+                style = MaterialTheme.typography.labelLarge
+            )
+            Text(
+                text  = stringResource(R.string.status_pmmtool),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text  = stringResource(labelRes),
+                color = tone,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        hintRes?.let {
+            Text(
+                text     = stringResource(it),
+                style    = MaterialTheme.typography.labelSmall,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 22.dp)
+            )
         }
     }
 }

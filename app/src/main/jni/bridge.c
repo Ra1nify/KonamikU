@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <dlfcn.h>
 #include <android/log.h>
 #include "dobby.h"
 
@@ -40,9 +41,32 @@ static const uint8_t TARGET_PMM[8] = {
 typedef int (*nfa_dm_check_set_config_t)(uint8_t tlv_len, uint8_t *tlv, int flags);
 static nfa_dm_check_set_config_t orig_nfa_dm_check_set_config = NULL;
 
-/* Set from JNI_OnLoad so Kotlin can distinguish "hook live" from "silently
- * inactive" (the old code reported success even when the symbol was missing). */
-static int g_hook_installed = 0;
+/*
+ * Hook state, returned to Kotlin as an int.
+ *
+ * These are part of the module's contract with the UI, so the numeric values
+ * are stable and mirrored in KonamikuModule.PmmState. "Not installed" is not
+ * one state: waiting for the NCI stack resolves itself on the next tag contact,
+ * while a missing symbol never will - telling the user which is which is the
+ * difference between "try again" and "this device cannot".
+ */
+#define PMM_STATE_NOT_ATTEMPTED 0   /* library not loaded yet */
+#define PMM_STATE_INSTALLED     1   /* hook live */
+#define PMM_STATE_WAITING_NCI   2   /* loader has no NCI stack mapped yet */
+#define PMM_STATE_NO_SYMBOL     3   /* searched, symbol absent on this ROM */
+#define PMM_STATE_HOOK_FAILED   4   /* symbol found, DobbyHook refused */
+
+static int g_hook_state = PMM_STATE_NOT_ATTEMPTED;
+
+static const char *state_name(int state) {
+    switch (state) {
+        case PMM_STATE_INSTALLED:   return "INSTALLED";
+        case PMM_STATE_WAITING_NCI: return "WAITING_NCI";
+        case PMM_STATE_NO_SYMBOL:   return "NO_SYMBOL";
+        case PMM_STATE_HOOK_FAILED: return "HOOK_FAILED";
+        default:                    return "NOT_ATTEMPTED";
+    }
+}
 
 #define PMM_LEN 8
 
@@ -94,12 +118,12 @@ static int hooked_nfa_dm_check_set_config(uint8_t tlv_len, uint8_t *tlv, int fla
 /**
  * Attempt the hook once.
  *
- * @return 1 on success, 0 when the symbol could not be found or DobbyHook
- *         failed. Safe to call repeatedly.
+ * @return a PMM_STATE_* value. Safe to call repeatedly; once installed it is a
+ *         no-op, and after a temporary miss (NCI not mapped) it retries.
  */
 static int try_install_hook(void) {
-    if (g_hook_installed) {
-        return 1;
+    if (g_hook_state == PMM_STATE_INSTALLED) {
+        return g_hook_state;
     }
 
     /*
@@ -119,7 +143,19 @@ static int try_install_hook(void) {
 
     void *target = NULL;
     const char *module = NULL;
+    int any_loaded = 0;
+
     for (size_t i = 0; i < sizeof(kModules) / sizeof(kModules[0]); ++i) {
+        /* dlopen with RTLD_NOLOAD only reports whether the library is already
+         * mapped; it never loads anything. That distinguishes "not mapped yet"
+         * (temporary) from "mapped but does not export the symbol" (permanent),
+         * which DobbySymbolResolver alone cannot tell apart - it returns NULL
+         * for both. */
+        void *handle = dlopen(kModules[i], RTLD_NOLOAD | RTLD_NOW);
+        if (handle != NULL) {
+            any_loaded = 1;
+            dlclose(handle);
+        }
         void *candidate = DobbySymbolResolver(kModules[i], TARGET_SYMBOL);
         if (candidate) {
             target = candidate;
@@ -130,10 +166,19 @@ static int try_install_hook(void) {
     if (!target) {
         /* Last resort: any already-loaded object that happens to export it. */
         target = DobbySymbolResolver(NULL, TARGET_SYMBOL);
-        module = "(loaded objects)";
+        if (target) {
+            module = "(loaded objects)";
+        }
     }
+
     if (!target) {
-        return 0;
+        /* Neither library is mapped: the NCI stack is loaded lazily, so this
+         * resolves on a later call. If one of them IS mapped and still lacks
+         * the symbol, the ROM diverges from stock and retrying will not help. */
+        g_hook_state = any_loaded ? PMM_STATE_NO_SYMBOL : PMM_STATE_WAITING_NCI;
+        LOGW("symbol %s not found (nci loaded=%d) -> %s",
+             TARGET_SYMBOL, any_loaded, state_name(g_hook_state));
+        return g_hook_state;
     }
 
     LOGI("symbol found in %s @ %p", module, target);
@@ -145,32 +190,31 @@ static int try_install_hook(void) {
     );
 
     if (ret == 0 && orig_nfa_dm_check_set_config != NULL) {
-        g_hook_installed = 1;
+        g_hook_state = PMM_STATE_INSTALLED;
         LOGI("hook installed OK");
-        return 1;
+        return g_hook_state;
     }
 
-    LOGW("DobbyHook failed: ret=%d orig=%p", ret, (void *) orig_nfa_dm_check_set_config);
-    return 0;
+    g_hook_state = PMM_STATE_HOOK_FAILED;
+    LOGW("DobbyHook failed: ret=%d orig=%p -> %s",
+         ret, (void *) orig_nfa_dm_check_set_config, state_name(g_hook_state));
+    return g_hook_state;
 }
 
 /**
- * Called by the module once it believes libnfc-nci should be mapped.
+ * Called by the module to query (and, if needed, retry) the hook.
  *
  * Injection happens in NfcApplication.onCreate(), which can run before the
- * NCI stack is dlopen'd - the NFC process sits idle until the first reader
- * or HCE use. Returning 0 then is correct but temporary, so callers may retry.
+ * NCI stack is dlopen'd - the NFC process sits idle until the first reader or
+ * HCE use. WAITING_NCI is therefore a temporary answer, not a failure.
  *
- * @return 1 when the hook is live, 0 otherwise.
+ * @return a PMM_STATE_* value, mirrored by KonamikuModule.PmmState.
  */
 JNIEXPORT jint JNICALL
 Java_org_cf0x_konamiku_xposed_KonamikuModule_nativePmmHooked(JNIEnv *env, jobject thiz) {
     (void) env;
     (void) thiz;
-    if (!g_hook_installed) {
-        try_install_hook();
-    }
-    return g_hook_installed;
+    return try_install_hook();
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {

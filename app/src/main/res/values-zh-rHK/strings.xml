@@ -45,7 +45,16 @@
     <string name="status_unavailable">不可用</string>
     <string name="status_injected">已注入</string>
     <string name="status_not_injected">未注入</string>
-    <string name="status_rf_on">已開啟</string>
+        <string name="status_pmm_installed">已注入</string>
+    <string name="status_pmm_waiting">等待 NFC 協定堆疊</string>
+    <string name="status_pmm_no_symbol">找不到符號</string>
+    <string name="status_pmm_hook_failed">Hook 被拒絕</string>
+    <string name="status_pmm_idle">未載入</string>
+    <string name="status_pmm_waiting_hint">刷一次卡即可完成初始化。</string>
+    <string name="status_pmm_no_symbol_hint">本機 NFC 協定堆疊未匯出目標符號，無法安裝 hook。</string>
+    <string name="status_pmm_hook_failed_hint">符號已找到但修補被拒絕，ROM 更新可能改動了該函式。</string>
+    <string name="status_pmm_idle_hint">已在設定中關閉。</string>
+<string name="status_rf_on">已開啟</string>
     <string name="status_rf_off">已關閉</string>
 
     <string name="status_hidden_api">隱藏 API</string>

@@ -47,6 +47,15 @@
     <string name="status_unavailable">Unavailable</string>
     <string name="status_injected">Injected</string>
     <string name="status_not_injected">Not injected</string>
+    <string name="status_pmm_installed">Injected</string>
+    <string name="status_pmm_waiting">Waiting for NFC stack</string>
+    <string name="status_pmm_no_symbol">Symbol not found</string>
+    <string name="status_pmm_hook_failed">Hook rejected</string>
+    <string name="status_pmm_idle">Not loaded</string>
+    <string name="status_pmm_waiting_hint">Tap a card once to finish setup.</string>
+    <string name="status_pmm_no_symbol_hint">This device\'s NFC stack does not export the target symbol; the hook cannot be installed here.</string>
+    <string name="status_pmm_hook_failed_hint">The symbol was found but the patch was refused. A ROM update may have changed the function.</string>
+    <string name="status_pmm_idle_hint">Disabled in settings.</string>
     <string name="status_rf_on">Enabled</string>
     <string name="status_rf_off">Disabled</string>
 

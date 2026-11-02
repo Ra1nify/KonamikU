@@ -62,7 +62,9 @@ object StatusDetector {
         val active: Boolean,
         val needsRestart: Boolean,
         val provider: String,
-        val pmmActive: Boolean
+        val pmmActive: Boolean,
+        /** Why the PMm hook is or is not live; drives the detail label. */
+        val pmmState: KonamikuModule.PmmState = KonamikuModule.PmmState.NOT_ATTEMPTED
     )
 
     data class AllStatus(
@@ -129,7 +131,8 @@ object StatusDetector {
             active       = state == XposedActivationState.ACTIVE,
             needsRestart = state == XposedActivationState.NEEDS_RESTART,
             provider     = provider,
-            pmmActive    = XposedState.pmmActive
+            pmmActive    = XposedState.pmmActive,
+            pmmState     = XposedState.pmmState
         )
     }
 
