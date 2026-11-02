@@ -12,6 +12,20 @@ object XposedState {
     private val _frameworkVersion = MutableStateFlow("")
     private val _pmmActive        = MutableStateFlow(false)
 
+    /**
+     * Set once the Xposed framework itself reports our module as loaded into
+     * com.android.nfc (see KonamikuApp.onServiceBind). The broadcast-based ping
+     * from the NFC process is only honoured after this is true, because that
+     * broadcast cannot be authenticated — any app could send it.
+     */
+    @Volatile
+    var frameworkConfirmed: Boolean = false
+        private set
+
+    fun markFrameworkConfirmed() {
+        frameworkConfirmed = true
+    }
+
     val activationStateFlow:  StateFlow<XposedActivationState> = _activationState.asStateFlow()
     val frameworkNameFlow:    StateFlow<String>  = _frameworkName.asStateFlow()
     val frameworkVersionFlow: StateFlow<String>  = _frameworkVersion.asStateFlow()
@@ -34,8 +48,10 @@ object XposedState {
         set(v) { _pmmActive.value = v }
 
     fun reset() {
+        frameworkConfirmed      = false
         _activationState.value  = XposedActivationState.INACTIVE
         _frameworkName.value    = ""
         _frameworkVersion.value = ""
+        _pmmActive.value        = false
     }
 }

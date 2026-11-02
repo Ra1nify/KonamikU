@@ -92,7 +92,12 @@
             </intent-filter>
         </receiver>
 
-        <!-- Receives broadcast from com.android.nfc process confirming hook is live -->
+        <!--
+          Receives the "hook is live" ping from the Xposed module, which runs
+          inside com.android.nfc. It cannot be exported=false (different
+          process, different uid), so the receiver validates the sender's
+          signature against our own in onReceive.
+        -->
         <receiver
             android:name=".xposed.NfcHookReceiver"
             android:exported="true">
@@ -117,7 +122,15 @@
         </receiver>
 
         <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposedminversion" android:value="101" />
+        <!--
+          Matches the dependency line: libxposed-api and libxposed-service are
+          both 102.0.0, so the bytecode is compiled against the 102 interface
+          even though the only APIs actually called (XposedModule,
+          PackageLoadedParam, getModuleApplicationInfo, Chain.proceed) are all
+          101. Declaring 101 here would let a 101-only framework load a module
+          built against 102 classes.
+        -->
+        <meta-data android:name="xposedminversion" android:value="102" />
 
         <!-- QS tile disabled -->
         <!--

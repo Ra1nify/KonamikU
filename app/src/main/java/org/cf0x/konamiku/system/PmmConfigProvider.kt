@@ -59,6 +59,13 @@ class PmmConfigProvider : ContentProvider() {
         selection: String?,
         selectionArgs: Array<out String>?
     ): Int {
+        // The provider is exported so the module in com.android.nfc can read
+        // it, which also exposes writes to every other app on the device.
+        // Reads are harmless (the value is a user preference), writes are not:
+        // refuse anything that is not this app writing to itself.
+        if (!callerIsSelf()) {
+            return 0
+        }
         return when (URI_MATCHER.match(uri)) {
             CODE_PMM_ENABLED -> {
                 values?.getAsInteger("enabled")?.let {
@@ -69,6 +76,15 @@ class PmmConfigProvider : ContentProvider() {
             else -> 0
         }
     }
+
+    /**
+     * Binder calls made by our own process (and by the system on our behalf)
+     * report our uid or the system uid; anything else is a third party.
+     */
+    private fun callerIsSelf(): Boolean = runCatching {
+        val uid = android.os.Binder.getCallingUid()
+        uid == android.os.Process.myUid() || uid == android.os.Process.SYSTEM_UID
+    }.getOrDefault(false)
 
     override fun getType(uri: Uri): String? =
         if (URI_MATCHER.match(uri) == CODE_PMM_ENABLED)
