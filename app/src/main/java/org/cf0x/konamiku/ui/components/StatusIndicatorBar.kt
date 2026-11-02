@@ -220,16 +220,7 @@ fun StatusIndicatorBar(
     // Restart-app dialog (shown after NFC restart completes)
     val showRestartDialog by viewModel.showRestartDialog.collectAsState()
     if (showRestartDialog) {
-        AlertDialog(
-            onDismissRequest = {},
-            title       = { Text(stringResource(R.string.restart_app_dialog_confirm)) },
-            text        = { Text(stringResource(R.string.restart_app_dialog_msg)) },
-            confirmButton = {
-                Button(onClick = { viewModel.restartApp() }) {
-                    Text(stringResource(R.string.restart_app_dialog_confirm))
-                }
-            }
-        )
+        RestartAppDialog(onConfirm = { viewModel.restartApp() })
     }
 }
 

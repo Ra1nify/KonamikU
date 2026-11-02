@@ -346,22 +346,10 @@ fun SettingScreen(dataStore: AppDataStore) {
 
     // Restart-app dialog shown after NFC restart completes
     if (showNfcRestartCompleteDialog) {
-        AlertDialog(
-            onDismissRequest = {},
-            title   = { Text(stringResource(R.string.restart_app_dialog_confirm)) },
-            text    = { Text(stringResource(R.string.restart_app_dialog_msg)) },
-            confirmButton = {
-                Button(onClick = {
-                    showNfcRestartCompleteDialog = false
-                    runCatching {
-                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-                        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        context.startActivity(intent)
-                        Runtime.getRuntime().exit(0)
-                    }
-                }) {
-                    Text(stringResource(R.string.restart_app_dialog_confirm))
-                }
+        RestartAppDialog(
+            onConfirm = {
+                showNfcRestartCompleteDialog = false
+                context.restartApp()
             }
         )
     }

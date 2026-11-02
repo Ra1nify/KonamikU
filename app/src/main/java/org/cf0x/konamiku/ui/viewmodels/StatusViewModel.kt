@@ -3,7 +3,6 @@ package org.cf0x.konamiku.ui.viewmodels
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.nfc.NfcAdapter
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
@@ -23,6 +22,7 @@ import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.notification.LiveUpdateManager
 import org.cf0x.konamiku.system.StatusDetector
 import org.cf0x.konamiku.util.NfcRestart
+import org.cf0x.konamiku.util.restartApp
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
@@ -145,18 +145,13 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     /**
-     * Restart the entire app process: launch the main activity with a fresh
-     * task stack, then kill the current process.
+     * Restart the entire app process. The mechanics live in
+     * [org.cf0x.konamiku.util.restartApp] because the settings screen reaches
+     * the same situation through its own NFC-restart flow.
      */
     fun restartApp() {
         _showRestartDialog.value = false
-        runCatching {
-            val intent = context.packageManager
-                .getLaunchIntentForPackage(context.packageName)
-            intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            context.startActivity(intent)
-            Runtime.getRuntime().exit(0)
-        }
+        context.restartApp()
     }
 
     // ── Execution methods ──
