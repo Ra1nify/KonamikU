@@ -159,7 +159,12 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
         if (activeCardId != null && expandedId == null) expandedId = activeCardId
     }
 
-    LaunchedEffect(emuMode, activeCardId) {
+    // Restore the foreground notification for an already-active card.
+    // `cards` and `isLoading` must be keys: on a cold start activeCardId is
+    // restored from DataStore before the card list finishes loading, so the
+    // lookup below would miss and this effect would never re-run.
+    LaunchedEffect(emuMode, activeCardId, cards, backgroundEmu, isLoading) {
+        if (isLoading) return@LaunchedEffect
         if (activeCardId != null) {
             val card = cards.find { it.id == activeCardId } ?: return@LaunchedEffect
             if (backgroundEmu) {
@@ -213,6 +218,10 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
                 }
             }
             dataStore.saveActiveCardId(card.id)
+            // The HCE-F service instance outlives this screen, so tell it the
+            // active card changed; otherwise it keeps answering with the old
+            // IDm and block data.
+            EmuCard.invalidateCard()
             if (backgroundEmu) {
                 LiveUpdateManager.postActive(context, card.name, mode)
             }
@@ -226,6 +235,7 @@ fun MainScreen(dataStore: AppDataStore, statusViewModel: StatusViewModel) {
                 freshEmulation()?.disableService(activity)
             }
             dataStore.saveActiveCardId(null)
+            EmuCard.invalidateCard()
             LiveUpdateManager.cancel(context)
         }
     }

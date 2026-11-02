@@ -9,6 +9,7 @@ import org.cf0x.konamiku.data.AppDataStore
 import org.cf0x.konamiku.data.EmuMode
 import org.cf0x.konamiku.data.JsonManager
 import org.cf0x.konamiku.data.loadActiveCard
+import org.cf0x.konamiku.nfc.EmuCard
 import org.cf0x.konamiku.nfc.updateHceRegistration
 
 /**
@@ -33,6 +34,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     LiveUpdateManager.ACTION_TOGGLE_ACTIVATE -> {
                         dataStore.saveActiveCardId(null)
+                        EmuCard.invalidateCard()
                         LiveUpdateManager.cancel(context)
                     }
                     LiveUpdateManager.ACTION_TOGGLE_MODE -> {
@@ -62,6 +64,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     }
                     LiveUpdateManager.ACTION_DISMISSED -> {
                         dataStore.saveActiveCardId(null)
+                        EmuCard.invalidateCard()
                     }
                     else -> {} // unknown action, ignore
                 }

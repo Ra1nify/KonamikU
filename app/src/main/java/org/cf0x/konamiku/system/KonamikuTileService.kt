@@ -38,6 +38,7 @@ class KonamikuTileService : TileService() {
             if (activeId != null) {
                 // Already active → deactivate
                 dataStore.saveActiveCardId(null)
+                EmuCard.invalidateCard()
                 LiveUpdateManager.cancel(applicationContext)
                 updateTileState()
                 return@launch
