@@ -42,9 +42,9 @@
 {
   "version_code": 260743,
   "version_name": "260743",
-  "download_url": "https://github.com/C-F0x/KonamikU/releases/download/260743/app-release.apk",
-  "changelog_url": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260743.json",
-  "latest_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260743.json"
+  "download_url": "https://github.com/Ra1nify/KonamikU/releases/download/260743/app-release.apk",
+  "changelog_url": "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/changelog-260743.json",
+  "latest_changelog": "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/changelog-260743.json"
 }
 ```
 
@@ -64,7 +64,7 @@
 {
   "version_name": "260743",
   "date": "2026-07-24",
-  "previous_changelog": "https://raw.githubusercontent.com/C-F0x/KonamikU/info/changelog-260730.json",
+  "previous_changelog": "https://raw.githubusercontent.com/Ra1nify/KonamikU/info/changelog-260730.json",
   "next_changelog": null,
   "commits": [
     {
@@ -456,11 +456,15 @@ git log "$RANGE" --reverse -z --format='%H%x00%s%x00%b' > raw.txt
 
 移植建议：若你的项目版本节奏更快，改用固定位数（如 `yyMM` + 2 位 major + 2 位 minor）。
 
-### 4.4 仓库改名依赖 301 转发
+### 4.4 仓库改名后必须重新生成产物
 
-线上 `update.json` 里的 URL 仍指向旧仓库名 `C-F0x`（GitHub 对改名仓库做 301）。一旦旧名被复用或删除，重定向失效，所有已发布客户端的下载与 changelog 链接同时失效。
+本项目曾把仓库从 `C-F0x/KonamikU` 改名到 `Ra1nify/KonamikU`。改名之前生成的 `update.json` 里，`download_url` 和 `changelog_url` 仍然写死旧名，只靠 GitHub 对改名仓库的 301 转发才解析成功。
 
-**移植时**：确保生成的 URL 与实际仓库一致，不要依赖转发。
+一旦旧名被复用或删除，转发失效，**所有已发布客户端的下载与 changelog 链接会同时断掉**——而这些客户端手里只有旧的 URL，改不了。
+
+**根治**：改名后立即重新跑一次生成流程，让 `info` 分支上的产物用新名重建；同时确保生成脚本用 `GITHUB_REPOSITORY` 这类运行时变量，而不是硬编码 owner。
+
+**移植时**：本文档 §1 的示例已按新仓库名 `Ra1nify` 书写。若你的项目也经历过改名，注意 `update.json` 里残留的旧名会长期潜伏——它不会报错，只是有一天突然 404。
 
 ---
 
