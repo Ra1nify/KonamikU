@@ -185,8 +185,9 @@
     <string name="toast_nfc_pid_restarted">com.android.nfc pid %s 재시작됨</string>
     <string name="toast_nfc_service_refreshed">NFC 새로고침됨</string>
 
-    <string name="restart_app_dialog_msg">모듈이 올바르게 작동하려면 앱을 다시 시작해야 합니다. 이 프로세스는 추후 업데이트에서 최적화될 예정입니다.</string>
+    <string name="restart_app_dialog_msg">NFC 서비스가 다시 시작되었지만 이 앱에서 연결할 수 없습니다.</string>
     <string name="restart_app_dialog_confirm">앱 다시 시작</string>
+    <string name="restart_app_dialog_title">다시 시작 필요</string>
 
     <string name="setting_pmm_title">PMm 도구</string>
     <string name="setting_pmm_desc">NFC 칩의 PMm 매개변수를 교체합니다. 특정 카드 리더기에 필요합니다.</string>

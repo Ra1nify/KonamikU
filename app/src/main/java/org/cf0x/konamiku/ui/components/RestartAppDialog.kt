@@ -8,20 +8,22 @@ import androidx.compose.ui.res.stringResource
 import org.cf0x.konamiku.R
 
 /**
- * "Restart the app" prompt, shown whenever the NFC stack was restarted.
+ * Last-resort prompt: the NFC service was restarted and this process still
+ * cannot reach it after the binder caches were dropped.
  *
- * Deliberately not dismissable by tapping outside: the NFC service has already
- * been killed at this point, so the app is in a state where it cannot reliably
- * talk to the framework until it is restarted. The only way out is the button.
+ * This should be rare now. The caches are cleared after a restart, which lets
+ * the framework rebind in-process, and both call sites probe the proxy before
+ * getting here. Seeing this dialog means that path did not work on the device.
  *
- * Shared by the status panel and the settings screen - both reach the same
- * situation through different flows and used to carry their own copy.
+ * Deliberately not dismissable by tapping outside: the app cannot talk to the
+ * NFC framework in this state, so leaving the dialog would strand the user on a
+ * screen where nothing works. The button is the only way out.
  */
 @Composable
 fun RestartAppDialog(onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = {},
-        title   = { Text(stringResource(R.string.restart_app_dialog_confirm)) },
+        title   = { Text(stringResource(R.string.restart_app_dialog_title)) },
         text    = { Text(stringResource(R.string.restart_app_dialog_msg)) },
         confirmButton = {
             Button(onClick = onConfirm) {

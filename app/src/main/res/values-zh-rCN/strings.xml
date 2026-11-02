@@ -213,8 +213,9 @@
     <string name="toast_nfc_pid_restarted">com.android.nfc 进程 %s 已重启</string>
     <string name="toast_nfc_service_refreshed">NFC 已刷新</string>
 
-    <string name="restart_app_dialog_msg">现在需要重启软件以让模块正常工作。这一流程将在后续更新被优化。</string>
+    <string name="restart_app_dialog_msg">NFC 服务已重启，但本应用无法再连接到它。</string>
     <string name="restart_app_dialog_confirm">重启软件</string>
+    <string name="restart_app_dialog_title">需要重启</string>
 
     <string name="setting_pmm_title">PMm 工具</string>
     <string name="setting_pmm_desc">替换PMm参数，对于某些读卡器是必需项</string>

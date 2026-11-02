@@ -185,8 +185,9 @@
     <string name="toast_nfc_pid_restarted">com.android.nfc pid %s を再起動</string>
     <string name="toast_nfc_service_refreshed">NFCを更新</string>
 
-    <string name="restart_app_dialog_msg">モジュールを正常に動作させるには、アプリの再起動が必要です。このプロセスは今後のアップデートで最適化されます。</string>
+    <string name="restart_app_dialog_msg">NFC サービスは再起動されましたが、このアプリから接続できません。</string>
     <string name="restart_app_dialog_confirm">アプリを再起動</string>
+    <string name="restart_app_dialog_title">再起動が必要です</string>
 
     <string name="setting_pmm_title">PMm ツール</string>
     <string name="setting_pmm_desc">NFCチップのPMmパラメータを置き換えます。特定のカードリーダーに必要です。</string>

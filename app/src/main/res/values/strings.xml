@@ -227,8 +227,9 @@
     <string name="toast_nfc_pid_restarted">com.android.nfc pid %s restarted</string>
     <string name="toast_nfc_service_refreshed">nfc refreshed</string>
 
-    <string name="restart_app_dialog_msg">The app needs to restart for the module to work properly. This process will be optimized in a future update.</string>
+    <string name="restart_app_dialog_msg">The NFC service was restarted, but this app can no longer reach it.</string>
     <string name="restart_app_dialog_confirm">Restart App</string>
+    <string name="restart_app_dialog_title">Restart needed</string>
 
     <string name="setting_pmm_title">PMm Tool</string>
     <string name="setting_pmm_desc">Replaces PMm parameters. Required for certain card readers.</string>
