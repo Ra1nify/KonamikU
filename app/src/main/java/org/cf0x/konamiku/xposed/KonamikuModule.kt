@@ -208,52 +208,36 @@ class KonamikuModule : XposedModule() {
      * [tryInstallPmmHook] re-resolves once the library is present.
      */
     private fun injectPmmtool(param: PackageLoadedParam): Boolean {
-        val soPath = runCatching {
-            getModuleApplicationInfo()?.nativeLibraryDir
-        }.getOrNull()
-        Log.i("KonamikU", "injectPmmtool: module nativeLibraryDir=$soPath")
-        if (soPath.isNullOrBlank()) {
-            Log.e("KonamikU", "injectPmmtool: cannot resolve the module's native library dir")
-            return false
-        }
-
-        val fullPath = "$soPath/libpmm.so"
-        // Do NOT test for the file's existence.
+        // libpmm.so must be bound to *this* module's class loader: natives for
+        // KonamikuModule.nativePmmHooked are looked up through the loader that
+        // defined the class, so loading it against param.defaultClassLoader
+        // leaves every external fun unresolved.
         //
-        // The APK is built with extractNativeLibs=false, so libpmm.so is never
-        // unpacked into nativeLibraryDir - it stays inside the (uncompressed)
-        // APK and is mapped straight from there. Runtime.nativeLoad() can load
-        // such a library; a File.exists() guard cannot see it and would refuse
-        // to load a library that is in fact available.
-        Log.i("KonamikU", "injectPmmtool: loading $fullPath")
-
-        // Load against *this* module's class loader.
-        //
-        // Runtime.nativeLoad(path, param.defaultClassLoader) binds the library
-        // to the target app's loader, but KonamikuModule itself is defined by
-        // the Xposed module loader, so the natives registered for this class
-        // are not found and every external fun throws:
-        //   "No implementation found for int
-        //    org.cf0x.konamiku.xposed.KonamikuModule.nativePmmHooked()
-        //    - is the library loaded, e.g. System.loadLibrary?"
-        // nativeLoad is tried first because it resolves the APK-embedded path;
-        // System.load is the fallback for builds that do extract.
-        val nativeError = runCatching {
-            Runtime::class.java.getDeclaredMethod(
-                "nativeLoad", String::class.java, ClassLoader::class.java
-            ).apply {
-                isAccessible = true
-                invoke(Runtime.getRuntime(), fullPath, param.defaultClassLoader)
-            }
-        }.exceptionOrNull()?.let { it.cause ?: it }
-
-        if (nativeError == null) {
-            Log.i("KonamikU", "pmmtool library loaded via nativeLoad: $fullPath")
+        // The APK is built with extractNativeLibs=false, so nativeLibraryDir is
+        // empty and "$nativeLibraryDir/libpmm.so" does not exist. The library
+        // lives uncompressed inside the APK and has to be addressed with the
+        // linker's "base.apk!/lib/<abi>/" syntax - which System.loadLibrary
+        // gets from the module class loader, and System.load accepts directly.
+        // Both throw on failure, unlike Runtime.nativeLoad, which returns the
+        // dlopen error as a String and so looked like success.
+        val loadError = runCatching { System.loadLibrary("pmm") }.exceptionOrNull()
+        if (loadError == null) {
+            Log.i("KonamikU", "pmmtool library loaded via System.loadLibrary")
         } else {
+            val apk = runCatching { getModuleApplicationInfo()?.sourceDir }.getOrNull()
+            if (apk.isNullOrBlank()) {
+                Log.e(
+                    "KonamikU",
+                    "injectPmmtool: System.loadLibrary failed (${loadError.message}) " +
+                        "and the module APK path is unknown"
+                )
+                return false
+            }
+            val abi = android.os.Build.SUPPORTED_64_BIT_ABIS.firstOrNull() ?: "arm64-v8a"
+            val fullPath = "$apk!/lib/$abi/libpmm.so"
             Log.w(
                 "KonamikU",
-                "injectPmmtool: nativeLoad failed (${nativeError.javaClass.simpleName}: " +
-                    "${nativeError.message}); trying System.load"
+                "injectPmmtool: System.loadLibrary failed (${loadError.message}); loading $fullPath"
             )
             val directError = runCatching { System.load(fullPath) }.exceptionOrNull()
             if (directError != null) {
