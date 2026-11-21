@@ -4,6 +4,7 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <android/log.h>
+#include <sys/system_properties.h>
 #include "dobby.h"
 
 #define TAG     "KonamikU_pmm"
@@ -109,6 +110,42 @@ static int patch_pmm_in_buffer(uint8_t *buf, int len) {
     return patched;
 }
 
+/* Sony CXD224x (Xperia, NCI 1.0) reads the 2-byte LF_T3T_FLAGS (0x53) value
+ * big-endian. AOSP writes it little-endian, so "enable identifier 1" (01 00)
+ * reaches the chip as bit 8 - an identifier past LF_T3T_MAX - and is
+ * rejected with STATUS_INVALID_PARAM, leaving the host IDm disabled: the
+ * NFCC never answers SENSF_REQ with it. Observed on G8441: 01 00 rejected,
+ * 00 01 accepted and the reader reads the IDm. Other controllers read it
+ * little-endian as the spec says, so this is gated on the CXD224x config. */
+static int is_cxd224x(void) {
+    static int cached = -1;
+    if (cached < 0) {
+        char prop[PROP_VALUE_MAX] = {0};
+        __system_property_get("persist.nfc_cfg.config_file_name", prop);
+        cached = strstr(prop, "cxd224x") != NULL;
+        LOGI("CXD224x LF_T3T_FLAGS byte swap %s", cached ? "enabled" : "disabled");
+    }
+    return cached;
+}
+
+/* Walks the TLVs (never a raw byte scan: 53 02 can occur inside an IDm). */
+static int swap_t3t_flags(uint8_t *buf, int len) {
+    int swapped = 0;
+    for (int i = 0; i + 2 <= len; ) {
+        uint8_t type = buf[i], vlen = buf[i + 1];
+        if (i + 2 + vlen > len) break;
+        if (type == 0x53 && vlen == 2) {
+            uint8_t lo = buf[i + 2];
+            buf[i + 2] = buf[i + 3];
+            buf[i + 3] = lo;
+            LOGI("LF_T3T_FLAGS swapped to %02x %02x", buf[i + 2], buf[i + 3]);
+            swapped = 1;
+        }
+        i += 2 + vlen;
+    }
+    return swapped;
+}
+
 static int hooked_nfa_dm_check_set_config(uint8_t tlv_len, uint8_t *tlv, int flags) {
     /* Never write through [tlv]: callers may pass read-only data. On this
      * stack nfa_dm_set_init_nci_params() hands in a buffer in .rodata, and
@@ -120,6 +157,9 @@ static int hooked_nfa_dm_check_set_config(uint8_t tlv_len, uint8_t *tlv, int fla
     if (tlv != NULL && tlv_len > 0) {
         memcpy(copy, tlv, tlv_len);
         int patched = patch_pmm_in_buffer(copy, (int) tlv_len);
+        if (is_cxd224x()) {
+            patched |= swap_t3t_flags(copy, (int) tlv_len);
+        }
         if (patched) {
             arg = copy;
         }
