@@ -38,16 +38,18 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         LiveUpdateManager.cancel(context)
                     }
                     LiveUpdateManager.ACTION_TOGGLE_MODE -> {
-                        val current = dataStore.emuMode.first()
-                        val next = when (current) {
+                        val active = context.loadActiveCard() ?: return@launch
+                        val next = when (active.mode) {
                             EmuMode.NORMAL -> EmuMode.COMPAT
                             EmuMode.COMPAT -> EmuMode.NATIVE
                             EmuMode.NATIVE -> EmuMode.NORMAL
                         }
-                        dataStore.saveEmuMode(next)
-                        val active = context.loadActiveCard() ?: return@launch
-                        LiveUpdateManager.postActive(context, active.card.name, next)
-                        updateHceRegistration(context, active.card.idm, next)
+                        val updated = active.card.copy(emuMode = next)
+                        jsonManager.saveCards(
+                            jsonManager.loadCards().map { if (it.id == updated.id) updated else it }
+                        )
+                        LiveUpdateManager.postActive(context, updated.name, next)
+                        updateHceRegistration(context, updated.idm, next)
                     }
                     LiveUpdateManager.ACTION_NEXT_CARD -> {
                         val cards = jsonManager.loadCards()
@@ -58,9 +60,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         val nextCard = cards[nextIndex]
 
                         dataStore.saveActiveCardId(nextCard.id)
-                        val mode = dataStore.emuMode.first()
-                        LiveUpdateManager.postActive(context, nextCard.name, mode)
-                        updateHceRegistration(context, nextCard.idm, mode)
+                        LiveUpdateManager.postActive(context, nextCard.name, nextCard.emuMode)
+                        updateHceRegistration(context, nextCard.idm, nextCard.emuMode)
                     }
                     LiveUpdateManager.ACTION_DISMISSED -> {
                         dataStore.saveActiveCardId(null)

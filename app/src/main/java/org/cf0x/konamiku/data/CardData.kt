@@ -24,14 +24,21 @@ data class NfcCard(
     val emuMode: EmuMode = EmuMode.NORMAL
 )
 
-/** Loads the currently active card with its mode, or null if none is selected. */
+/**
+ * Loads the currently active card with its mode, or null if none is selected.
+ *
+ * The mode is the card's own. That is the mode the UI shows and the one its
+ * IDm was registered with (MainScreen.activateCard); answering reads with the
+ * global emu_mode instead left a NORMAL-registered card silent whenever the
+ * global value was NATIVE, which the mode lock writes on every cold start
+ * before the Xposed service has bound.
+ */
 suspend fun Context.loadActiveCard(): ActiveCard? {
     val dataStore = AppDataStore(this)
     val jsonManager = JsonManager(this)
     val activeId = dataStore.activeCardId.first() ?: return null
-    val mode = dataStore.emuMode.first()
     val card = jsonManager.loadCards().find { it.id == activeId } ?: return null
-    return ActiveCard(card, mode)
+    return ActiveCard(card, card.emuMode)
 }
 
 class JsonManager(private val context: Context) {

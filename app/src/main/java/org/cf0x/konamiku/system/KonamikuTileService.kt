@@ -60,8 +60,7 @@ class KonamikuTileService : TileService() {
     private fun activateAndLaunch(card: org.cf0x.konamiku.data.NfcCard, dataStore: AppDataStore) {
         scope.launch {
             dataStore.saveActiveCardId(card.id)
-            val mode = dataStore.emuMode.first()
-            LiveUpdateManager.postActive(applicationContext, card.name, mode)
+            LiveUpdateManager.postActive(applicationContext, card.name, card.emuMode)
             updateTileState()
         }
         startActivityAndCollapse(
