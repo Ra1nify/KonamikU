@@ -117,6 +117,16 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         UpdateDownloadService.setUiVisible(false)
 
+        // A configuration change (rotation, most often: holding the phone
+        // flat over a reader flips it to landscape) recreates the Activity.
+        // That is not the user leaving the app, and stopping here deregistered
+        // the card ~300 ms into the first tap. The registration is held by the
+        // NFC service per uid, so it survives the recreation untouched.
+        if (isChangingConfigurations) {
+            runCatching { nfcAdapter?.disableReaderMode(this) }
+            return
+        }
+
         // Both reads below need the value before deciding, so they stay in one
         // coroutine instead of blocking the main thread. onPause runs on every
         // app switch, and a DataStore first read parses a file - doing that
