@@ -40,22 +40,29 @@ class NfcHookReceiver : BroadcastReceiver() {
         // Without that gate any app could broadcast this and flip pmmActive,
         // which is half of the condition that unlocks NORMAL/COMPAT mode.
         if (!XposedState.frameworkConfirmed) {
-            Log.w("KonamikU", "Ignoring hook ping: framework has not confirmed the module")
+            Log.w("KonamikU", "Deferring hook ping until the framework confirms the module")
+            XposedState.pendingPmmState = state
             return
         }
 
-        XposedState.pmmState = state
-        XposedState.activationState = XposedActivationState.ACTIVE
-
-        context.getSharedPreferences("KonamikU_xposed", Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean("pmmtool_active", state == KonamikuModule.PmmState.INSTALLED)
-            .putInt("pmmtool_state", state.code)
-            .apply()
+        applyPing(context, state)
     }
 
     companion object {
         const val ACTION_NFC_HOOKED = "org.cf0x.konamiku.ACTION_NFC_HOOKED"
         const val EXTRA_PMM_STATE = "pmmtool_state"
+        const val PREFS_NAME = "KonamikU_xposed"
+
+        /** Records a ping the framework has vouched for. */
+        fun applyPing(context: Context, state: KonamikuModule.PmmState) {
+            XposedState.pmmState = state
+            XposedState.activationState = XposedActivationState.ACTIVE
+
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("pmmtool_active", state == KonamikuModule.PmmState.INSTALLED)
+                .putInt("pmmtool_state", state.code)
+                .apply()
+        }
     }
 }

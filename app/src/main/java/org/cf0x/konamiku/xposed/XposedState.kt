@@ -37,6 +37,16 @@ object XposedState {
         frameworkConfirmed = true
     }
 
+    /**
+     * A ping that arrived before [frameworkConfirmed]. The NFC process pings
+     * once per state change, typically while this process is still cold
+     * starting - before the framework has bound - so dropping it would leave
+     * the PMm state unknown until the next NFC restart. It is applied only
+     * after the framework confirms the module is loaded in com.android.nfc.
+     */
+    @Volatile
+    var pendingPmmState: KonamikuModule.PmmState? = null
+
     val activationStateFlow:  StateFlow<XposedActivationState> = _activationState.asStateFlow()
     val frameworkNameFlow:    StateFlow<String>  = _frameworkName.asStateFlow()
     val frameworkVersionFlow: StateFlow<String>  = _frameworkVersion.asStateFlow()

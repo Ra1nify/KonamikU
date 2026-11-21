@@ -16,6 +16,7 @@ import org.cf0x.konamiku.data.AppLocale
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.util.applyLocale
 import org.cf0x.konamiku.xposed.KonamikuModule
+import org.cf0x.konamiku.xposed.NfcHookReceiver
 import org.cf0x.konamiku.xposed.XposedActivationState
 import org.cf0x.konamiku.xposed.XposedState
 
@@ -96,7 +97,7 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
             // Restore the last reported state so the panel is correct before
             // the next ping arrives. Older builds wrote only the boolean, so
             // both forms are honoured.
-            val prefs = getSharedPreferences("KonamikuU_xposed", MODE_PRIVATE)
+            val prefs = getSharedPreferences(NfcHookReceiver.PREFS_NAME, MODE_PRIVATE)
             XposedState.pmmState = when {
                 prefs.contains("pmmtool_state") ->
                     KonamikuModule.PmmState.fromCode(prefs.getInt("pmmtool_state", 0))
@@ -114,7 +115,14 @@ class KonamikuApp : Application(), XposedServiceHelper.OnServiceListener {
                                       else XposedActivationState.NEEDS_RESTART
         // Authoritative confirmation from the framework, not from a broadcast.
         // NfcHookReceiver only trusts its ping once this is set.
-        if (hooked) XposedState.markFrameworkConfirmed()
+        if (hooked) {
+            XposedState.markFrameworkConfirmed()
+            XposedState.pendingPmmState?.let {
+                Log.i(TAG, "Applying deferred hook ping: pmm=$it")
+                NfcHookReceiver.applyPing(this, it)
+                XposedState.pendingPmmState = null
+            }
+        }
 
         Log.i(TAG, "Bound: state=${XposedState.activationState} hooked=$hooked")
     }
