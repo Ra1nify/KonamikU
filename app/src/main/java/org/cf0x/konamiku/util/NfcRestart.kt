@@ -250,7 +250,12 @@ object NfcRestart {
             ?: return false
         // getMaxNumOfRegisterableSystemCodes() is a plain binder round-trip and
         // has no side effects; -1 means the framework reported a failure.
-        emulation.maxNumOfRegisterableSystemCodes != -1
+        // It is @hide, so it is not visible to the compiler.
+        org.lsposed.hiddenapibypass.HiddenApiBypass.invoke(
+            android.nfc.cardemulation.NfcFCardEmulation::class.java,
+            emulation,
+            "getMaxNumOfRegisterableSystemCodes"
+        ) as Int != -1
     }.onFailure {
         Log.w(TAG, "HCE-F proxy still unreachable after cache clear: ${it.message}")
     }.getOrDefault(false)

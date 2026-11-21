@@ -101,8 +101,10 @@ import org.cf0x.konamiku.system.UpdateInstaller
 import org.cf0x.konamiku.system.UpdateDownloadService
 import org.cf0x.konamiku.system.UpdateManager
 import org.cf0x.konamiku.ui.components.ColorPickerWheel
+import org.cf0x.konamiku.ui.components.RestartAppDialog
 import org.cf0x.konamiku.ui.components.SegmentSwitch
 import org.cf0x.konamiku.util.NfcRestart
+import org.cf0x.konamiku.util.restartApp
 import org.cf0x.konamiku.util.applyLocale
 
 @Composable
