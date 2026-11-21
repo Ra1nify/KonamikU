@@ -71,14 +71,16 @@ static const char *state_name(int state) {
 #define PMM_LEN 8
 
 /*
- * Replace the PMm inside a buffer of [len] bytes.
+ * Replace the PMm inside a buffer of [len] bytes. Returns non-zero when
+ * anything was rewritten.
  *
  * Only full 8-byte windows that START inside the bounds are touched, and the
  * write is skipped unless the whole destination is inside the buffer.
  */
-static void patch_pmm_in_buffer(uint8_t *buf, int len) {
+static int patch_pmm_in_buffer(uint8_t *buf, int len) {
+    int patched = 0;
     if (buf == NULL || len < PMM_LEN) {
-        return;
+        return patched;
     }
 
     for (int i = 0; i + PMM_LEN <= len; ++i) {
@@ -88,6 +90,7 @@ static void patch_pmm_in_buffer(uint8_t *buf, int len) {
             i + 2 + PMM_LEN <= len) {
             LOGI("PMm patch [51 08] at offset %d (len=%d)", i, len);
             memcpy(buf + i + 2, TARGET_PMM, PMM_LEN);
+            patched = 1;
             i += 2 + PMM_LEN - 1;   /* skip the region we just wrote */
             continue;
         }
@@ -99,20 +102,35 @@ static void patch_pmm_in_buffer(uint8_t *buf, int len) {
             buf[i + 6] == 0xFF && buf[i + 7] == 0xFF) {
             LOGI("PMm patch [FF*8] at offset %d (len=%d)", i, len);
             memcpy(buf + i, TARGET_PMM, PMM_LEN);
+            patched = 1;
             i += PMM_LEN - 1;       /* skip the region we just wrote */
         }
     }
+    return patched;
 }
 
 static int hooked_nfa_dm_check_set_config(uint8_t tlv_len, uint8_t *tlv, int flags) {
-    patch_pmm_in_buffer(tlv, (int) tlv_len);
+    /* Never write through [tlv]: callers may pass read-only data. On this
+     * stack nfa_dm_set_init_nci_params() hands in a buffer in .rodata, and
+     * patching it in place faulted (SEGV_ACCERR) on every NFC start. Patch a
+     * copy instead; the callee copies the TLVs before returning, so a stack
+     * buffer is safe. tlv_len is a uint8_t, so 255 bytes always fit. */
+    uint8_t copy[256];
+    uint8_t *arg = tlv;
+    if (tlv != NULL && tlv_len > 0) {
+        memcpy(copy, tlv, tlv_len);
+        int patched = patch_pmm_in_buffer(copy, (int) tlv_len);
+        if (patched) {
+            arg = copy;
+        }
+    }
 
     /* orig_ is only non-NULL when DobbyHook succeeded; guard anyway so a
      * partial hook can never jump through a null pointer. */
     if (orig_nfa_dm_check_set_config == NULL) {
         return 0;
     }
-    return orig_nfa_dm_check_set_config(tlv_len, tlv, flags);
+    return orig_nfa_dm_check_set_config(tlv_len, arg, flags);
 }
 
 /**
