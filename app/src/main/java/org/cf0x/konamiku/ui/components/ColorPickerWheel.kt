@@ -1,8 +1,9 @@
 package org.cf0x.konamiku.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -111,13 +112,24 @@ fun ColorPickerWheel(
             val sqLeft     = sizePx / 2f - squareSide / 2f
             val sqTop      = sizePx / 2f - squareSide / 2f
 
-            fun inRing(p: Offset): Boolean {
-                val d = sqrt((p.x - sizePx / 2f).pow(2) + (p.y - sizePx / 2f).pow(2))
-                return d in (innerR * 0.75f)..outerR
+            fun distanceToCenter(p: Offset): Float =
+                sqrt((p.x - sizePx / 2f).pow(2) + (p.y - sizePx / 2f).pow(2))
+
+            /**
+             * Zone under a pointer position.
+             *
+             * The hue ring is the annulus `innerR..outerR` and the SV square keeps its corners at
+             * `0.9 * innerR`, strictly inside `innerR`, so the two zones cannot overlap. A press
+             * inside `innerR` but outside the square snaps to the nearest square edge.
+             */
+            fun zoneAt(p: Offset): DragZone {
+                val d = distanceToCenter(p)
+                return when {
+                    d in innerR..outerR -> DragZone.RING
+                    d <= innerR         -> DragZone.SQUARE
+                    else                -> DragZone.NONE
+                }
             }
-            fun inSquare(p: Offset) =
-                p.x in sqLeft..(sqLeft + squareSide) &&
-                        p.y in sqTop..(sqTop + squareSide)
 
             fun handleRing(p: Offset) {
                 hue = (atan2(p.y - sizePx / 2f, p.x - sizePx / 2f)
@@ -130,36 +142,29 @@ fun ColorPickerWheel(
                 bri = (1f - (cy - sqTop) / squareSide).coerceIn(0f, 1f)
             }
 
-            var dragZone by remember { mutableStateOf(DragZone.NONE) }
+            fun apply(zone: DragZone, p: Offset) {
+                when (zone) {
+                    DragZone.RING   -> handleRing(p)
+                    DragZone.SQUARE -> handleSquareClamped(p)
+                    DragZone.NONE   -> Unit
+                }
+            }
 
             androidx.compose.foundation.Canvas(
                 modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(squareSide, sqLeft, sqTop) {
-                        detectDragGestures(
-                            onDragStart = { p ->
-                                dragZone = when {
-                                    inRing(p)   -> DragZone.RING
-                                    inSquare(p) -> DragZone.SQUARE
-                                    else        -> DragZone.NONE
-                                }
-                            },
-                            onDragEnd    = { dragZone = DragZone.NONE },
-                            onDragCancel = { dragZone = DragZone.NONE },
-                            onDrag = { change, _ ->
-                                when (dragZone) {
-                                    DragZone.RING   -> handleRing(change.position)
-                                    DragZone.SQUARE -> handleSquareClamped(change.position)
-                                    DragZone.NONE   -> Unit
-                                }
-                            }
-                        )
-                    }
-                    .pointerInput(squareSide, sqLeft, sqTop) {
-                        detectTapGestures { p ->
-                            when {
-                                inRing(p)   -> handleRing(p)
-                                inSquare(p) -> handleSquareClamped(p)
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val zone = zoneAt(down.position)
+                            if (zone == DragZone.NONE) return@awaitEachGesture
+                            // Applies on the press itself, so a tap selects the touched point and
+                            // a drag keeps the zone chosen on press instead of re-resolving it.
+                            apply(zone, down.position)
+                            down.consume()
+                            drag(down.id) { change ->
+                                apply(zone, change.position)
+                                change.consume()
                             }
                         }
                     }
